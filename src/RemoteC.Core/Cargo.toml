@@ -21,9 +21,9 @@ core-graphics = { version = "0.23", optional = true }
 core-foundation = { version = "0.9", optional = true }
 
 # Video encoding
-# TODO: Add these dependencies when implementing actual encoding
+openh264 = { version = "0.4", optional = true }
+# TODO: Add these dependencies for additional codecs
 # ffmpeg-next = "6.1"
-# openh264 = "0.4"
 # vpx = "0.1"
 
 # Networking
@@ -76,10 +76,11 @@ cc = "1.0"
 bindgen = "0.69"
 
 [features]
-default = ["windows", "linux", "macos"]
+default = ["windows", "linux", "macos", "openh264"]
 windows = ["winapi"]
 linux = ["x11", "xcb"]
 macos = ["core-graphics", "core-foundation"]
+production = ["openh264"]
 
 
 [profile.release]
