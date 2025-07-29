@@ -220,3 +220,22 @@ public enum KeyAction
     Release,
     Type
 }
+
+/// <summary>
+/// PIN validation request
+/// </summary>
+public class PinValidationRequest
+{
+    public string PinCode { get; set; } = string.Empty;
+    public Guid? SessionId { get; set; }
+}
+
+/// <summary>
+/// PIN validation response
+/// </summary>
+public class PinValidationResponse
+{
+    public bool Success { get; set; }
+    public string? ErrorMessage { get; set; }
+    public SessionDto? Session { get; set; }
+}

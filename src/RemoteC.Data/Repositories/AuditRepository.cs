@@ -82,7 +82,7 @@ public class AuditRepository : IAuditRepository
                 Action = reader.GetString(reader.GetOrdinal("Action")),
                 EntityType = reader.IsDBNull(reader.GetOrdinal("EntityType")) ? null : reader.GetString(reader.GetOrdinal("EntityType")),
                 EntityId = reader.IsDBNull(reader.GetOrdinal("EntityId")) ? null : reader.GetString(reader.GetOrdinal("EntityId")),
-                UserId = reader.IsDBNull(reader.GetOrdinal("UserId")) ? null : reader.GetString(reader.GetOrdinal("UserId")),
+                UserId = reader.IsDBNull(reader.GetOrdinal("UserId")) ? null : reader.GetGuid(reader.GetOrdinal("UserId")),
                 IpAddress = reader.IsDBNull(reader.GetOrdinal("IpAddress")) ? null : reader.GetString(reader.GetOrdinal("IpAddress")),
                 Timestamp = reader.GetDateTime(reader.GetOrdinal("Timestamp")),
                 Success = reader.GetBoolean(reader.GetOrdinal("Success")),

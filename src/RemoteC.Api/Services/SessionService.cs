@@ -38,7 +38,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Getting sessions for user {UserId}", userId);
+            _logger.LogInformation("Getting sessions for user {UserId}", userId);
 
             var sessions = await _context.Sessions
                 .Include(s => s.Device)
@@ -52,13 +52,13 @@ public class SessionService : ISessionService
 
             var sessionDtos = _mapper.Map<IEnumerable<SessionDto>>(sessions);
 
-            await _auditService.LogActionAsync("session.list", "Session", null, userId);
+            await _auditService.LogActionAsync("session.list", "Session", string.Empty);
 
             return sessionDtos;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error getting sessions for user {UserId}", userId);
+            _logger.LogError(ex, "Error getting sessions for user {UserId}", userId);
             throw;
         }
     }
@@ -67,7 +67,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Getting session {SessionId} for user {UserId}", sessionId, userId);
+            _logger.LogInformation("Getting session {SessionId} for user {UserId}", sessionId, userId);
 
             var session = await _context.Sessions
                 .Include(s => s.Device)
@@ -78,7 +78,7 @@ public class SessionService : ISessionService
 
             if (session == null)
             {
-                _logger.Warning("Session {SessionId} not found", sessionId);
+                _logger.LogWarning("Session {SessionId} not found", sessionId);
                 return null;
             }
 
@@ -88,7 +88,7 @@ public class SessionService : ISessionService
 
             if (!hasAccess)
             {
-                _logger.Warning("User {UserId} does not have access to session {SessionId}", userId, sessionId);
+                _logger.LogWarning("User {UserId} does not have access to session {SessionId}", userId, sessionId);
                 throw new UnauthorizedAccessException("Access denied to session");
             }
 
@@ -100,7 +100,7 @@ public class SessionService : ISessionService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error getting session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error getting session {SessionId}", sessionId);
             throw;
         }
     }
@@ -109,7 +109,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Creating session for device {DeviceId} by user {UserId}", request.DeviceId, userId);
+            _logger.LogInformation("Creating session for device {DeviceId} by user {UserId}", request.DeviceId, userId);
 
             // Validate device exists
             var device = await _context.Devices.FirstOrDefaultAsync(d => d.Id.ToString() == request.DeviceId);
@@ -164,13 +164,13 @@ public class SessionService : ISessionService
 
             await _auditService.LogActionAsync("session.create", "Session", session.Id.ToString(), userId);
 
-            _logger.Information("Session {SessionId} created successfully", session.Id);
+            _logger.LogInformation("Session {SessionId} created successfully", session.Id);
 
             return sessionDto;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error creating session");
+            _logger.LogError(ex, "Error creating session");
             throw;
         }
     }
@@ -179,7 +179,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Starting session {SessionId} for user {UserId}", sessionId, userId);
+            _logger.LogInformation("Starting session {SessionId} for user {UserId}", sessionId, userId);
 
             var session = await _context.Sessions
                 .Include(s => s.Device)
@@ -233,13 +233,13 @@ public class SessionService : ISessionService
 
             await _auditService.LogActionAsync("session.start", "Session", sessionId.ToString(), userId);
 
-            _logger.Information("Session {SessionId} started successfully", sessionId);
+            _logger.LogInformation("Session {SessionId} started successfully", sessionId);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error starting session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error starting session {SessionId}", sessionId);
 
             return new SessionStartResult
             {
@@ -253,7 +253,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Stopping session {SessionId} for user {UserId}", sessionId, userId);
+            _logger.LogInformation("Stopping session {SessionId} for user {UserId}", sessionId, userId);
 
             var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId);
             if (session == null)
@@ -295,11 +295,11 @@ public class SessionService : ISessionService
 
             await _auditService.LogActionAsync("session.stop", "Session", sessionId.ToString(), userId);
 
-            _logger.Information("Session {SessionId} stopped successfully", sessionId);
+            _logger.LogInformation("Session {SessionId} stopped successfully", sessionId);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error stopping session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error stopping session {SessionId}", sessionId);
             throw;
         }
     }
@@ -308,7 +308,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Generating PIN for session {SessionId} by user {UserId}", sessionId, userId);
+            _logger.LogInformation("Generating PIN for session {SessionId} by user {UserId}", sessionId, userId);
 
             var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId);
             if (session == null)
@@ -341,13 +341,13 @@ public class SessionService : ISessionService
 
             await _auditService.LogActionAsync("session.pin.generate", "Session", sessionId.ToString(), userId);
 
-            _logger.Information("PIN generated for session {SessionId}", sessionId);
+            _logger.LogInformation("PIN generated for session {SessionId}", sessionId);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error generating PIN for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error generating PIN for session {SessionId}", sessionId);
             throw;
         }
     }
@@ -356,7 +356,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            _logger.Information("Validating PIN for session {SessionId}", sessionId);
+            _logger.LogInformation("Validating PIN for session {SessionId}", sessionId);
 
             var isValid = await _pinService.ValidatePinAsync(sessionId, pin);
 
@@ -378,7 +378,7 @@ public class SessionService : ISessionService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error validating PIN for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error validating PIN for session {SessionId}", sessionId);
             throw;
         }
     }

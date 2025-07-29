@@ -135,6 +135,7 @@ namespace RemoteC.Shared.Models
         public int FramesDropped { get; set; }
         public double CpuUsage { get; set; }
         public double MemoryUsage { get; set; }
+        public TimeSpan Duration { get; set; }
     }
     
     /// <summary>

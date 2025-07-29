@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remotec-config
+  namespace: remotec
+data:
+  appsettings.Production.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "RemoteC": {
+        "Environment": "Production",
+        "EnableSwagger": false,
+        "MaxSessionDuration": "04:00:00",
+        "SessionTimeout": "00:30:00",
+        "PinExpirationMinutes": 10,
+        "MaxConcurrentSessions": 100
+      },
+      "Performance": {
+        "CaptureFrameRate": 30,
+        "InputPollingRate": 60,
+        "CompressionLevel": "Optimal",
+        "EnableHardwareAcceleration": true
+      },
+      "Security": {
+        "RequireHttps": true,
+        "EnableRateLimiting": true,
+        "MaxRequestsPerMinute": 60,
+        "EnableAuditLogging": true
+      }
+    }

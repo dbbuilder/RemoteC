@@ -68,6 +68,12 @@ namespace RemoteC.Api.Services
             DateTime startDate,
             DateTime endDate,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Helper method to log an action
+        /// </summary>
+        Task LogActionAsync(string action, string entityType, string entityId, 
+            object? oldValue = null, object? newValue = null, object? metadata = null);
     }
 
     public class AuditLogEntry
@@ -95,28 +101,7 @@ namespace RemoteC.Api.Services
         public string? StackTrace { get; set; }
     }
 
-    public enum AuditSeverity
-    {
-        Debug,
-        Info,
-        Warning,
-        Error,
-        Critical
-    }
-
-    public enum AuditCategory
-    {
-        General,
-        Authentication,
-        Authorization,
-        DataAccess,
-        DataModification,
-        Configuration,
-        Security,
-        Compliance,
-        Performance,
-        System
-    }
+    // Using enums from RemoteC.Shared.Models
 
     public class AuditLogQuery
     {

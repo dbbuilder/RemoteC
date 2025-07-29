@@ -1,166 +1,481 @@
-using System.Text;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using RemoteC.Data;
+using RemoteC.Data.Entities;
+using RemoteC.Shared.Models;
 
-namespace RemoteC.Api.Services;
-
-/// <summary>
-/// File transfer service implementation
-/// </summary>
-public class FileTransferService : IFileTransferService
+namespace RemoteC.Api.Services
 {
-    private readonly ILogger<FileTransferService> _logger;
-    private readonly IConfiguration _configuration;
-    private readonly Dictionary<Guid, FileTransferStatus> _activeTransfers;
-
-    public FileTransferService(
-        ILogger<FileTransferService> logger,
-        IConfiguration configuration)
+    public class FileTransferService : IFileTransferService
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _activeTransfers = new Dictionary<Guid, FileTransferStatus>();
-    }
+        private readonly RemoteCDbContext _context;
+        private readonly ILogger<FileTransferService> _logger;
+        private readonly IEncryptionService _encryptionService;
+        private readonly IAuditService _auditService;
+        private readonly FileTransferOptions _options;
+        private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _transferLocks;
 
-    public async Task<FileTransferResult> StartFileTransferAsync(Guid sessionId, FileTransferRequest request)
-    {
-        try
+        public FileTransferService(
+            RemoteCDbContext context,
+            ILogger<FileTransferService> logger,
+            IEncryptionService encryptionService,
+            IAuditService auditService,
+            IOptions<FileTransferOptions> options)
         {
-            _logger.Information("Starting file transfer for session {SessionId}: {FileName}", sessionId, request.FileName);
+            _context = context;
+            _logger = logger;
+            _encryptionService = encryptionService;
+            _auditService = auditService;
+            _options = options.Value;
+            _transferLocks = new ConcurrentDictionary<Guid, SemaphoreSlim>();
+        }
 
+        public async Task<FileTransfer> InitiateTransferAsync(FileTransferRequest request)
+        {
             // Validate file size
-            var maxFileSize = _configuration.GetValue<long>("FileTransfer:MaxFileSizeBytes", 1024 * 1024 * 1024); // 1GB default
-            if (request.FileSize > maxFileSize)
+            if (request.FileSize > _options.MaxFileSize)
             {
-                throw new ArgumentException($"File size {request.FileSize} exceeds maximum allowed size {maxFileSize}");
+                throw new InvalidOperationException($"File size {request.FileSize} exceeds maximum allowed size {_options.MaxFileSize}");
             }
 
-            // Validate file extension
-            var allowedExtensions = _configuration.GetSection("FileTransfer:AllowedExtensions").Get<string[]>() ?? Array.Empty<string>();
-            var fileExtension = Path.GetExtension(request.FileName).ToLowerInvariant();
+            // Generate encryption key if enabled
+            string? encryptionKeyId = null;
+            if (_options.EnableEncryption)
+            {
+                encryptionKeyId = await _encryptionService.GenerateKeyAsync();
+            }
+
+            // Calculate chunk information
+            var totalChunks = (int)Math.Ceiling((double)request.FileSize / _options.ChunkSize);
+
+            var transfer = new FileTransfer
+            {
+                Id = Guid.NewGuid(),
+                SessionId = request.SessionId,
+                UserId = request.UserId,
+                FileName = request.FileName,
+                TotalSize = request.FileSize,
+                ChunkSize = _options.ChunkSize,
+                TotalChunks = totalChunks,
+                ChunksReceived = 0,
+                Direction = (RemoteC.Data.Entities.TransferDirection)request.Direction,
+                Status = RemoteC.Data.Entities.TransferStatus.Pending,
+                EncryptionKeyId = encryptionKeyId,
+                Checksum = request.Checksum,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.FileTransfers.Add(transfer);
+            await _context.SaveChangesAsync();
+
+            // Create transfer directory
+            var transferDir = GetTransferDirectory(transfer.Id);
+            Directory.CreateDirectory(transferDir);
+
+            // Log transfer initiation
+            await _auditService.LogAsync(new AuditLogEntry
+            {
+                UserId = request.UserId,
+                Action = "FileTransferInitiated",
+                ResourceId = transfer.Id.ToString(),
+                Details = $"FileName: {request.FileName}, FileSize: {request.FileSize}"
+            });
+
+            _logger.LogInformation("Initiated file transfer {TransferId} for file {FileName}", transfer.Id, request.FileName);
+
+            return transfer;
+        }
+
+        public async Task<ChunkUploadResult> UploadChunkAsync(FileChunk chunk)
+        {
+            var transfer = await _context.FileTransfers.FindAsync(chunk.TransferId);
+            if (transfer == null)
+            {
+                throw new InvalidOperationException($"Transfer {chunk.TransferId} not found");
+            }
+
+            // Get or create lock for this transfer
+            var transferLock = _transferLocks.GetOrAdd(transfer.Id, _ => new SemaphoreSlim(1, 1));
             
-            if (allowedExtensions.Length > 0 && !allowedExtensions.Contains(fileExtension))
+            await transferLock.WaitAsync();
+            try
             {
-                throw new ArgumentException($"File extension {fileExtension} is not allowed");
+                // Validate chunk
+                if (!ValidateChunk(chunk))
+                {
+                    return new ChunkUploadResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Invalid chunk checksum"
+                    };
+                }
+
+                // Check if chunk already exists
+                var chunkPath = GetChunkPath(transfer.Id, chunk.ChunkNumber);
+                if (File.Exists(chunkPath))
+                {
+                    // Chunk already uploaded, return success
+                    return new ChunkUploadResult
+                    {
+                        Success = true,
+                        ChunksReceived = transfer.ChunksReceived,
+                        BytesReceived = transfer.BytesReceived,
+                        Progress = CalculateProgress(transfer),
+                        IsComplete = transfer.Status == RemoteC.Data.Entities.TransferStatus.Completed
+                    };
+                }
+
+                // Process chunk data
+                var processedData = chunk.Data;
+                
+                // Decompress if needed
+                if (chunk.IsCompressed && _options.EnableCompression)
+                {
+                    processedData = await DecompressDataAsync(processedData);
+                }
+
+                // Encrypt if needed
+                if (_options.EnableEncryption && !string.IsNullOrEmpty(transfer.EncryptionKeyId))
+                {
+                    processedData = await _encryptionService.EncryptAsync(processedData, transfer.EncryptionKeyId);
+                }
+
+                // Save chunk
+                await File.WriteAllBytesAsync(chunkPath, processedData);
+
+                // Update transfer progress
+                transfer.ChunksReceived++;
+                transfer.BytesReceived += chunk.Data.Length;
+                transfer.UpdatedAt = DateTime.UtcNow;
+
+                if (transfer.ChunksReceived == transfer.TotalChunks)
+                {
+                    // All chunks received, assemble file
+                    await AssembleFileAsync(transfer);
+                    transfer.Status = RemoteC.Data.Entities.TransferStatus.Completed;
+                    transfer.CompletedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    transfer.Status = RemoteC.Data.Entities.TransferStatus.InProgress;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return new ChunkUploadResult
+                {
+                    Success = true,
+                    ChunksReceived = transfer.ChunksReceived,
+                    BytesReceived = transfer.BytesReceived,
+                    Progress = CalculateProgress(transfer),
+                    IsComplete = transfer.Status == RemoteC.Data.Entities.TransferStatus.Completed
+                };
+            }
+            finally
+            {
+                transferLock.Release();
+            }
+        }
+
+        public async Task<FileTransfer?> GetTransferStatusAsync(Guid transferId)
+        {
+            return await _context.FileTransfers.FindAsync(transferId);
+        }
+
+        public async Task<FileChunk?> DownloadChunkAsync(Guid transferId, int chunkNumber)
+        {
+            var transfer = await _context.FileTransfers.FindAsync(transferId);
+            if (transfer == null || transfer.Direction != RemoteC.Data.Entities.TransferDirection.Download)
+            {
+                return null;
             }
 
-            var transferId = Guid.NewGuid();
-            var transferStatus = new FileTransferStatus
+            if (chunkNumber < 0 || chunkNumber >= transfer.TotalChunks)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(transfer.SourcePath) || !File.Exists(transfer.SourcePath))
+            {
+                throw new InvalidOperationException("Source file not found");
+            }
+
+            // Calculate chunk boundaries
+            var startOffset = (long)chunkNumber * transfer.ChunkSize;
+            var chunkSize = (int)Math.Min(transfer.ChunkSize, transfer.TotalSize - startOffset);
+
+            // Read chunk from file
+            var chunkData = new byte[chunkSize];
+            using (var fileStream = new FileStream(transfer.SourcePath, FileMode.Open, FileAccess.Read))
+            {
+                fileStream.Seek(startOffset, SeekOrigin.Begin);
+                await fileStream.ReadAsync(chunkData, 0, chunkSize);
+            }
+
+            // Encrypt if needed
+            if (_options.EnableEncryption && !string.IsNullOrEmpty(transfer.EncryptionKeyId))
+            {
+                chunkData = await _encryptionService.EncryptAsync(chunkData, transfer.EncryptionKeyId);
+            }
+
+            // Compress if needed
+            if (_options.EnableCompression)
+            {
+                chunkData = await CompressDataAsync(chunkData);
+            }
+
+            return new FileChunk
             {
                 TransferId = transferId,
-                State = FileTransferState.Queued,
-                BytesTransferred = 0,
-                TotalBytes = request.FileSize,
-                ProgressPercentage = 0
-            };
-
-            _activeTransfers[transferId] = transferStatus;
-
-            // Start transfer in background
-            _ = Task.Run(async () => await ProcessFileTransferAsync(transferId, sessionId, request));
-
-            return new FileTransferResult
-            {
-                TransferId = transferId,
-                Success = true
+                ChunkNumber = chunkNumber,
+                Data = chunkData,
+                Checksum = ComputeChecksum(chunkData),
+                IsCompressed = _options.EnableCompression
             };
         }
-        catch (Exception ex)
+
+        public async Task<bool> CancelTransferAsync(Guid transferId)
         {
-            _logger.Error(ex, "Error starting file transfer for session {SessionId}", sessionId);
-            return new FileTransferResult
+            var transfer = await _context.FileTransfers.FindAsync(transferId);
+            if (transfer == null)
             {
-                TransferId = Guid.Empty,
-                Success = false,
-                ErrorMessage = ex.Message
-            };
-        }
-    }
-
-    public async Task<FileTransferStatus> GetTransferStatusAsync(Guid transferId)
-    {
-        await Task.CompletedTask;
-        
-        if (_activeTransfers.TryGetValue(transferId, out var status))
-        {
-            return status;
-        }
-
-        throw new ArgumentException($"Transfer {transferId} not found");
-    }
-
-    public async Task CancelTransferAsync(Guid transferId)
-    {
-        try
-        {
-            _logger.Information("Cancelling file transfer {TransferId}", transferId);
-
-            if (_activeTransfers.TryGetValue(transferId, out var status))
-            {
-                status.State = FileTransferState.Cancelled;
-                _logger.Information("File transfer {TransferId} cancelled", transferId);
+                return false;
             }
 
-            await Task.CompletedTask;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error cancelling transfer {TransferId}", transferId);
-            throw;
-        }
-    }
+            transfer.Status = RemoteC.Data.Entities.TransferStatus.Cancelled;
+            transfer.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
 
-    public async Task<IEnumerable<FileTransferHistoryDto>> GetTransferHistoryAsync(Guid sessionId)
-    {
-        // TODO: Implement transfer history storage and retrieval
-        await Task.CompletedTask;
-        return new List<FileTransferHistoryDto>();
-    }
-
-    private async Task ProcessFileTransferAsync(Guid transferId, Guid sessionId, FileTransferRequest request)
-    {
-        try
-        {
-            var status = _activeTransfers[transferId];
-            status.State = FileTransferState.InProgress;
-
-            // Simulate file transfer progress
-            var chunkSize = 64 * 1024; // 64KB chunks
-            var totalChunks = (int)Math.Ceiling((double)request.FileSize / chunkSize);
-
-            for (int i = 0; i < totalChunks; i++)
+            // Clean up transfer directory
+            var transferDir = GetTransferDirectory(transferId);
+            if (Directory.Exists(transferDir))
             {
-                if (status.State == FileTransferState.Cancelled)
-                    break;
-
-                // Simulate processing time
-                await Task.Delay(100);
-
-                var bytesInChunk = Math.Min(chunkSize, (int)(request.FileSize - status.BytesTransferred));
-                status.BytesTransferred += bytesInChunk;
-                status.ProgressPercentage = (double)status.BytesTransferred / request.FileSize * 100;
-
-                var remainingBytes = request.FileSize - status.BytesTransferred;
-                var estimatedTimeRemaining = TimeSpan.FromMilliseconds(remainingBytes / chunkSize * 100);
-                status.EstimatedTimeRemaining = estimatedTimeRemaining;
+                Directory.Delete(transferDir, recursive: true);
             }
 
-            if (status.State != FileTransferState.Cancelled)
-            {
-                status.State = FileTransferState.Completed;
-                status.ProgressPercentage = 100;
-                status.EstimatedTimeRemaining = TimeSpan.Zero;
-            }
-
-            _logger.Information("File transfer {TransferId} completed with state {State}", transferId, status.State);
+            _logger.LogInformation("Cancelled transfer {TransferId}", transferId);
+            return true;
         }
-        catch (Exception ex)
+
+        public async Task<int> CleanupStalledTransfersAsync(TimeSpan stalledThreshold)
         {
-            _logger.Error(ex, "Error processing file transfer {TransferId}", transferId);
+            var cutoffTime = DateTime.UtcNow - stalledThreshold;
             
-            if (_activeTransfers.TryGetValue(transferId, out var status))
+            var stalledTransfers = await _context.FileTransfers
+                .Where(t => t.Status == RemoteC.Data.Entities.TransferStatus.InProgress && t.UpdatedAt < cutoffTime)
+                .ToListAsync();
+
+            foreach (var transfer in stalledTransfers)
             {
-                status.State = FileTransferState.Failed;
-                status.ErrorMessage = ex.Message;
+                transfer.Status = RemoteC.Data.Entities.TransferStatus.Failed;
+                transfer.UpdatedAt = DateTime.UtcNow;
+                
+                _logger.LogWarning("Marking transfer {TransferId} as failed due to inactivity", transfer.Id);
             }
+
+            await _context.SaveChangesAsync();
+
+            return stalledTransfers.Count;
         }
+
+        private bool ValidateChunk(FileChunk chunk)
+        {
+            var computedChecksum = ComputeChecksum(chunk.Data);
+            return computedChecksum == chunk.Checksum;
+        }
+
+        private string ComputeChecksum(byte[] data)
+        {
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(data);
+            return Convert.ToBase64String(hash);
+        }
+
+        private int CalculateProgress(FileTransfer transfer)
+        {
+            if (transfer.TotalChunks == 0) return 0;
+            return (int)((transfer.ChunksReceived * 100) / transfer.TotalChunks);
+        }
+
+        private string GetTransferDirectory(Guid transferId)
+        {
+            return Path.Combine(_options.StoragePath, transferId.ToString());
+        }
+
+        private string GetChunkPath(Guid transferId, int chunkNumber)
+        {
+            return Path.Combine(GetTransferDirectory(transferId), $"chunk_{chunkNumber}");
+        }
+
+        public async Task<IEnumerable<int>> GetMissingChunksAsync(Guid transferId)
+        {
+            var transfer = await _context.FileTransfers.FindAsync(transferId);
+            if (transfer == null)
+            {
+                throw new InvalidOperationException($"Transfer {transferId} not found");
+            }
+            
+            return await GetMissingChunksInternalAsync(transfer);
+        }
+
+        private async Task<List<int>> GetMissingChunksInternalAsync(FileTransfer transfer)
+        {
+            var missingChunks = new List<int>();
+            var transferDir = GetTransferDirectory(transfer.Id);
+
+            for (int i = 0; i < transfer.TotalChunks; i++)
+            {
+                var chunkPath = GetChunkPath(transfer.Id, i);
+                if (!File.Exists(chunkPath))
+                {
+                    missingChunks.Add(i);
+                }
+            }
+
+            return missingChunks;
+        }
+
+        private async Task AssembleFileAsync(FileTransfer transfer)
+        {
+            var completedDir = Path.Combine(_options.StoragePath, "completed");
+            Directory.CreateDirectory(completedDir);
+
+            var finalPath = Path.Combine(completedDir, $"{transfer.Id}_{transfer.FileName}");
+            
+            using (var outputStream = new FileStream(finalPath, FileMode.Create, FileAccess.Write))
+            {
+                for (int i = 0; i < transfer.TotalChunks; i++)
+                {
+                    var chunkPath = GetChunkPath(transfer.Id, i);
+                    var chunkData = await File.ReadAllBytesAsync(chunkPath);
+
+                    // Decrypt if needed
+                    if (_options.EnableEncryption && !string.IsNullOrEmpty(transfer.EncryptionKeyId))
+                    {
+                        chunkData = await _encryptionService.DecryptAsync(chunkData, transfer.EncryptionKeyId);
+                    }
+
+                    await outputStream.WriteAsync(chunkData, 0, chunkData.Length);
+                }
+            }
+
+            // Verify final file checksum if provided
+            if (!string.IsNullOrEmpty(transfer.Checksum))
+            {
+                var fileData = await File.ReadAllBytesAsync(finalPath);
+                var computedChecksum = ComputeChecksum(fileData);
+                
+                if (computedChecksum != transfer.Checksum)
+                {
+                    File.Delete(finalPath);
+                    throw new InvalidOperationException("Final file checksum mismatch");
+                }
+            }
+
+            // Clean up chunk files
+            var transferDir = GetTransferDirectory(transfer.Id);
+            Directory.Delete(transferDir, recursive: true);
+
+            _logger.LogInformation("Assembled file {FileName} for transfer {TransferId}", transfer.FileName, transfer.Id);
+        }
+
+        private async Task<byte[]> CompressDataAsync(byte[] data)
+        {
+            using var output = new MemoryStream();
+            using (var gzip = new GZipStream(output, CompressionLevel.Optimal))
+            {
+                await gzip.WriteAsync(data, 0, data.Length);
+            }
+            return output.ToArray();
+        }
+
+        private async Task<byte[]> DecompressDataAsync(byte[] data)
+        {
+            using var input = new MemoryStream(data);
+            using var output = new MemoryStream();
+            using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+            {
+                await gzip.CopyToAsync(output);
+            }
+            return output.ToArray();
+        }
+
+        public async Task<FileTransferMetrics> GetTransferMetricsAsync(Guid transferId)
+        {
+            var transfer = await _context.FileTransfers.FindAsync(transferId);
+            if (transfer == null)
+            {
+                throw new InvalidOperationException($"Transfer {transferId} not found");
+            }
+
+            var elapsedTime = transfer.UpdatedAt - transfer.CreatedAt;
+            var bytesTransferred = (long)(transfer.ChunksReceived * transfer.ChunkSize);
+            var transferRate = elapsedTime.TotalSeconds > 0 ? bytesTransferred / elapsedTime.TotalSeconds : 0;
+            var remainingBytes = transfer.TotalSize - bytesTransferred;
+            var estimatedTimeRemaining = transferRate > 0 
+                ? TimeSpan.FromSeconds(remainingBytes / transferRate) 
+                : TimeSpan.Zero;
+
+            return new FileTransferMetrics
+            {
+                TransferId = transfer.Id,
+                BytesTransferred = bytesTransferred,
+                TotalBytes = transfer.TotalSize,
+                ChunksTransferred = transfer.ChunksReceived,
+                TotalChunks = transfer.TotalChunks,
+                TransferRate = transferRate,
+                ElapsedTime = elapsedTime,
+                EstimatedTimeRemaining = estimatedTimeRemaining,
+                RetryCount = 0, // TODO: Track retry count
+                Status = (RemoteC.Shared.Models.TransferStatus)transfer.Status
+            };
+        }
+
+
+        public async Task<int> CleanupStalledTransfersAsync()
+        {
+            // Default to 60 minutes for stalled threshold
+            return await CleanupStalledTransfersAsync(TimeSpan.FromMinutes(60));
+        }
+
+        public async Task CleanupExpiredTransfersAsync()
+        {
+            var cutoffTime = DateTime.UtcNow.AddHours(-24);
+            var expiredTransfers = await _context.FileTransfers
+                .Where(t => t.CreatedAt < cutoffTime && 
+                           (t.Status == RemoteC.Data.Entities.TransferStatus.Pending || t.Status == RemoteC.Data.Entities.TransferStatus.InProgress))
+                .ToListAsync();
+
+            foreach (var transfer in expiredTransfers)
+            {
+                transfer.Status = RemoteC.Data.Entities.TransferStatus.Failed;
+                transfer.UpdatedAt = DateTime.UtcNow;
+                
+                await _auditService.LogActionAsync(
+                    "file_transfer.expired",
+                    "FileTransfer",
+                    transfer.Id.ToString(),
+                    null,
+                    null,
+                    new { reason = "Transfer expired after 24 hours" }
+                );
+            }
+
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Cleaned up {Count} expired transfers", expiredTransfers.Count);
+        }
+
     }
 }

@@ -18,7 +18,7 @@ public class SessionHub : Hub
     public override async Task OnConnectedAsync()
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} connected to SessionHub with connection {ConnectionId}", 
+        _logger.LogInformation("User {UserId} connected to SessionHub with connection {ConnectionId}", 
             userId, Context.ConnectionId);
         
         await base.OnConnectedAsync();
@@ -27,7 +27,7 @@ public class SessionHub : Hub
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} disconnected from SessionHub with connection {ConnectionId}. Exception: {Exception}", 
+        _logger.LogInformation("User {UserId} disconnected from SessionHub with connection {ConnectionId}. Exception: {Exception}", 
             userId, Context.ConnectionId, exception?.Message);
         
         await base.OnDisconnectedAsync(exception);
@@ -40,7 +40,7 @@ public class SessionHub : Hub
     public async Task JoinSession(string sessionId)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} joining session {SessionId}", userId, sessionId);
+        _logger.LogInformation("User {UserId} joining session {SessionId}", userId, sessionId);
         
         await Groups.AddToGroupAsync(Context.ConnectionId, $"Session_{sessionId}");
         await Clients.Group($"Session_{sessionId}").SendAsync("UserJoinedSession", userId);
@@ -53,7 +53,7 @@ public class SessionHub : Hub
     public async Task LeaveSession(string sessionId)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} leaving session {SessionId}", userId, sessionId);
+        _logger.LogInformation("User {UserId} leaving session {SessionId}", userId, sessionId);
         
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Session_{sessionId}");
         await Clients.Group($"Session_{sessionId}").SendAsync("UserLeftSession", userId);
@@ -67,7 +67,7 @@ public class SessionHub : Hub
     public async Task SendMouseInput(string sessionId, MouseInputDto input)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Debug("User {UserId} sending mouse input to session {SessionId}", userId, sessionId);
+        _logger.LogDebug("User {UserId} sending mouse input to session {SessionId}", userId, sessionId);
         
         await Clients.OthersInGroup($"Session_{sessionId}").SendAsync("ReceiveMouseInput", input);
     }
@@ -80,7 +80,7 @@ public class SessionHub : Hub
     public async Task SendKeyboardInput(string sessionId, KeyboardInputDto input)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Debug("User {UserId} sending keyboard input to session {SessionId}", userId, sessionId);
+        _logger.LogDebug("User {UserId} sending keyboard input to session {SessionId}", userId, sessionId);
         
         await Clients.OthersInGroup($"Session_{sessionId}").SendAsync("ReceiveKeyboardInput", input);
     }
@@ -93,7 +93,7 @@ public class SessionHub : Hub
     public async Task UpdateSessionStatus(string sessionId, SessionStatus status)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} updating session {SessionId} status to {Status}", 
+        _logger.LogInformation("User {UserId} updating session {SessionId} status to {Status}", 
             userId, sessionId, status);
         
         await Clients.Group($"Session_{sessionId}").SendAsync("SessionStatusChanged", status);
@@ -119,7 +119,7 @@ public class SessionHub : Hub
         var userId = Context.User?.Identity?.Name ?? "unknown";
         var timestamp = DateTime.UtcNow;
         
-        _logger.Information("User {UserId} sending chat message to session {SessionId}", userId, sessionId);
+        _logger.LogInformation("User {UserId} sending chat message to session {SessionId}", userId, sessionId);
         
         var chatMessage = new ChatMessageDto
         {
@@ -138,7 +138,7 @@ public class SessionHub : Hub
     public async Task RequestControl(string sessionId)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} requesting control of session {SessionId}", userId, sessionId);
+        _logger.LogInformation("User {UserId} requesting control of session {SessionId}", userId, sessionId);
         
         await Clients.Group($"Session_{sessionId}").SendAsync("ControlRequested", userId);
     }
@@ -151,7 +151,7 @@ public class SessionHub : Hub
     public async Task GrantControl(string sessionId, string targetUserId)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} granting control to {TargetUserId} for session {SessionId}", 
+        _logger.LogInformation("User {UserId} granting control to {TargetUserId} for session {SessionId}", 
             userId, targetUserId, sessionId);
         
         await Clients.Group($"Session_{sessionId}").SendAsync("ControlGranted", targetUserId);
@@ -165,7 +165,7 @@ public class SessionHub : Hub
     public async Task RevokeControl(string sessionId, string targetUserId)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
-        _logger.Information("User {UserId} revoking control from {TargetUserId} for session {SessionId}", 
+        _logger.LogInformation("User {UserId} revoking control from {TargetUserId} for session {SessionId}", 
             userId, targetUserId, sessionId);
         
         await Clients.Group($"Session_{sessionId}").SendAsync("ControlRevoked", targetUserId);

@@ -1,4 +1,5 @@
 using RemoteC.Shared.Models;
+using RemoteC.Data.Entities;
 
 namespace RemoteC.Api.Services;
 
@@ -26,6 +27,7 @@ public interface IUserService
     Task<UserDto> UpdateUserAsync(string userId, UpdateUserRequest request);
     Task<IEnumerable<string>> GetUserPermissionsAsync(string userId);
     Task<bool> HasPermissionAsync(string userId, string permission);
+    Task<UserDto> CreateOrUpdateUserAsync(string email, string firstName, string lastName, string azureId);
 }
 
 /// <summary>
@@ -66,139 +68,15 @@ public interface ICommandExecutionService
 /// </summary>
 public interface IFileTransferService
 {
-    Task<FileTransferResult> StartFileTransferAsync(Guid sessionId, FileTransferRequest request);
-    Task<FileTransferStatus> GetTransferStatusAsync(Guid transferId);
-    Task CancelTransferAsync(Guid transferId);
-    Task<IEnumerable<FileTransferHistoryDto>> GetTransferHistoryAsync(Guid sessionId);
+    Task<FileTransfer> InitiateTransferAsync(FileTransferRequest request);
+    Task<ChunkUploadResult> UploadChunkAsync(FileChunk chunk);
+    Task<FileTransfer?> GetTransferStatusAsync(Guid transferId);
+    Task<IEnumerable<int>> GetMissingChunksAsync(Guid transferId);
+    Task<FileChunk?> DownloadChunkAsync(Guid transferId, int chunkIndex);
+    Task<bool> CancelTransferAsync(Guid transferId);
+    Task<FileTransferMetrics> GetTransferMetricsAsync(Guid transferId);
+    Task CleanupExpiredTransfersAsync();
+    Task<int> CleanupStalledTransfersAsync();
 }
 
-/// <summary>
-/// Interface for audit logging operations
-/// </summary>
-public interface IAuditService
-{
-    Task LogActionAsync(string action, string? entityType = null, string? entityId = null, 
-        string? userId = null, object? oldValues = null, object? newValues = null);
-    Task LogSecurityEventAsync(string eventType, string userId, string? details = null);
-    Task<IEnumerable<AuditLogDto>> GetAuditLogsAsync(DateTime? from = null, DateTime? to = null, 
-        string? userId = null, string? action = null);
-}
 
-// Additional DTOs for services
-public class UserDto
-{
-    public string Id { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public bool IsActive { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? LastLoginAt { get; set; }
-    public List<string> Roles { get; set; } = new();
-    public List<string> Permissions { get; set; } = new();
-}
-
-public class CreateUserRequest
-{
-    public string Email { get; set; } = string.Empty;
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string? AzureAdB2CId { get; set; }
-    public List<string> Roles { get; set; } = new();
-}
-
-public class UpdateUserRequest
-{
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public bool? IsActive { get; set; }
-    public List<string>? Roles { get; set; }
-}
-
-public class CommandExecutionResult
-{
-    public bool Success { get; set; }
-    public string Output { get; set; } = string.Empty;
-    public string? ErrorOutput { get; set; }
-    public int ExitCode { get; set; }
-    public TimeSpan ExecutionTime { get; set; }
-    public DateTime ExecutedAt { get; set; }
-}
-
-public class CommandHistoryDto
-{
-    public Guid Id { get; set; }
-    public string Command { get; set; } = string.Empty;
-    public string Shell { get; set; } = string.Empty;
-    public bool Success { get; set; }
-    public int ExitCode { get; set; }
-    public DateTime ExecutedAt { get; set; }
-    public string ExecutedBy { get; set; } = string.Empty;
-}
-
-public class FileTransferRequest
-{
-    public string FileName { get; set; } = string.Empty;
-    public string SourcePath { get; set; } = string.Empty;
-    public string DestinationPath { get; set; } = string.Empty;
-    public FileTransferDirection Direction { get; set; }
-    public long FileSize { get; set; }
-}
-
-public class FileTransferResult
-{
-    public Guid TransferId { get; set; }
-    public bool Success { get; set; }
-    public string? ErrorMessage { get; set; }
-}
-
-public class FileTransferStatus
-{
-    public Guid TransferId { get; set; }
-    public FileTransferState State { get; set; }
-    public long BytesTransferred { get; set; }
-    public long TotalBytes { get; set; }
-    public double ProgressPercentage { get; set; }
-    public TimeSpan? EstimatedTimeRemaining { get; set; }
-    public string? ErrorMessage { get; set; }
-}
-
-public class FileTransferHistoryDto
-{
-    public Guid Id { get; set; }
-    public string FileName { get; set; } = string.Empty;
-    public FileTransferDirection Direction { get; set; }
-    public long FileSize { get; set; }
-    public FileTransferState FinalState { get; set; }
-    public DateTime StartedAt { get; set; }
-    public DateTime? CompletedAt { get; set; }
-    public string TransferredBy { get; set; } = string.Empty;
-}
-
-public class AuditLogDto
-{
-    public Guid Id { get; set; }
-    public string Action { get; set; } = string.Empty;
-    public string? EntityType { get; set; }
-    public string? EntityId { get; set; }
-    public string? UserId { get; set; }
-    public string? IpAddress { get; set; }
-    public DateTime Timestamp { get; set; }
-    public bool Success { get; set; }
-    public string? ErrorMessage { get; set; }
-}
-
-public enum FileTransferDirection
-{
-    Upload,
-    Download
-}
-
-public enum FileTransferState
-{
-    Queued,
-    InProgress,
-    Completed,
-    Failed,
-    Cancelled
-}

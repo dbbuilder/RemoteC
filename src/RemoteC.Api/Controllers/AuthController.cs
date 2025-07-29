@@ -11,11 +11,13 @@ namespace RemoteC.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IPinService _pinService;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IUserService userService, ILogger<AuthController> logger)
+    public AuthController(IUserService userService, IPinService pinService, ILogger<AuthController> logger)
     {
         _userService = userService;
+        _pinService = pinService;
         _logger = logger;
     }
 
@@ -83,7 +85,7 @@ public class AuthController : ControllerBase
                 return Unauthorized();
             }
 
-            var user = await _userService.GetUserAsync(Guid.Parse(userId));
+            var user = await _userService.GetUserAsync(userId);
             if (user == null)
             {
                 return NotFound("User not found");
@@ -113,7 +115,7 @@ public class AuthController : ControllerBase
                 return Unauthorized();
             }
 
-            var user = await _userService.UpdateUserAsync(Guid.Parse(userId), request);
+            var user = await _userService.UpdateUserAsync(userId, request);
             return Ok(user);
         }
         catch (Exception ex)
@@ -138,7 +140,7 @@ public class AuthController : ControllerBase
                 return Unauthorized();
             }
 
-            var permissions = await _userService.GetUserPermissionsAsync(Guid.Parse(userId));
+            var permissions = await _userService.GetUserPermissionsAsync(userId);
             return Ok(permissions);
         }
         catch (Exception ex)
@@ -153,22 +155,31 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("validate-pin")]
     [AllowAnonymous]
-    public async Task<ActionResult<SessionPinResponse>> ValidatePin([FromBody] SessionPinRequest request)
+    public async Task<ActionResult<PinValidationResponse>> ValidatePin([FromBody] PinValidationRequest request)
     {
         try
         {
-            _logger.LogInformation("PIN validation attempt for session {SessionId}", request.SessionId);
+            _logger.LogInformation("PIN validation attempt");
 
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var response = await _sessionService.ValidatePinAsync(request.SessionId, request.Pin);
+            
+            // Use session ID from request or generate new one
+            var sessionId = request.SessionId ?? Guid.NewGuid();
+            var isValid = await _pinService.ValidatePinAsync(sessionId, request.PinCode);
 
-            if (response.IsValid)
+            var response = new PinValidationResponse
             {
-                _logger.LogInformation("PIN validated successfully for session {SessionId}", request.SessionId);
+                Success = isValid,
+                ErrorMessage = isValid ? null : "Invalid PIN"
+            };
+
+            if (isValid)
+            {
+                _logger.LogInformation("PIN validated successfully for session {SessionId}", sessionId);
             }
             else
             {
-                _logger.LogWarning("Invalid PIN for session {SessionId} from IP {IpAddress}", request.SessionId, ipAddress);
+                _logger.LogWarning("Invalid PIN for session {SessionId} from IP {IpAddress}", sessionId, ipAddress);
             }
 
             return Ok(response);
@@ -176,10 +187,10 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating PIN");
-            return StatusCode(500, new SessionPinResponse
+            return StatusCode(500, new PinValidationResponse
             {
-                IsValid = false,
-                Message = "An error occurred during PIN validation"
+                Success = false,
+                ErrorMessage = "An error occurred during PIN validation"
             });
         }
     }

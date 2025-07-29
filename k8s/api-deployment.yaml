@@ -1,0 +1,151 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: remotec-api
+  namespace: remotec
+  labels:
+    app: remotec-api
+spec:
+  selector:
+    app: remotec-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remotec-api
+  namespace: remotec
+  labels:
+    app: remotec-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: remotec-api
+  template:
+    metadata:
+      labels:
+        app: remotec-api
+    spec:
+      containers:
+      - name: remotec-api
+        image: remotec/api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "https://+:443;http://+:80"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: connectionstring-default
+        - name: ConnectionStrings__RedisConnection
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: connectionstring-redis
+        - name: AzureAd__TenantId
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: azure-tenant-id
+        - name: AzureAd__ClientId
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: azure-client-id
+        - name: AzureAd__ClientSecret
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: azure-client-secret
+        - name: Storage__ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: azure-storage-connection
+        - name: Encryption__MasterKey
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: encryption-master-key
+        - name: Jwt__SecretKey
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: jwt-secret-key
+        volumeMounts:
+        - name: config
+          mountPath: /app/appsettings.Production.json
+          subPath: appsettings.Production.json
+        - name: logs
+          mountPath: /app/logs
+        - name: certs
+          mountPath: /app/certs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: remotec-config
+      - name: logs
+        emptyDir: {}
+      - name: certs
+        emptyDir: {}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: remotec-api-hpa
+  namespace: remotec
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: remotec-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

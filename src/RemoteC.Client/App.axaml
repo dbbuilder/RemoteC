@@ -1,0 +1,21 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RemoteC.Client.App"
+             xmlns:local="using:RemoteC.Client"
+             RequestedThemeVariant="Default">
+             
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="/Styles/Styles.axaml" />
+    </Application.Styles>
+    
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Resources can be added here later -->
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

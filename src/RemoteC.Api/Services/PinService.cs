@@ -54,13 +54,13 @@ public class PinService : IPinService
             var cacheKey = GetPinCacheKey(sessionId);
             await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(pinData), options);
 
-            _logger.Information("Generated PIN for session {SessionId}", sessionId);
+            _logger.LogInformation("Generated PIN for session {SessionId}", sessionId);
 
             return pin;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error generating PIN for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error generating PIN for session {SessionId}", sessionId);
             throw;
         }
     }
@@ -74,7 +74,7 @@ public class PinService : IPinService
 
             if (string.IsNullOrEmpty(cachedData))
             {
-                _logger.Warning("PIN validation failed: No PIN found for session {SessionId}", sessionId);
+                _logger.LogWarning("PIN validation failed: No PIN found for session {SessionId}", sessionId);
                 return false;
             }
 
@@ -84,7 +84,7 @@ public class PinService : IPinService
 
             if (isUsed)
             {
-                _logger.Warning("PIN validation failed: PIN already used for session {SessionId}", sessionId);
+                _logger.LogWarning("PIN validation failed: PIN already used for session {SessionId}", sessionId);
                 return false;
             }
 
@@ -95,18 +95,18 @@ public class PinService : IPinService
             {
                 // Mark PIN as used
                 await InvalidatePinAsync(sessionId);
-                _logger.Information("PIN validation successful for session {SessionId}", sessionId);
+                _logger.LogInformation("PIN validation successful for session {SessionId}", sessionId);
             }
             else
             {
-                _logger.Warning("PIN validation failed: Invalid PIN for session {SessionId}", sessionId);
+                _logger.LogWarning("PIN validation failed: Invalid PIN for session {SessionId}", sessionId);
             }
 
             return isValid;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error validating PIN for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error validating PIN for session {SessionId}", sessionId);
             return false;
         }
     }
@@ -118,11 +118,11 @@ public class PinService : IPinService
             var cacheKey = GetPinCacheKey(sessionId);
             await _cache.RemoveAsync(cacheKey);
 
-            _logger.Information("Invalidated PIN for session {SessionId}", sessionId);
+            _logger.LogInformation("Invalidated PIN for session {SessionId}", sessionId);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error invalidating PIN for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error invalidating PIN for session {SessionId}", sessionId);
             throw;
         }
     }
@@ -152,7 +152,7 @@ public class PinService : IPinService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error checking PIN validity for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error checking PIN validity for session {SessionId}", sessionId);
             return false;
         }
     }
@@ -217,7 +217,7 @@ public class RemoteControlService : IRemoteControlService
     {
         try
         {
-            _logger.Information("Starting remote session {SessionId} for device {DeviceId}", sessionId, deviceId);
+            _logger.LogInformation("Starting remote session {SessionId} for device {DeviceId}", sessionId, deviceId);
 
             var httpClient = _httpClientFactory.CreateClient("ControlR");
             var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
@@ -243,13 +243,13 @@ public class RemoteControlService : IRemoteControlService
             
             var connectionUrl = result?.GetProperty("connectionUrl").GetString() ?? string.Empty;
 
-            _logger.Information("Remote session {SessionId} started successfully", sessionId);
+            _logger.LogInformation("Remote session {SessionId} started successfully", sessionId);
 
             return connectionUrl;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error starting remote session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error starting remote session {SessionId}", sessionId);
             throw;
         }
     }
@@ -258,7 +258,7 @@ public class RemoteControlService : IRemoteControlService
     {
         try
         {
-            _logger.Information("Stopping remote session {SessionId}", sessionId);
+            _logger.LogInformation("Stopping remote session {SessionId}", sessionId);
 
             var httpClient = _httpClientFactory.CreateClient("ControlR");
             var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
@@ -270,11 +270,11 @@ public class RemoteControlService : IRemoteControlService
             var response = await httpClient.DeleteAsync($"{apiUrl}/api/sessions/{sessionId}");
             response.EnsureSuccessStatusCode();
 
-            _logger.Information("Remote session {SessionId} stopped successfully", sessionId);
+            _logger.LogInformation("Remote session {SessionId} stopped successfully", sessionId);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error stopping remote session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error stopping remote session {SessionId}", sessionId);
             throw;
         }
     }
@@ -298,7 +298,7 @@ public class RemoteControlService : IRemoteControlService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error sending input to session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error sending input to session {SessionId}", sessionId);
             return false;
         }
     }
@@ -321,7 +321,7 @@ public class RemoteControlService : IRemoteControlService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error getting screenshot for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error getting screenshot for session {SessionId}", sessionId);
             return Array.Empty<byte>();
         }
     }
@@ -350,102 +350,7 @@ public class RemoteControlService : IRemoteControlService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error checking session status for {SessionId}", sessionId);
-            return false;
-        }
-    }
-}Async(u => u.Id.ToString() == userId);
-
-            if (user == null)
-            {
-                throw new ArgumentException($"User {userId} not found");
-            }
-
-            // Update user properties
-            if (!string.IsNullOrEmpty(request.FirstName))
-                user.FirstName = request.FirstName;
-
-            if (!string.IsNullOrEmpty(request.LastName))
-                user.LastName = request.LastName;
-
-            if (request.IsActive.HasValue)
-                user.IsActive = request.IsActive.Value;
-
-            // Update roles if provided
-            if (request.Roles != null)
-            {
-                // Remove existing roles
-                _context.UserRoles.RemoveRange(user.UserRoles);
-
-                // Add new roles
-                foreach (var roleName in request.Roles)
-                {
-                    var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-                    if (role != null)
-                    {
-                        var userRole = new UserRole
-                        {
-                            UserId = user.Id,
-                            RoleId = role.Id,
-                            AssignedBy = user.Id
-                        };
-                        _context.UserRoles.Add(userRole);
-                    }
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            var userDto = _mapper.Map<UserDto>(user);
-            userDto.Roles = request.Roles ?? new List<string>();
-
-            _logger.Information("User {UserId} updated successfully", userId);
-
-            return userDto;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error updating user {UserId}", userId);
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<string>> GetUserPermissionsAsync(string userId)
-    {
-        try
-        {
-            var permissions = await _context.Users
-                .Where(u => u.Id.ToString() == userId)
-                .SelectMany(u => u.UserRoles)
-                .SelectMany(ur => ur.Role.RolePermissions)
-                .Select(rp => rp.Permission.Name)
-                .Distinct()
-                .ToListAsync();
-
-            return permissions;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error getting permissions for user {UserId}", userId);
-            throw;
-        }
-    }
-
-    public async Task<bool> HasPermissionAsync(string userId, string permission)
-    {
-        try
-        {
-            var hasPermission = await _context.Users
-                .Where(u => u.Id.ToString() == userId)
-                .SelectMany(u => u.UserRoles)
-                .SelectMany(ur => ur.Role.RolePermissions)
-                .AnyAsync(rp => rp.Permission.Name == permission);
-
-            return hasPermission;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error checking permission {Permission} for user {UserId}", permission, userId);
+            _logger.LogError(ex, "Error checking session status for {SessionId}", sessionId);
             return false;
         }
     }
@@ -471,7 +376,7 @@ public class CommandExecutionService : ICommandExecutionService
     {
         try
         {
-            _logger.Information("Executing command for session {SessionId}: {Command}", sessionId, command);
+            _logger.LogInformation("Executing command for session {SessionId}: {Command}", sessionId, command);
 
             // Validate command is allowed
             if (!await IsCommandAllowedAsync(command))
@@ -534,14 +439,14 @@ public class CommandExecutionService : ICommandExecutionService
                 ExecutedAt = startTime
             };
 
-            _logger.Information("Command executed for session {SessionId}. Success: {Success}, ExitCode: {ExitCode}", 
+            _logger.LogInformation("Command executed for session {SessionId}. Success: {Success}, ExitCode: {ExitCode}", 
                 sessionId, result.Success, result.ExitCode);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error executing command for session {SessionId}", sessionId);
+            _logger.LogError(ex, "Error executing command for session {SessionId}", sessionId);
             
             return new CommandExecutionResult
             {
@@ -599,7 +504,7 @@ public class CommandExecutionService : ICommandExecutionService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error checking if command is allowed: {Command}", command);
+            _logger.LogError(ex, "Error checking if command is allowed: {Command}", command);
             return false;
         }
     }
@@ -628,111 +533,3 @@ public class CommandExecutionService : ICommandExecutionService
     }
 }
 
-/// <summary>
-/// Audit service implementation
-/// </summary>
-public class AuditService : IAuditService
-{
-    private readonly RemoteCDbContext _context;
-    private readonly ILogger<AuditService> _logger;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public AuditService(
-        RemoteCDbContext context,
-        ILogger<AuditService> logger,
-        IHttpContextAccessor httpContextAccessor)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
-    }
-
-    public async Task LogActionAsync(string action, string? entityType = null, string? entityId = null, 
-        string? userId = null, object? oldValues = null, object? newValues = null)
-    {
-        try
-        {
-            var httpContext = _httpContextAccessor.HttpContext;
-            var auditLog = new AuditLog
-            {
-                Action = action,
-                EntityType = entityType,
-                EntityId = entityId,
-                UserId = userId ?? httpContext?.User?.Identity?.Name,
-                IpAddress = httpContext?.Connection?.RemoteIpAddress?.ToString(),
-                UserAgent = httpContext?.Request?.Headers?["User-Agent"].ToString(),
-                OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues) : null,
-                NewValues = newValues != null ? JsonSerializer.Serialize(newValues) : null,
-                Timestamp = DateTime.UtcNow,
-                Success = true
-            };
-
-            _context.AuditLogs.Add(auditLog);
-            await _context.SaveChangesAsync();
-
-            _logger.Debug("Audit log created for action {Action}", action);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error creating audit log for action {Action}", action);
-            // Don't throw - audit failures shouldn't break application flow
-        }
-    }
-
-    public async Task LogSecurityEventAsync(string eventType, string userId, string? details = null)
-    {
-        try
-        {
-            await LogActionAsync($"security.{eventType}", "Security", null, userId, null, new { details });
-            _logger.Information("Security event logged: {EventType} for user {UserId}", eventType, userId);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error logging security event {EventType}", eventType);
-        }
-    }
-
-    public async Task<IEnumerable<AuditLogDto>> GetAuditLogsAsync(DateTime? from = null, DateTime? to = null, 
-        string? userId = null, string? action = null)
-    {
-        try
-        {
-            var query = _context.AuditLogs.AsQueryable();
-
-            if (from.HasValue)
-                query = query.Where(al => al.Timestamp >= from.Value);
-
-            if (to.HasValue)
-                query = query.Where(al => al.Timestamp <= to.Value);
-
-            if (!string.IsNullOrEmpty(userId))
-                query = query.Where(al => al.UserId == userId);
-
-            if (!string.IsNullOrEmpty(action))
-                query = query.Where(al => al.Action.Contains(action));
-
-            var auditLogs = await query
-                .OrderByDescending(al => al.Timestamp)
-                .Take(1000) // Limit results for performance
-                .ToListAsync();
-
-            return auditLogs.Select(al => new AuditLogDto
-            {
-                Id = al.Id,
-                Action = al.Action,
-                EntityType = al.EntityType,
-                EntityId = al.EntityId,
-                UserId = al.UserId,
-                IpAddress = al.IpAddress,
-                Timestamp = al.Timestamp,
-                Success = al.Success,
-                ErrorMessage = al.ErrorMessage
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error getting audit logs");
-            throw;
-        }
-    }
-}

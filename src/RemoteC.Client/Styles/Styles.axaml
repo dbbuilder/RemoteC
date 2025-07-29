@@ -1,0 +1,94 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Custom Button Styles -->
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="#0078D4"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Padding" Value="12,8"/>
+    </Style>
+    
+    <Style Selector="Button.primary:pointerover">
+        <Setter Property="Background" Value="#106EBE"/>
+    </Style>
+    
+    <Style Selector="Button.primary:pressed">
+        <Setter Property="Background" Value="#005A9E"/>
+    </Style>
+    
+    <Style Selector="Button.danger">
+        <Setter Property="Background" Value="#D13438"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Padding" Value="12,8"/>
+    </Style>
+    
+    <Style Selector="Button.danger:pointerover">
+        <Setter Property="Background" Value="#B71C1C"/>
+    </Style>
+    
+    <Style Selector="Button.danger:pressed">
+        <Setter Property="Background" Value="#A80000"/>
+    </Style>
+    
+    <!-- TextBox Styles -->
+    <Style Selector="TextBox">
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    
+    <Style Selector="TextBox:focus">
+        <Setter Property="BorderBrush" Value="#0078D4"/>
+    </Style>
+    
+    <!-- Card Style -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#E0E0E0"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="8"/>
+    </Style>
+    
+    <!-- Heading Styles -->
+    <Style Selector="TextBlock.h1">
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontWeight" Value="Light"/>
+        <Setter Property="Margin" Value="0,0,0,16"/>
+    </Style>
+    
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+    
+    <Style Selector="TextBlock.h3">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    
+    <!-- Status Indicators -->
+    <Style Selector="Ellipse.status-online">
+        <Setter Property="Fill" Value="#107C10"/>
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Height" Value="8"/>
+    </Style>
+    
+    <Style Selector="Ellipse.status-offline">
+        <Setter Property="Fill" Value="#D83B01"/>
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Height" Value="8"/>
+    </Style>
+    
+    <Style Selector="Ellipse.status-away">
+        <Setter Property="Fill" Value="#FFB900"/>
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Height" Value="8"/>
+    </Style>
+    
+</Styles>

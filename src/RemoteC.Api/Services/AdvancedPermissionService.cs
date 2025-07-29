@@ -263,7 +263,7 @@ namespace RemoteC.Api.Services
         /// <summary>
         /// Create a custom role with specific permissions
         /// </summary>
-        public async Task<Role?> CreateCustomRoleAsync(
+        public async Task<RemoteC.Data.Entities.Role?> CreateCustomRoleAsync(
             string name, 
             string description,
             Guid organizationId,
@@ -275,7 +275,7 @@ namespace RemoteC.Api.Services
             try
             {
                 // Create role
-                var role = new Role
+                var role = new RemoteC.Data.Entities.Role
                 {
                     Id = Guid.NewGuid(),
                     Name = name,
@@ -397,7 +397,7 @@ namespace RemoteC.Api.Services
             HashSet<string> permissions)
         {
             var device = await _context.Devices
-                .Include(d => d.DeviceGroupAssignments)
+                .Include(d => d.DeviceGroupMembers)
                 .FirstOrDefaultAsync(d => d.Id == deviceId);
 
             if (device == null) return false;
@@ -406,11 +406,11 @@ namespace RemoteC.Api.Services
             if (device.OrganizationId != user.OrganizationId) return false;
 
             // Check if user has device group permissions
-            if (device.DeviceGroupAssignments.Any())
+            if (device.DeviceGroupMembers.Any())
             {
-                foreach (var assignment in device.DeviceGroupAssignments)
+                foreach (var member in device.DeviceGroupMembers)
                 {
-                    if (permissions.Contains($"devicegroup:{assignment.GroupId}:{action}"))
+                    if (permissions.Contains($"devicegroup:{member.DeviceGroupId}:{action}"))
                         return true;
                 }
             }
@@ -568,7 +568,7 @@ namespace RemoteC.Api.Services
             bool granted,
             string? reason = null)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
+            if (_logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
             {
                 _logger.LogDebug(
                     "Permission check: User={UserId}, Resource={Resource}, Action={Action}, Granted={Granted}, Reason={Reason}",
@@ -598,7 +598,7 @@ namespace RemoteC.Api.Services
             Guid? resourceId = null, Dictionary<string, object>? context = null);
         Task<IEnumerable<EffectivePermission>> GetEffectivePermissionsAsync(Guid userId);
         Task<bool> GrantPermissionToRoleAsync(Guid roleId, string resource, string action, Guid grantedBy);
-        Task<Role?> CreateCustomRoleAsync(string name, string description, Guid organizationId,
+        Task<RemoteC.Data.Entities.Role?> CreateCustomRoleAsync(string name, string description, Guid organizationId,
             IEnumerable<string> permissionKeys, Guid createdBy);
     }
 

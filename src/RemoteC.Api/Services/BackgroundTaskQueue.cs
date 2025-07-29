@@ -15,7 +15,7 @@ namespace RemoteC.Api.Services
         private readonly ConcurrentQueue<Func<CancellationToken, Task>> _workItems = new();
         private readonly SemaphoreSlim _signal = new(0);
 
-        public async Task QueueBackgroundWorkItemAsync(Func<CancellationToken, Task> workItem)
+        public Task QueueBackgroundWorkItemAsync(Func<CancellationToken, Task> workItem)
         {
             if (workItem == null)
             {
@@ -24,6 +24,7 @@ namespace RemoteC.Api.Services
 
             _workItems.Enqueue(workItem);
             _signal.Release();
+            return Task.CompletedTask;
         }
 
         public async Task<Func<CancellationToken, Task>?> DequeueAsync(CancellationToken cancellationToken)

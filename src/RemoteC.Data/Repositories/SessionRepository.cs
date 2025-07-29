@@ -42,8 +42,8 @@ public class SessionRepository : ISessionRepository
             {
                 Id = reader.GetGuid(reader.GetOrdinal("Id")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
-                Status = (SessionStatus)reader.GetInt32(reader.GetOrdinal("Status")),
-                Type = (SessionType)reader.GetInt32(reader.GetOrdinal("Type")),
+                Status = (RemoteC.Shared.Models.SessionStatus)reader.GetInt32(reader.GetOrdinal("Status")),
+                Type = (RemoteC.Shared.Models.SessionType)reader.GetInt32(reader.GetOrdinal("Type")),
                 CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                 StartedAt = reader.IsDBNull(reader.GetOrdinal("StartedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("StartedAt")),
                 EndedAt = reader.IsDBNull(reader.GetOrdinal("EndedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("EndedAt")),
@@ -92,8 +92,8 @@ public class SessionRepository : ISessionRepository
             {
                 Id = reader.GetGuid(reader.GetOrdinal("Id")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
-                Status = (SessionStatus)reader.GetInt32(reader.GetOrdinal("Status")),
-                Type = (SessionType)reader.GetInt32(reader.GetOrdinal("Type")),
+                Status = (RemoteC.Shared.Models.SessionStatus)reader.GetInt32(reader.GetOrdinal("Status")),
+                Type = (RemoteC.Shared.Models.SessionType)reader.GetInt32(reader.GetOrdinal("Type")),
                 CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                 StartedAt = reader.IsDBNull(reader.GetOrdinal("StartedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("StartedAt")),
                 EndedAt = reader.IsDBNull(reader.GetOrdinal("EndedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("EndedAt")),
@@ -117,7 +117,7 @@ public class SessionRepository : ISessionRepository
                 participants.Add(new SessionParticipantInfo
                 {
                     Id = reader.GetGuid(reader.GetOrdinal("Id")),
-                    Role = (ParticipantRole)reader.GetInt32(reader.GetOrdinal("Role")),
+                    Role = (RemoteC.Shared.Models.ParticipantRole)reader.GetInt32(reader.GetOrdinal("Role")),
                     IsConnected = reader.GetBoolean(reader.GetOrdinal("IsConnected")),
                     JoinedAt = reader.GetDateTime(reader.GetOrdinal("JoinedAt")),
                     LeftAt = reader.IsDBNull(reader.GetOrdinal("LeftAt")) ? null : reader.GetDateTime(reader.GetOrdinal("LeftAt")),
@@ -136,7 +136,7 @@ public class SessionRepository : ISessionRepository
         return sessionDetails;
     }
 
-    public async Task<Session> CreateSessionAsync(string name, Guid deviceId, Guid createdBy, SessionType type = SessionType.RemoteControl, bool requirePin = true)
+    public async Task<Session> CreateSessionAsync(string name, Guid deviceId, Guid createdBy, RemoteC.Data.Entities.SessionType type = RemoteC.Data.Entities.SessionType.RemoteControl, bool requirePin = true)
     {
         var sessionIdParam = new SqlParameter("@SessionId", SqlDbType.UniqueIdentifier)
         {
@@ -161,7 +161,7 @@ public class SessionRepository : ISessionRepository
         return (await _context.Sessions.FindAsync(sessionId))!;
     }
 
-    public async Task UpdateSessionStatusAsync(Guid sessionId, SessionStatus status, Guid? userId = null, string? connectionInfo = null)
+    public async Task UpdateSessionStatusAsync(Guid sessionId, RemoteC.Data.Entities.SessionStatus status, Guid? userId = null, string? connectionInfo = null)
     {
         var parameters = new[]
         {
@@ -176,7 +176,7 @@ public class SessionRepository : ISessionRepository
             parameters);
     }
 
-    public async Task<bool> AddParticipantAsync(Guid sessionId, Guid userId, ParticipantRole role)
+    public async Task<bool> AddParticipantAsync(Guid sessionId, Guid userId, RemoteC.Data.Entities.ParticipantRole role)
     {
         var participant = new SessionParticipant
         {

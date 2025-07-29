@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="100"
+             x:Class="RemoteC.Client.Views.SessionItemView">
+    <Border Background="#F5F5F5" 
+            BorderBrush="#E0E0E0" 
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="10"
+            Margin="0,2">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+            <Ellipse Grid.Column="0" 
+                     Width="8" 
+                     Height="8" 
+                     Fill="Green"
+                     Margin="0,0,10,0"/>
+            
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="{Binding DeviceName}" 
+                           FontWeight="Bold"
+                           FontSize="14"/>
+                <TextBlock Text="{Binding DeviceId}" 
+                           Foreground="#666666"
+                           FontSize="12"/>
+            </StackPanel>
+            
+            <TextBlock Grid.Column="2" 
+                       Text="{Binding ConnectedAt, StringFormat='Connected: {0:HH:mm}'}"
+                       VerticalAlignment="Center"
+                       Margin="10,0"
+                       Foreground="#666666"/>
+            
+            <Button Grid.Column="3" 
+                    Content="Disconnect"
+                    Command="{Binding DisconnectCommand}"
+                    Classes="danger"/>
+        </Grid>
+    </Border>
+</UserControl>

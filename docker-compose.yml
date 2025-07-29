@@ -1,61 +1,64 @@
 version: '3.8'
 
 services:
-  # SQL Server database
+  # SQL Server Database
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: remotec-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_SA_PASSWORD=RemoteC@2024Strong!
       - MSSQL_PID=Developer
     ports:
       - "1433:1433"
     volumes:
-      - sqlserver-data:/var/opt/mssql
-      - ./database:/docker-entrypoint-initdb.d
+      - remotec-sqldata:/var/opt/mssql
     networks:
       - remotec-network
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong@Passw0rd", "-Q", "SELECT 1"]
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "RemoteC@2024Strong!" -Q "SELECT 1" -b
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
 
-  # Redis cache
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: remotec-redis
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - remotec-redis:/data
     networks:
       - remotec-network
+    command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
 
-  # API service
-  api:
+  # RemoteC API
+  remotec-api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: src/RemoteC.Api/Dockerfile
     container_name: remotec-api
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RemoteCDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true
-      - ConnectionStrings__Redis=redis:6379
-      - AzureAdB2C__Instance=https://your-tenant.b2clogin.com
-      - AzureAdB2C__Domain=your-tenant.onmicrosoft.com
-      - AzureAdB2C__TenantId=your-tenant-id
-      - AzureAdB2C__ClientId=your-client-id
-      - AzureAdB2C__SignUpSignInPolicyId=B2C_1_signupsignin
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_HTTPS_PORT=7001
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RemoteCDb;User Id=sa;Password=RemoteC@2024Strong!;TrustServerCertificate=true
+      - ConnectionStrings__RedisConnection=redis:6379
+      - AzureAd__Instance=https://login.microsoftonline.com/
+      - AzureAd__TenantId=${AZURE_TENANT_ID}
+      - AzureAd__ClientId=${AZURE_CLIENT_ID}
+      - AzureAd__ClientSecret=${AZURE_CLIENT_SECRET}
+      - Storage__ConnectionString=${AZURE_STORAGE_CONNECTION}
+      - Encryption__MasterKey=${ENCRYPTION_MASTER_KEY}
     ports:
-      - "7001:8080"
-      - "7002:8081"
+      - "7001:443"
+      - "7000:80"
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -64,35 +67,49 @@ services:
     networks:
       - remotec-network
     volumes:
-      - ./src/RemoteC.Api/Certificates:/app/Certificates:ro
+      - remotec-logs:/app/logs
+      - remotec-certs:/app/certs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Web UI
-  web:
+  # RemoteC Web (React Frontend)
+  remotec-web:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: src/RemoteC.Web/Dockerfile
     container_name: remotec-web
+    environment:
+      - REACT_APP_API_URL=https://remotec-api:443
+      - REACT_APP_SIGNALR_URL=https://remotec-api:443/hubs/session
     ports:
-      - "3000:8080"
+      - "3000:80"
     depends_on:
-      - api
+      - remotec-api
     networks:
       - remotec-network
-    environment:
-      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Database migration runner
-  db-migrator:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: remotec-db-migrator
-    command: ["dotnet", "ef", "database", "update", "--project", "RemoteC.Data", "--startup-project", "RemoteC.Api"]
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RemoteCDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: remotec-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - remotec-static:/usr/share/nginx/html
     depends_on:
-      sqlserver:
-        condition: service_healthy
+      - remotec-api
+      - remotec-web
     networks:
       - remotec-network
 
@@ -101,5 +118,8 @@ networks:
     driver: bridge
 
 volumes:
-  sqlserver-data:
-  redis-data:
+  remotec-sqldata:
+  remotec-redis:
+  remotec-logs:
+  remotec-certs:
+  remotec-static:

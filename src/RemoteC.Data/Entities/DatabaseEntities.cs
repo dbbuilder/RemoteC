@@ -24,12 +24,33 @@ public class User
     [MaxLength(255)]
     public string? AzureAdB2CId { get; set; }
     
+    [MaxLength(50)]
+    public string? PhoneNumber { get; set; }
+    
     public bool IsActive { get; set; } = true;
+    public bool IsSuperAdmin { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastLoginDate { get; set; }
+    
+    [MaxLength(45)]
+    public string? LastLoginIp { get; set; }
+    
+    [MaxLength(100)]
+    public string? Department { get; set; }
+    
+    public Guid? OrganizationId { get; set; }
+    
+    // Computed property
+    public string Name => $"{FirstName} {LastName}";
     
     // Navigation properties
+    public virtual Organization? Organization { get; set; }
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public virtual ICollection<Session> CreatedSessions { get; set; } = new List<Session>();
+    public virtual ICollection<SessionParticipant> SessionParticipants { get; set; } = new List<SessionParticipant>();
+    public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 }
 
 /// <summary>
@@ -47,7 +68,9 @@ public class Role
     public string? Description { get; set; }
     
     public bool IsActive { get; set; } = true;
+    public bool IsSystem { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
     
     // Navigation properties
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
@@ -82,6 +105,12 @@ public class Permission
     
     [MaxLength(500)]
     public string? Description { get; set; }
+    
+    [MaxLength(100)]
+    public string Resource { get; set; } = string.Empty;
+    
+    [MaxLength(100)]
+    public string Action { get; set; } = string.Empty;
     
     public string? Category { get; set; }
     public bool IsActive { get; set; } = true;
@@ -136,10 +165,13 @@ public class Device
     public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public Guid CreatedBy { get; set; }
+    public Guid? RegisteredBy { get; set; }
+    public Guid? OrganizationId { get; set; }
     
     // Navigation properties
     public virtual User CreatedByUser { get; set; } = null!;
     public virtual ICollection<DeviceGroupMember> DeviceGroupMembers { get; set; } = new List<DeviceGroupMember>();
+    public virtual ICollection<Session> Sessions { get; set; } = new List<Session>();
 }
 
 /// <summary>
@@ -192,6 +224,7 @@ public class Session
     
     public Guid DeviceId { get; set; }
     public Guid CreatedBy { get; set; }
+    public Guid OrganizationId { get; set; }
     
     public SessionStatus Status { get; set; } = SessionStatus.Created;
     public SessionType Type { get; set; } = SessionType.RemoteControl;
@@ -206,6 +239,7 @@ public class Session
     // Navigation properties
     public virtual Device Device { get; set; } = null!;
     public virtual User CreatedByUser { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
     public virtual ICollection<SessionParticipant> Participants { get; set; } = new List<SessionParticipant>();
     public virtual ICollection<SessionLog> Logs { get; set; } = new List<SessionLog>();
 }
@@ -236,6 +270,12 @@ public class SessionLog
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid SessionId { get; set; }
+    public Guid OrganizationId { get; set; }
+    public Guid? UserId { get; set; }
+    public Guid? DeviceId { get; set; }
+    
+    [MaxLength(100)]
+    public string? EventType { get; set; }
     
     [Required]
     public string Message { get; set; } = string.Empty;
@@ -243,11 +283,26 @@ public class SessionLog
     public LogLevel Level { get; set; } = LogLevel.Information;
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     
-    public string? UserId { get; set; }
+    [MaxLength(500)]
+    public string? Details { get; set; }
+    
+    [MaxLength(45)]
+    public string? IpAddress { get; set; }
+    
+    [MaxLength(50)]
+    public string? Location { get; set; }
+    
+    [MaxLength(50)]
+    public string? DeviceType { get; set; }
+    
+    public double? Latency { get; set; }
+    
     public string? AdditionalData { get; set; }
     
     // Navigation properties
     public virtual Session Session { get; set; } = null!;
+    public virtual User? User { get; set; }
+    public virtual Device? Device { get; set; }
 }
 
 /// <summary>
@@ -287,8 +342,22 @@ public class AuditLog
     [MaxLength(100)]
     public string? EntityId { get; set; }
     
+    [MaxLength(100)]
+    public string ResourceType { get; set; } = string.Empty;
+    
+    [MaxLength(100)]
+    public string? ResourceId { get; set; }
+    
+    [MaxLength(200)]
+    public string? ResourceName { get; set; }
+    
+    public Guid? UserId { get; set; }
+    
+    [MaxLength(100)]
+    public string? UserName { get; set; }
+    
     [MaxLength(255)]
-    public string? UserId { get; set; }
+    public string? UserEmail { get; set; }
     
     [MaxLength(45)]
     public string? IpAddress { get; set; }
@@ -298,10 +367,26 @@ public class AuditLog
     
     public string? OldValues { get; set; }
     public string? NewValues { get; set; }
+    public string? Details { get; set; }
+    public string? Metadata { get; set; }
+    public string? CorrelationId { get; set; }
+    public TimeSpan? Duration { get; set; }
+    public string? StackTrace { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     
     public bool Success { get; set; } = true;
     public string? ErrorMessage { get; set; }
+    
+    public Guid? OrganizationId { get; set; }
+    public int Severity { get; set; }
+    public int Category { get; set; }
+    
+    public bool IsArchived { get; set; } = false;
+    public DateTime? ArchivedAt { get; set; }
+    
+    // Navigation properties
+    public virtual User? User { get; set; }
+    public virtual Organization? Organization { get; set; }
 }
 
 /// <summary>
@@ -343,7 +428,8 @@ public enum SessionStatus
     Paused = 5,
     Disconnected = 6,
     Ended = 7,
-    Error = 8
+    Error = 8,
+    Completed = 9
 }
 
 public enum SessionType

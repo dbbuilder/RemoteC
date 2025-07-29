@@ -48,36 +48,39 @@ public class MappingProfile : Profile
         CreateMap<AuditLog, AuditLogDto>();
 
         // Role mappings
-        CreateMap<Role, RoleDto>();
+        CreateMap<RemoteC.Data.Entities.Role, RoleDto>();
 
         // Permission mappings
         CreateMap<Permission, string>()
             .ConvertUsing(src => src.Name);
     }
 
-    private static SessionStatus MapSessionStatus(Data.Entities.SessionStatus status)
+    private static RemoteC.Shared.Models.SessionStatus MapSessionStatus(Data.Entities.SessionStatus status)
     {
         return status switch
         {
-            Data.Entities.SessionStatus.Created => SessionStatus.Created,
-            Data.Entities.SessionStatus.Approved => SessionStatus.WaitingForPin,
-            Data.Entities.SessionStatus.Connected => SessionStatus.Connected,
-            Data.Entities.SessionStatus.Disconnected => SessionStatus.Disconnected,
-            Data.Entities.SessionStatus.Ended => SessionStatus.Ended,
-            Data.Entities.SessionStatus.Failed => SessionStatus.Error,
-            _ => SessionStatus.Created
+            Data.Entities.SessionStatus.Created => RemoteC.Shared.Models.SessionStatus.Created,
+            Data.Entities.SessionStatus.WaitingForPin => RemoteC.Shared.Models.SessionStatus.WaitingForPin,
+            Data.Entities.SessionStatus.Connecting => RemoteC.Shared.Models.SessionStatus.Connecting,
+            Data.Entities.SessionStatus.Connected => RemoteC.Shared.Models.SessionStatus.Connected,
+            Data.Entities.SessionStatus.Active => RemoteC.Shared.Models.SessionStatus.Active,
+            Data.Entities.SessionStatus.Paused => RemoteC.Shared.Models.SessionStatus.Paused,
+            Data.Entities.SessionStatus.Disconnected => RemoteC.Shared.Models.SessionStatus.Disconnected,
+            Data.Entities.SessionStatus.Ended => RemoteC.Shared.Models.SessionStatus.Ended,
+            Data.Entities.SessionStatus.Error => RemoteC.Shared.Models.SessionStatus.Error,
+            _ => RemoteC.Shared.Models.SessionStatus.Created
         };
     }
 
-    private static ParticipantRole MapParticipantRole(Data.Entities.ParticipantRole role)
+    private static RemoteC.Shared.Models.ParticipantRole MapParticipantRole(Data.Entities.ParticipantRole role)
     {
         return role switch
         {
-            Data.Entities.ParticipantRole.Viewer => ParticipantRole.Viewer,
-            Data.Entities.ParticipantRole.Controller => ParticipantRole.Controller,
-            Data.Entities.ParticipantRole.Admin => ParticipantRole.Administrator,
-            Data.Entities.ParticipantRole.Owner => ParticipantRole.Owner,
-            _ => ParticipantRole.Viewer
+            Data.Entities.ParticipantRole.Viewer => RemoteC.Shared.Models.ParticipantRole.Viewer,
+            Data.Entities.ParticipantRole.Controller => RemoteC.Shared.Models.ParticipantRole.Controller,
+            Data.Entities.ParticipantRole.Administrator => RemoteC.Shared.Models.ParticipantRole.Administrator,
+            Data.Entities.ParticipantRole.Owner => RemoteC.Shared.Models.ParticipantRole.Owner,
+            _ => RemoteC.Shared.Models.ParticipantRole.Viewer
         };
     }
 }

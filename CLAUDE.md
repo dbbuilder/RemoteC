@@ -174,3 +174,19 @@ sqlcmd -S localhost -i database/setup-database.sql
 - Ensure Docker Desktop is running
 - Check port conflicts (1433, 6379, 7001, 3000)
 - Verify network connectivity between containers
+
+## Code Snippets and Utilities
+
+### JWT Token Date Handling
+- Helper method to convert DateTime to Unix timestamp, handling default/unset dates
+```csharp
+// Helper: Check for default DateTime, which means "not set"
+long? ToUnixIfSet(DateTime dt) =>
+    (dt != DateTime.MinValue && dt != DateTime.MaxValue)
+        ? new DateTimeOffset(dt).ToUnixTimeSeconds()
+        : (long?)null;
+
+// Example usage in JWT token payload
+Exp = jwtToken != null ? ToUnixIfSet(jwtToken.Payload.ValidTo) : null,
+Iat = jwtToken != null ? ToUnixIfSet(jwtToken.Payload.ValidFrom) : null,
+```

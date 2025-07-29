@@ -8,10 +8,13 @@ using Azure.Security.KeyVault.Secrets;
 using RemoteC.Api.Hubs;
 using RemoteC.Api.Services;
 using RemoteC.Api.Middleware;
+using RemoteC.Shared.Models;
 using StackExchange.Redis;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 namespace RemoteC.Api;
 
@@ -109,8 +112,55 @@ public class Program
             builder.Services.AddScoped<ICommandExecutionService, CommandExecutionService>();
             builder.Services.AddScoped<IFileTransferService, FileTransferService>();
             builder.Services.AddScoped<IAuditService, AuditService>();
+            builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+            builder.Services.AddScoped<IE2EEncryptionService, E2EEncryptionService>();
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             builder.Services.AddHostedService<QueuedHostedService>();
+            
+            // Add new services
+            builder.Services.AddScoped<IComplianceService, ComplianceService>();
+            builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+            builder.Services.AddScoped<ICacheService, CacheService>();
+            builder.Services.AddScoped<IMetricsCollector, MetricsCollector>();
+            builder.Services.AddScoped<IEdgeDeploymentService, EdgeDeploymentService>();
+            builder.Services.AddScoped<IDockerService, DockerService>();
+            builder.Services.AddScoped<IKubernetesService, KubernetesService>();
+            builder.Services.AddScoped<IRegistryService, RegistryService>();
+            builder.Services.AddScoped<IMetricsService, MetricsService>();
+            builder.Services.AddScoped<IIdentityProviderService, IdentityProviderService>();
+            builder.Services.AddScoped<ICertificateService, CertificateService>();
+            
+            // Configure file transfer options
+            builder.Services.Configure<FileTransferOptions>(builder.Configuration.GetSection("FileTransfer"));
+            
+            // Configure E2EE options
+            builder.Services.Configure<E2EEncryptionOptions>(builder.Configuration.GetSection("E2EEncryption"));
+            
+            // Configure compliance options
+            builder.Services.Configure<ComplianceOptions>(builder.Configuration.GetSection("Compliance"));
+            
+            // Configure analytics options
+            builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection("Analytics"));
+            
+            // Configure edge deployment options
+            builder.Services.Configure<EdgeDeploymentOptions>(builder.Configuration.GetSection("EdgeDeployment"));
+            
+            // Configure identity provider options
+            builder.Services.Configure<IdentityProviderOptions>(options =>
+            {
+                var config = builder.Configuration.GetSection("IdentityProvider");
+                config.Bind(options);
+                
+                // Generate RSA signing key if not provided
+                if (options.SigningKey == null)
+                {
+                    var rsa = RSA.Create(2048);
+                    options.SigningKey = new RsaSecurityKey(rsa)
+                    {
+                        KeyId = Guid.NewGuid().ToString()
+                    };
+                }
+            });
             
             // Configure audit options
             builder.Services.Configure<AuditOptions>(options =>
@@ -118,7 +168,7 @@ public class Program
                 options.EnableBatching = true;
                 options.BatchSize = 100;
                 options.BatchIntervalSeconds = 5;
-                options.MinimumSeverity = AuditSeverity.Info;
+                options.MinimumSeverity = RemoteC.Shared.Models.AuditSeverity.Info;
                 options.RetentionDays = 365;
                 options.FailureAlertThreshold = 5;
                 options.ExcludedActions = new List<string> { "HealthCheck", "GetMetrics" };

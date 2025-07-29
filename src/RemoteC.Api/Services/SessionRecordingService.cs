@@ -11,6 +11,15 @@ using RemoteC.Shared.Models;
 
 namespace RemoteC.Api.Services
 {
+    public class NotFoundException : Exception
+    {
+        public NotFoundException(string message) : base(message) { }
+    }
+
+    public class UnauthorizedException : Exception
+    {
+        public UnauthorizedException(string message) : base(message) { }
+    }
     /// <summary>
     /// Service for recording and managing session recordings
     /// </summary>
@@ -135,27 +144,38 @@ namespace RemoteC.Api.Services
                 // Append to blob
                 var blobName = GetBlobName(recordingId, recording.ChunkCount);
                 var containerClient = _blobServiceClient.GetBlobContainerClient(CONTAINER_NAME);
-                var blobClient = containerClient.GetAppendBlobClient(blobName);
+                var blobClient = containerClient.GetBlobClient(blobName);
 
-                // Create blob if it doesn't exist
+                // Check if blob exists, if not upload the first chunk
                 if (!await blobClient.ExistsAsync(cancellationToken))
                 {
-                    await blobClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+                    using var stream = new MemoryStream(encryptedData);
+                    await blobClient.UploadAsync(stream, overwrite: false, cancellationToken);
                 }
-
-                // Check if we need to create a new chunk
-                var properties = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
-                if (properties.Value.ContentLength + encryptedData.Length > CHUNK_SIZE)
+                else
                 {
-                    recording.ChunkCount++;
-                    blobName = GetBlobName(recordingId, recording.ChunkCount);
-                    blobClient = containerClient.GetAppendBlobClient(blobName);
-                    await blobClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+                    // Check if we need to create a new chunk
+                    var properties = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
+                    if (properties.Value.ContentLength + encryptedData.Length > CHUNK_SIZE)
+                    {
+                        recording.ChunkCount++;
+                        blobName = GetBlobName(recordingId, recording.ChunkCount);
+                        blobClient = containerClient.GetBlobClient(blobName);
+                        using var stream = new MemoryStream(encryptedData);
+                        await blobClient.UploadAsync(stream, overwrite: false, cancellationToken);
+                    }
+                    else
+                    {
+                        // For regular blob storage, we can't append - need to download, merge, and re-upload
+                        // This is inefficient, but works for now
+                        var existingData = new MemoryStream();
+                        await blobClient.DownloadToAsync(existingData, cancellationToken);
+                        existingData.Seek(0, SeekOrigin.End);
+                        await existingData.WriteAsync(encryptedData, 0, encryptedData.Length, cancellationToken);
+                        existingData.Seek(0, SeekOrigin.Begin);
+                        await blobClient.UploadAsync(existingData, overwrite: true, cancellationToken);
+                    }
                 }
-
-                // Append encrypted frame
-                using var stream = new MemoryStream(encryptedData);
-                await blobClient.AppendBlockAsync(stream, cancellationToken: cancellationToken);
 
                 // Update recording stats
                 recording.Duration = frame.Timestamp - recording.StartedAt;
@@ -411,18 +431,14 @@ namespace RemoteC.Api.Services
         {
             var containerClient = _blobServiceClient.GetBlobContainerClient(CONTAINER_NAME);
             var metadataBlobName = $"{recordingId}{METADATA_SUFFIX}";
-            var blobClient = containerClient.GetAppendBlobClient(metadataBlobName);
+            var blobClient = containerClient.GetBlobClient(metadataBlobName);
 
-            if (!await blobClient.ExistsAsync(cancellationToken))
-            {
-                await blobClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
-            }
-
+            // For metadata, we just overwrite the entire file
             var json = System.Text.Json.JsonSerializer.Serialize(metadata);
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json + "\n");
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
             
             using var stream = new MemoryStream(bytes);
-            await blobClient.AppendBlockAsync(stream, cancellationToken: cancellationToken);
+            await blobClient.UploadAsync(stream, overwrite: true, cancellationToken);
         }
 
         private async Task<RecordingMetadata> GetRecordingMetadataAsync(Guid recordingId)

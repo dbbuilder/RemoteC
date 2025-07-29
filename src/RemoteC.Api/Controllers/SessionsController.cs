@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using RemoteC.Api.Services;
 using RemoteC.Shared.Models;
-using Serilog;
 
 namespace RemoteC.Api.Controllers;
 
@@ -30,14 +30,14 @@ public class SessionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? string.Empty;
-            _logger.Information("Getting sessions for user {UserId}", userId);
+            _logger.LogInformation("Getting sessions for user {UserId}", userId);
             
             var sessions = await _sessionService.GetUserSessionsAsync(userId);
             return Ok(sessions);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error getting sessions");
+            _logger.LogError(ex, "Error getting sessions");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -53,7 +53,7 @@ public class SessionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? string.Empty;
-            _logger.Information("Getting session {SessionId} for user {UserId}", id, userId);
+            _logger.LogInformation("Getting session {SessionId} for user {UserId}", id, userId);
 
             var session = await _sessionService.GetSessionAsync(id, userId);
             if (session == null)
@@ -65,7 +65,7 @@ public class SessionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error getting session {SessionId}", id);
+            _logger.LogError(ex, "Error getting session {SessionId}", id);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -81,19 +81,19 @@ public class SessionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? string.Empty;
-            _logger.Information("Creating session for device {DeviceId} by user {UserId}", request.DeviceId, userId);
+            _logger.LogInformation("Creating session for device {DeviceId} by user {UserId}", request.DeviceId, userId);
 
             var session = await _sessionService.CreateSessionAsync(request, userId);
             return CreatedAtAction(nameof(GetSession), new { id = session.Id }, session);
         }
         catch (ArgumentException ex)
         {
-            _logger.Warning(ex, "Invalid session creation request");
+            _logger.LogWarning(ex, "Invalid session creation request");
             return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error creating session");
+            _logger.LogError(ex, "Error creating session");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -109,24 +109,24 @@ public class SessionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? string.Empty;
-            _logger.Information("Starting session {SessionId} for user {UserId}", id, userId);
+            _logger.LogInformation("Starting session {SessionId} for user {UserId}", id, userId);
 
             var result = await _sessionService.StartSessionAsync(id, userId);
             return Ok(result);
         }
         catch (ArgumentException ex)
         {
-            _logger.Warning(ex, "Invalid session start request for session {SessionId}", id);
+            _logger.LogWarning(ex, "Invalid session start request for session {SessionId}", id);
             return BadRequest(ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.Warning(ex, "Unauthorized session start attempt for session {SessionId}", id);
+            _logger.LogWarning(ex, "Unauthorized session start attempt for session {SessionId}", id);
             return Forbid();
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error starting session {SessionId}", id);
+            _logger.LogError(ex, "Error starting session {SessionId}", id);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -142,24 +142,24 @@ public class SessionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? string.Empty;
-            _logger.Information("Stopping session {SessionId} for user {UserId}", id, userId);
+            _logger.LogInformation("Stopping session {SessionId} for user {UserId}", id, userId);
 
             await _sessionService.StopSessionAsync(id, userId);
             return Ok();
         }
         catch (ArgumentException ex)
         {
-            _logger.Warning(ex, "Invalid session stop request for session {SessionId}", id);
+            _logger.LogWarning(ex, "Invalid session stop request for session {SessionId}", id);
             return BadRequest(ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.Warning(ex, "Unauthorized session stop attempt for session {SessionId}", id);
+            _logger.LogWarning(ex, "Unauthorized session stop attempt for session {SessionId}", id);
             return Forbid();
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error stopping session {SessionId}", id);
+            _logger.LogError(ex, "Error stopping session {SessionId}", id);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -175,24 +175,24 @@ public class SessionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? string.Empty;
-            _logger.Information("Generating PIN for session {SessionId} by user {UserId}", id, userId);
+            _logger.LogInformation("Generating PIN for session {SessionId} by user {UserId}", id, userId);
 
             var result = await _sessionService.GeneratePinAsync(id, userId);
             return Ok(result);
         }
         catch (ArgumentException ex)
         {
-            _logger.Warning(ex, "Invalid PIN generation request for session {SessionId}", id);
+            _logger.LogWarning(ex, "Invalid PIN generation request for session {SessionId}", id);
             return BadRequest(ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.Warning(ex, "Unauthorized PIN generation attempt for session {SessionId}", id);
+            _logger.LogWarning(ex, "Unauthorized PIN generation attempt for session {SessionId}", id);
             return Forbid();
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error generating PIN for session {SessionId}", id);
+            _logger.LogError(ex, "Error generating PIN for session {SessionId}", id);
             return StatusCode(500, "Internal server error");
         }
     }

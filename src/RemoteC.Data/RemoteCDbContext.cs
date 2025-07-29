@@ -10,6 +10,7 @@ public class RemoteCDbContext : DbContext
     {
     }
 
+    public DbSet<Organization> Organizations { get; set; } = null!;
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Role> Roles { get; set; } = null!;
     public DbSet<Permission> Permissions { get; set; } = null!;
@@ -23,6 +24,47 @@ public class RemoteCDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
     public DbSet<SessionPin> SessionPins { get; set; } = null!;
     public DbSet<FileTransfer> FileTransfers { get; set; } = null!;
+    public DbSet<SessionRecording> SessionRecordings { get; set; } = null!;
+    public DbSet<OrganizationSettings> OrganizationSettings { get; set; } = null!;
+    
+    // Compliance entities
+    public DbSet<ComplianceSettings> ComplianceSettings { get; set; } = null!;
+    public DbSet<PrivacyPolicy> PrivacyPolicies { get; set; } = null!;
+    public DbSet<DataProcessingAgreement> DataProcessingAgreements { get; set; } = null!;
+    public DbSet<ConsentRecord> ConsentRecords { get; set; } = null!;
+    public DbSet<RetentionPolicy> RetentionPolicies { get; set; } = null!;
+    public DbSet<PHIAccessLog> PHIAccessLogs { get; set; } = null!;
+    public DbSet<DataBreach> DataBreaches { get; set; } = null!;
+    
+    // Analytics entities
+    public DbSet<PerformanceMetric> PerformanceMetrics { get; set; } = null!;
+    public DbSet<UserActivityLog> UserActivityLogs { get; set; } = null!;
+    public DbSet<BusinessEvent> BusinessEvents { get; set; } = null!;
+    public DbSet<CustomAlertEntity> CustomAlerts { get; set; } = null!;
+    public DbSet<AlertHistory> AlertHistory { get; set; } = null!;
+    public DbSet<ScheduledReportEntity> ScheduledReports { get; set; } = null!;
+    public DbSet<DataExportRequest> DataExportRequests { get; set; } = null!;
+    public DbSet<HourlyAggregation> HourlyAggregations { get; set; } = null!;
+    public DbSet<DailyAggregation> DailyAggregations { get; set; } = null!;
+    
+    // Edge deployment entities
+    public DbSet<EdgeNodeEntity> EdgeNodes { get; set; } = null!;
+    public DbSet<EdgeDeploymentEntity> EdgeDeployments { get; set; } = null!;
+    public DbSet<ConfigurationHistoryEntity> ConfigurationHistories { get; set; } = null!;
+    
+    // Policy engine entities
+    public DbSet<PolicyEntity> Policies { get; set; } = null!;
+    public DbSet<PolicyRoleEntity> PolicyRoles { get; set; } = null!;
+    public DbSet<RolePolicyEntity> RolePolicies { get; set; } = null!;
+    public DbSet<UserPolicyRoleEntity> UserPolicyRoles { get; set; } = null!;
+    public DbSet<GroupPolicyRoleEntity> GroupPolicyRoles { get; set; } = null!;
+    public DbSet<UserPolicyAssignmentEntity> UserPolicyAssignments { get; set; } = null!;
+    public DbSet<GroupPolicyAssignmentEntity> GroupPolicyAssignments { get; set; } = null!;
+    public DbSet<ResourceDefinitionEntity> ResourceDefinitions { get; set; } = null!;
+    public DbSet<ActionDefinitionEntity> ActionDefinitions { get; set; } = null!;
+    public DbSet<PolicyTemplateEntity> PolicyTemplates { get; set; } = null!;
+    public DbSet<PolicyDelegationEntity> PolicyDelegations { get; set; } = null!;
+    public DbSet<UserGroupEntity> UserGroups { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +117,25 @@ public class RemoteCDbContext : DbContext
             .HasOne(sp => sp.User)
             .WithMany(u => u.SessionParticipants)
             .HasForeignKey(sp => sp.UserId);
+
+        // Policy Engine configurations
+        modelBuilder.Entity<RolePolicyEntity>()
+            .HasKey(rp => new { rp.RoleId, rp.PolicyId });
+
+        modelBuilder.Entity<UserPolicyRoleEntity>()
+            .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+        modelBuilder.Entity<GroupPolicyRoleEntity>()
+            .HasKey(gr => new { gr.GroupId, gr.RoleId });
+
+        modelBuilder.Entity<UserPolicyAssignmentEntity>()
+            .HasKey(upa => new { upa.UserId, upa.PolicyId });
+
+        modelBuilder.Entity<GroupPolicyAssignmentEntity>()
+            .HasKey(gpa => new { gpa.GroupId, gpa.PolicyId });
+
+        modelBuilder.Entity<UserGroupEntity>()
+            .HasKey(ug => new { ug.UserId, ug.GroupId });
 
         // Configure stored procedures
         ConfigureStoredProcedures(modelBuilder);
