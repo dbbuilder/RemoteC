@@ -94,6 +94,11 @@ public class Program
             // Add AutoMapper
             builder.Services.AddAutoMapper(typeof(Program));
 
+            // Add Repositories
+            builder.Services.AddScoped<Data.Repositories.IUserRepository, Data.Repositories.UserRepository>();
+            builder.Services.AddScoped<Data.Repositories.ISessionRepository, Data.Repositories.SessionRepository>();
+            builder.Services.AddScoped<Data.Repositories.IAuditRepository, Data.Repositories.AuditRepository>();
+
             // Add Application Services
             builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<IUserService, UserService>();
@@ -102,6 +107,16 @@ public class Program
             builder.Services.AddScoped<ICommandExecutionService, CommandExecutionService>();
             builder.Services.AddScoped<IFileTransferService, FileTransferService>();
             builder.Services.AddScoped<IAuditService, AuditService>();
+
+            // Add HttpClient for ControlR integration
+            builder.Services.AddHttpClient("ControlR", client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["RemoteControl:ControlR:ApiUrl"] ?? "https://controlr.api");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+            // Add HttpContextAccessor for audit service
+            builder.Services.AddHttpContextAccessor();
 
             // Add Application Insights
             builder.Services.AddApplicationInsightsTelemetry();
