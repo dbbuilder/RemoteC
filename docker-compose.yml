@@ -1,0 +1,74 @@
+# Docker Compose for RemoteC Development Environment
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: remotec-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=RemoteC_Dev123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - remotec-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: remotec-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - remotec-network
+
+  # RemoteC API
+  api:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.api
+    container_name: remotec-api
+    ports:
+      - "7001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RemoteCDb;User Id=sa;Password=RemoteC_Dev123!;TrustServerCertificate=true
+      - ConnectionStrings__Redis=redis:6379
+    depends_on:
+      - sqlserver
+      - redis
+    networks:
+      - remotec-network
+    volumes:
+      - ./logs:/app/logs
+
+  # React Frontend (Development)
+  web:
+    build:
+      context: ./src/RemoteC.Web
+      dockerfile: ../../deployment/docker/Dockerfile.web.dev
+    container_name: remotec-web
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:7001
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./src/RemoteC.Web:/app
+      - /app/node_modules
+    networks:
+      - remotec-network
+
+volumes:
+  sqlserver_data:
+  redis_data:
+
+networks:
+  remotec-network:
+    driver: bridge

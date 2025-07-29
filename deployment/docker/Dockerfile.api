@@ -1,0 +1,54 @@
+# FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+USER app
+EXPOSE 8080
+EXPOSE 8081
+
+# FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# Copy csproj files and restore dependencies
+COPY ["src/RemoteC.Api/RemoteC.Api.csproj", "src/RemoteC.Api/"]
+COPY ["src/RemoteC.Data/RemoteC.Data.csproj", "src/RemoteC.Data/"]
+COPY ["src/RemoteC.Shared/RemoteC.Shared.csproj", "src/RemoteC.Shared/"]
+RUN dotnet restore "./src/RemoteC.Api/RemoteC.Api.csproj"
+
+# Copy all source code
+COPY . .
+
+# Build the application
+WORKDIR "/src/src/RemoteC.Api"
+RUN dotnet build "./RemoteC.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# FROM build AS publish
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./RemoteC.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# FROM base AS final
+FROM base AS final
+WORKDIR /app
+
+# Install additional dependencies if needed
+USER root
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown app:app /app/logs
+
+USER app
+COPY --from=publish /app/publish .
+
+# Set environment variables
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["dotnet", "RemoteC.Api.dll"]
