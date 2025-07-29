@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: remotec-redis
+  namespace: remotec
+  labels:
+    app: remotec-redis
+    component: cache
+spec:
+  serviceName: remotec-redis
+  replicas: 3
+  selector:
+    matchLabels:
+      app: remotec-redis
+  template:
+    metadata:
+      labels:
+        app: remotec-redis
+        component: cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        ports:
+        - containerPort: 6379
+          name: redis
+        - containerPort: 16379
+          name: gossip
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: redis-password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-config
+        configMap:
+          name: remotec-redis-config
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remotec-redis
+  namespace: remotec
+  labels:
+    app: remotec-redis
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+  - name: gossip
+    port: 16379
+    targetPort: 16379
+  selector:
+    app: remotec-redis
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remotec-redis-config
+  namespace: remotec
+data:
+  redis.conf: |
+    # Redis configuration for RemoteC
+    port 6379
+    bind 0.0.0.0
+    protected-mode yes
+    requirepass ${REDIS_PASSWORD}
+    
+    # Persistence
+    save 900 1
+    save 300 10
+    save 60 10000
+    dbfilename dump.rdb
+    dir /data
+    
+    # Cluster configuration
+    cluster-enabled yes
+    cluster-config-file nodes.conf
+    cluster-node-timeout 5000
+    cluster-announce-ip-template "{{ .PodIP }}"
+    cluster-announce-port 6379
+    cluster-announce-bus-port 16379
+    
+    # Performance tuning
+    maxmemory 800mb
+    maxmemory-policy allkeys-lru
+    
+    # Security
+    rename-command FLUSHDB ""
+    rename-command FLUSHALL ""
+    rename-command KEYS ""
+    rename-command CONFIG "CONFIG_remotec"
+    
+    # Logging
+    loglevel notice
+    logfile /data/redis.log
+    
+    # Client connection limits
+    maxclients 10000
+    timeout 300
+    tcp-keepalive 60
+    
+    # Slow log
+    slowlog-log-slower-than 10000
+    slowlog-max-len 128

@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remotec-api
+  namespace: remotec
+  labels:
+    app: remotec-api
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: remotec-api
+  template:
+    metadata:
+      labels:
+        app: remotec-api
+        component: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: remotec-api
+      containers:
+      - name: api
+        image: remotec/api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: grpc
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080;https://+:8443"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: db-connection-string
+        - name: Redis__ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: redis-connection-string
+        - name: AzureAdB2C__Instance
+          valueFrom:
+            configMapKeyRef:
+              name: remotec-config
+              key: azure-ad-instance
+        - name: AzureAdB2C__ClientId
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: azure-ad-client-id
+        - name: AzureAdB2C__ClientSecret
+          valueFrom:
+            secretKeyRef:
+              name: remotec-secrets
+              key: azure-ad-client-secret
+        - name: REMOTEC_RUST_LIB_PATH
+          value: "/app/runtimes/linux-x64/native"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: app-config
+          mountPath: /app/appsettings.Production.json
+          subPath: appsettings.Production.json
+        - name: tls-certs
+          mountPath: /app/certs
+          readOnly: true
+      volumes:
+      - name: app-config
+        configMap:
+          name: remotec-api-config
+      - name: tls-certs
+        secret:
+          secretName: remotec-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remotec-api
+  namespace: remotec
+  labels:
+    app: remotec-api
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: grpc
+    port: 8081
+    targetPort: 8081
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  selector:
+    app: remotec-api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: remotec-api-hpa
+  namespace: remotec
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: remotec-api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "1000"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+      - type: Pods
+        value: 4
+        periodSeconds: 60

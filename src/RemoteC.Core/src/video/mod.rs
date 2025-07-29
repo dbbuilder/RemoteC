@@ -134,6 +134,7 @@ mod h264;
 mod h265;
 mod vp8;
 mod vp9;
+pub mod hardware;
 
 pub use h264::H264Encoder;
 pub use h265::H265Encoder;
