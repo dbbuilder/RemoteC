@@ -61,6 +61,67 @@ namespace RemoteC.Core.Interop
                 throw new RemoteCoreException($"Failed to initialize RemoteC Core: {result}");
             }
         }
+        
+        #region Screen Capture
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr remotec_capture_create();
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_capture_start(IntPtr handle);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_capture_get_frame(IntPtr handle, ref FrameData frameData);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_capture_stop(IntPtr handle);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void remotec_capture_destroy(IntPtr handle);
+        
+        #endregion
+        
+        #region Input Simulation
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr remotec_input_create();
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_input_mouse_move(IntPtr handle, int x, int y);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_input_mouse_click(IntPtr handle, uint button);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_input_key_press(IntPtr handle, uint keyCode);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void remotec_input_destroy(IntPtr handle);
+        
+        #endregion
+        
+        #region Transport
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr remotec_transport_create(uint protocol);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void remotec_transport_destroy(IntPtr handle);
+        
+        #endregion
+        
+        /// <summary>
+        /// FFI-safe frame data structure
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct FrameData
+        {
+            public uint width;
+            public uint height;
+            public IntPtr data;
+            public UIntPtr data_len;
+            public ulong timestamp;
+        }
     }
 
     /// <summary>
