@@ -125,7 +125,7 @@ public class ScreenCaptureServiceTests
         { 
             Quality = 85, 
             Scale = 0.5f,
-            CompressionType = CompressionType.Jpeg
+            CompressionType = RemoteC.Host.Services.CompressionType.Jpeg
         };
         
         var originalFrame = new ScreenFrame

@@ -33,5 +33,9 @@ namespace RemoteC.Api.Services
         
         // Export and Reporting
         Task<ComplianceReport> GenerateComplianceReportAsync(ComplianceReportRequest request);
+        
+        // Monitoring and Dashboard - Added for test compatibility
+        Task<List<ComplianceViolation>> MonitorComplianceAsync(Guid organizationId);
+        Task<ComplianceDashboard> GenerateComplianceDashboardAsync(Guid organizationId);
     }
 }

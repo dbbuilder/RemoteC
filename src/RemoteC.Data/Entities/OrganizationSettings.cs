@@ -17,6 +17,13 @@ public class OrganizationSettings
     public bool SessionRecordingEnabled { get; set; } = true;
     public bool AllowPinAccess { get; set; } = true;
     public int SessionRecordingDays { get; set; } = 30; // How long to keep recordings
+    public int SessionRecordingRetentionDays { get; set; } = 30; // Added for test compatibility
+    
+    // Compliance settings - added for test compatibility
+    public bool RequireMFA { get; set; } = false;
+    public bool EncryptionEnabled { get; set; } = true;
+    public bool AuditLoggingEnabled { get; set; } = true;
+    public bool AccessControlsEnabled { get; set; } = true;
     
     [MaxLength(1000)]
     public string? IpWhitelist { get; set; }

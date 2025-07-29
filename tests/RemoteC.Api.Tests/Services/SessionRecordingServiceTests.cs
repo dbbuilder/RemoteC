@@ -24,7 +24,7 @@ namespace RemoteC.Api.Tests.Services
         private readonly Mock<IAuditService> _auditServiceMock;
         private readonly Mock<ILogger<SessionRecordingService>> _loggerMock;
         private readonly SessionRecordingService _service;
-        private readonly SessionRecordingOptions _options;
+        private readonly RemoteC.Shared.Models.SessionRecordingOptions _options;
 
         public SessionRecordingServiceTests()
         {
@@ -38,7 +38,7 @@ namespace RemoteC.Api.Tests.Services
             _auditServiceMock = new Mock<IAuditService>();
             _loggerMock = new Mock<ILogger<SessionRecordingService>>();
 
-            _options = new SessionRecordingOptions
+            _options = new RemoteC.Shared.Models.SessionRecordingOptions
             {
                 StorageConnectionString = "DefaultEndpointsProtocol=https;AccountName=test;",
                 MaxRecordingDuration = TimeSpan.FromHours(2),
@@ -155,7 +155,7 @@ namespace RemoteC.Api.Tests.Services
                 StartedAt = DateTime.UtcNow.AddMinutes(-30),
                 Status = RecordingStatus.Recording,
                 EncryptionKeyId = "test-key",
-                FileSizeBytes = 1024 * 1024 * 50 // 50MB
+                FileSize = 1024 * 1024 * 50 // 50MB
             };
             _context.SessionRecordings.Add(recording);
             await _context.SaveChangesAsync();
@@ -244,7 +244,7 @@ namespace RemoteC.Api.Tests.Services
                 EndedAt = DateTime.UtcNow,
                 Status = RecordingStatus.Completed,
                 EncryptionKeyId = "test-key",
-                FileSizeBytes = 1024 * 1024 * 100,
+                FileSize = 1024 * 1024 * 100,
                 Duration = TimeSpan.FromHours(1),
                 FrameCount = 108000
             };
@@ -278,7 +278,7 @@ namespace RemoteC.Api.Tests.Services
                 EndedAt = DateTime.UtcNow,
                 Status = RecordingStatus.Completed,
                 EncryptionKeyId = "test-key",
-                FileSizeBytes = 1024 * 1024,
+                FileSize = 1024 * 1024,
                 Duration = TimeSpan.FromHours(1)
             };
             _context.SessionRecordings.Add(recording);

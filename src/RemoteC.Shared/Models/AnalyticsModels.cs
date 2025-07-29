@@ -368,6 +368,7 @@ namespace RemoteC.Shared.Models
     public class DataExport
     {
         public Guid Id { get; set; }
+        public Guid RecordingId { get; set; } // Added for test compatibility
         public string FileName { get; set; } = string.Empty;
         public long FileSize { get; set; }
         public ExportFormat Format { get; set; }
@@ -406,6 +407,7 @@ namespace RemoteC.Shared.Models
         Csv,
         Excel,
         Parquet,
+        MP4,  // Added for test compatibility
         Xml,
         Pdf
     }

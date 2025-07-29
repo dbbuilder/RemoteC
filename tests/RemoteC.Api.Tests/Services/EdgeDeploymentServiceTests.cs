@@ -497,12 +497,7 @@ namespace RemoteC.Api.Tests.Services
             };
 
             _dockerMock.Setup(d => d.ConfigureLoadBalancerAsync(It.IsAny<string>(), It.IsAny<LoadBalancerConfig>()))
-                .ReturnsAsync(new LoadBalancerInfo
-                {
-                    Endpoint = "lb.remotec.io",
-                    Port = 443,
-                    BackendCount = 3
-                });
+                .ReturnsAsync(true);
 
             // Act
             var result = await _service.ConfigureLoadBalancerAsync(deployment.Id, lbConfig);
@@ -751,14 +746,14 @@ namespace RemoteC.Api.Tests.Services
             return await _service.RegisterEdgeNodeAsync(nodeSpec);
         }
 
-        private async Task<EdgeDeployment> CreateTestDeployment(
+        private async Task<EdgeDeploymentEntity> CreateTestDeployment(
             string appName = "test-app",
             string version = "1.0.0",
             int replicas = 1)
         {
             var node = await RegisterTestNode();
             
-            var deployment = new EdgeDeployment
+            var deployment = new EdgeDeploymentEntity
             {
                 Id = Guid.NewGuid(),
                 ApplicationName = appName,
@@ -766,7 +761,7 @@ namespace RemoteC.Api.Tests.Services
                 NodeId = node.Id,
                 Status = DeploymentStatus.Running,
                 Replicas = replicas,
-                Resources = new ResourceRequirements { CPU = 1, MemoryGB = 2 },
+                ResourcesJson = System.Text.Json.JsonSerializer.Serialize(new ResourceRequirements { CPU = 1, MemoryGB = 2 }),
                 CreatedAt = DateTime.UtcNow,
                 ContainerId = $"container-{Guid.NewGuid()}"
             };

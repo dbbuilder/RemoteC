@@ -477,7 +477,8 @@ namespace RemoteC.Api.Tests.Services
             {
                 Id = userId,
                 Email = email,
-                Name = "Test User",
+                FirstName = "Test",
+                LastName = "User",
                 PhoneNumber = "+1234567890",
                 CreatedAt = DateTime.UtcNow
             };
@@ -491,9 +492,9 @@ namespace RemoteC.Api.Tests.Services
         {
             var activities = new[]
             {
-                new UserActivity { UserId = userId, Action = "Login", Timestamp = DateTime.UtcNow.AddDays(-1) },
-                new UserActivity { UserId = userId, Action = "ViewDocument", Timestamp = DateTime.UtcNow.AddHours(-2) },
-                new UserActivity { UserId = userId, Action = "UpdateProfile", Timestamp = DateTime.UtcNow.AddMinutes(-30) }
+                new RemoteC.Data.Entities.UserActivity { UserId = userId, Action = "Login", Timestamp = DateTime.UtcNow.AddDays(-1) },
+                new RemoteC.Data.Entities.UserActivity { UserId = userId, Action = "ViewDocument", Timestamp = DateTime.UtcNow.AddHours(-2) },
+                new RemoteC.Data.Entities.UserActivity { UserId = userId, Action = "UpdateProfile", Timestamp = DateTime.UtcNow.AddMinutes(-30) }
             };
 
             _context.UserActivities.AddRange(activities);
@@ -533,14 +534,14 @@ namespace RemoteC.Api.Tests.Services
         {
             var consents = new[]
             {
-                new ConsentRecord 
+                new RemoteC.Data.Entities.ConsentRecord 
                 { 
                     UserId = userId, 
                     Purpose = "Marketing", 
                     Granted = true, 
                     GrantedAt = DateTime.UtcNow.AddDays(-30) 
                 },
-                new ConsentRecord 
+                new RemoteC.Data.Entities.ConsentRecord 
                 { 
                     UserId = userId, 
                     Purpose = "Analytics", 
@@ -634,92 +635,12 @@ namespace RemoteC.Api.Tests.Services
         Rejected
     }
 
-    public enum ViolationSeverity
-    {
-        Low,
-        Medium,
-        High,
-        Critical
-    }
 
-    public enum ControlStatus
-    {
-        Satisfied,
-        PartiallyMet,
-        NotMet,
-        NotApplicable
-    }
 
-    public enum ExportFormat
-    {
-        Json,
-        Csv,
-        Xml
-    }
 
-    public class ComplianceOptions
-    {
-        public bool EnableSOC2 { get; set; }
-        public bool EnableGDPR { get; set; }
-        public bool EnableHIPAA { get; set; }
-        public int DataRetentionDays { get; set; }
-        public bool RequireDataEncryption { get; set; }
-        public bool RequireAuditLogging { get; set; }
-    }
 
-    // Additional test entities
-    public class OrganizationSettings
-    {
-        public Guid OrganizationId { get; set; }
-        public bool RequireMFA { get; set; }
-        public bool EncryptionEnabled { get; set; }
-        public bool AuditLoggingEnabled { get; set; }
-        public bool AccessControlsEnabled { get; set; }
-    }
 
-    public class UserActivity
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid UserId { get; set; }
-        public string Action { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
-    }
 
-    public class PrivacyPolicy
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid OrganizationId { get; set; }
-        public string Version { get; set; } = string.Empty;
-        public DateTime EffectiveDate { get; set; }
-        public string Content { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
-    }
 
-    public class DataProcessingAgreement
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid OrganizationId { get; set; }
-        public string ProcessorName { get; set; } = string.Empty;
-        public DateTime SignedDate { get; set; }
-        public bool IsActive { get; set; }
-    }
 
-    public class ConsentRecord
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid UserId { get; set; }
-        public string Purpose { get; set; } = string.Empty;
-        public bool Granted { get; set; }
-        public DateTime GrantedAt { get; set; }
-    }
-
-    public class PHIAccess
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid UserId { get; set; }
-        public Guid ResourceId { get; set; }
-        public string Purpose { get; set; } = string.Empty;
-        public DateTime GrantedAt { get; set; }
-        public DateTime ExpiresAt { get; set; }
-    }
 }

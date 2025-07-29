@@ -6,6 +6,7 @@ namespace RemoteC.Shared.Models
     // Policy Definition Models
     public class PolicyDefinition
     {
+        public Guid Id { get; set; } = Guid.NewGuid(); // Added for test compatibility
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public PolicyEffect Effect { get; set; } = PolicyEffect.Deny;

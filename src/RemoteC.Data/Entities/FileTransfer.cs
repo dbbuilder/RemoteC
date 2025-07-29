@@ -31,6 +31,10 @@ namespace RemoteC.Data.Entities
         public TransferDirection Direction { get; set; }
 
         public TransferStatus Status { get; set; }
+        
+        // Added for test compatibility
+        public double Progress => TotalChunks > 0 ? (double)ChunksReceived / TotalChunks * 100 : 0;
+        public string MissingChunks { get; set; } = string.Empty;
 
         [MaxLength(255)]
         public string? EncryptionKeyId { get; set; }

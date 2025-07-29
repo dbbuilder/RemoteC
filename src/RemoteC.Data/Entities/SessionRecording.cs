@@ -18,6 +18,7 @@ public class SessionRecording
     public string? StoragePath { get; set; }
     
     public long FileSize { get; set; }
+    public long FileSizeBytes => FileSize; // Alias for test compatibility
     public TimeSpan Duration { get; set; }
     
     [MaxLength(50)]
@@ -28,9 +29,9 @@ public class SessionRecording
     
     public Guid OrganizationId { get; set; }
     public string? EncryptionKeyId { get; set; }
-    public string? CompressionType { get; set; }
+    public RemoteC.Shared.Models.CompressionType CompressionType { get; set; }
     public bool IncludeAudio { get; set; }
-    public int Quality { get; set; }
+    public RemoteC.Shared.Models.RecordingQuality Quality { get; set; }
     public int FrameRate { get; set; }
     
     public DateTime StartedAt { get; set; }

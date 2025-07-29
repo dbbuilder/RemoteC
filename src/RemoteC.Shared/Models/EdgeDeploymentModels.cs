@@ -352,6 +352,7 @@ namespace RemoteC.Shared.Models
     // Container Models
     public class ContainerSpec
     {
+        public string Name { get; set; } = string.Empty; // Added for test compatibility
         public string Image { get; set; } = string.Empty;
         public string NodeId { get; set; } = string.Empty;
         public Dictionary<string, string> Environment { get; set; } = new();

@@ -435,7 +435,7 @@ namespace RemoteC.Api.Services
             // Most active users
             analytics.MostActiveUsers = activities
                 .GroupBy(ua => new { ua.UserId, ua.User.Email })
-                .Select(g => new UserActivity
+                .Select(g => new RemoteC.Shared.Models.UserActivity
                 {
                     UserId = g.Key.UserId,
                     UserEmail = g.Key.Email,

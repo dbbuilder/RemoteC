@@ -91,7 +91,7 @@ namespace RemoteC.Api.Tests.Services
                 UserId = userId,
                 FileName = "test.txt",
                 FileSize = new FileInfo(filePath).Length,
-                Direction = TransferDirection.Upload
+                Direction = RemoteC.Shared.Models.TransferDirection.Upload
             };
 
             // Act
@@ -99,7 +99,7 @@ namespace RemoteC.Api.Tests.Services
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(RemoteC.Shared.Models.TransferStatus.Pending, result.Status);
+            Assert.Equal(RemoteC.Data.Entities.TransferStatus.Pending, result.Status);
             Assert.Equal(request.FileName, result.FileName);
             Assert.Equal(request.FileSize, result.TotalSize);
             Assert.True(result.TotalChunks > 0);
@@ -119,7 +119,7 @@ namespace RemoteC.Api.Tests.Services
                 UserId = Guid.NewGuid(),
                 FileName = "huge.bin",
                 FileSize = _options.MaxFileSize + 1,
-                Direction = TransferDirection.Upload
+                Direction = RemoteC.Shared.Models.TransferDirection.Upload
             };
 
             // Act & Assert
@@ -138,7 +138,7 @@ namespace RemoteC.Api.Tests.Services
                 UserId = Guid.NewGuid(),
                 FileName = "test.bin",
                 FileSize = fileSize,
-                Direction = TransferDirection.Upload
+                Direction = RemoteC.Shared.Models.TransferDirection.Upload
             };
 
             // Act
@@ -249,7 +249,7 @@ namespace RemoteC.Api.Tests.Services
 
             // Assert
             var updatedTransfer = await _context.FileTransfers.FindAsync(transfer.Id);
-            Assert.Equal(RemoteC.Shared.Models.TransferStatus.Completed, updatedTransfer!.Status);
+            Assert.Equal(RemoteC.Data.Entities.TransferStatus.Completed, updatedTransfer!.Status);
             Assert.Equal(100, updatedTransfer.Progress);
             
             // Verify final file exists
@@ -318,7 +318,7 @@ namespace RemoteC.Api.Tests.Services
 
             // Assert
             var updatedTransfer = await _context.FileTransfers.FindAsync(transfer.Id);
-            Assert.Equal(RemoteC.Shared.Models.TransferStatus.Completed, updatedTransfer!.Status);
+            Assert.Equal(RemoteC.Data.Entities.TransferStatus.Completed, updatedTransfer!.Status);
             
             var finalPath = Path.Combine(_testDirectory, "completed", $"{transfer.Id}_{transfer.FileName}");
             Assert.Equal(fileContent, File.ReadAllText(finalPath));
@@ -353,7 +353,7 @@ namespace RemoteC.Api.Tests.Services
         public async Task DownloadChunkAsync_ChunkOutOfRange_ReturnsNull()
         {
             // Arrange
-            var transfer = await CreateTestTransfer(totalChunks: 3, direction: TransferDirection.Download);
+            var transfer = await CreateTestTransfer(totalChunks: 3, direction: RemoteC.Data.Entities.TransferDirection.Download);
 
             // Act
             var chunk = await _service.DownloadChunkAsync(transfer.Id, 5);
@@ -450,7 +450,7 @@ namespace RemoteC.Api.Tests.Services
             Assert.All(results, r => Assert.True(r.Success));
             
             var updatedTransfer = await _context.FileTransfers.FindAsync(transfer.Id);
-            Assert.Equal(RemoteC.Shared.Models.TransferStatus.Completed, updatedTransfer!.Status);
+            Assert.Equal(RemoteC.Data.Entities.TransferStatus.Completed, updatedTransfer!.Status);
             Assert.Equal(20, updatedTransfer.ChunksReceived);
         }
 

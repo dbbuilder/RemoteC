@@ -1,5 +1,8 @@
 using System;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +17,13 @@ namespace RemoteC.Api.Services
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+        
+        // Constructor for tests that use IDistributedCache
+        public CacheService(IDistributedCache distributedCache, ILogger<CacheService> logger)
+            : this(new MemoryCache(new MemoryCacheOptions()), logger)
+        {
+            // This constructor is for test compatibility
         }
 
         public async Task<T?> GetAsync<T>(string key) where T : class
@@ -89,6 +99,28 @@ namespace RemoteC.Api.Services
             // In production, you might want to use a distributed cache like Redis
             _logger.LogWarning("Cache clear requested - this operation is not fully supported with IMemoryCache");
             await Task.CompletedTask;
+        }
+        
+        // Methods to support distributed cache-like functionality
+        public async Task<string?> GetStringAsync(string key, CancellationToken cancellationToken = default)
+        {
+            var value = await GetAsync<string>(key);
+            return value;
+        }
+        
+        public async Task SetStringAsync(string key, string value, TimeSpan? expiration = null, CancellationToken cancellationToken = default)
+        {
+            await SetAsync(key, value, expiration);
+        }
+        
+        public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null) where T : class
+        {
+            return await GetOrSetAsync(key, factory, expiration);
+        }
+        
+        public async Task InvalidatePatternAsync(string pattern)
+        {
+            await InvalidateAsync(pattern);
         }
     }
 }

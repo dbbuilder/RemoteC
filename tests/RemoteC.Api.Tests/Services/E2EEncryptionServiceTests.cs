@@ -494,14 +494,7 @@ namespace RemoteC.Api.Tests.Services
         public string KeyId { get; set; } = Guid.NewGuid().ToString();
     }
 
-    public class SessionKeys
-    {
-        public Guid SessionId { get; set; }
-        public byte[] EncryptionKey { get; set; } = Array.Empty<byte>();
-        public byte[] AuthenticationKey { get; set; } = Array.Empty<byte>();
-        public int Version { get; set; } = 1;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
+    // Removed duplicate SessionKeys - using RemoteC.Api.Services.SessionKeys from the service
 
     public class EncryptedData
     {
@@ -537,12 +530,4 @@ namespace RemoteC.Api.Tests.Services
         public string Issuer { get; set; } = string.Empty;
     }
 
-    public class E2EEncryptionOptions
-    {
-        public int KeyDerivationIterations { get; set; } = 100000;
-        public bool EnablePerfectForwardSecrecy { get; set; } = true;
-        public int KeyRotationIntervalDays { get; set; } = 30;
-        public int MaxKeyAgeHours { get; set; } = 24;
-        public int StreamChunkSize { get; set; } = 64 * 1024; // 64KB chunks
-    }
 }

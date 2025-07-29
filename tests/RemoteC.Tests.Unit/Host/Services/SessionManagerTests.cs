@@ -284,7 +284,7 @@ public class SessionManagerTests
     public async Task SessionInfo_IsTimedOut_ShouldReturnTrueAfter8Hours()
     {
         // Arrange
-        var session = new SessionInfo
+        var session = new RemoteC.Host.Services.SessionInfo
         {
             StartTime = DateTime.UtcNow.AddHours(-9),
             Status = SessionStatus.Active
@@ -298,7 +298,7 @@ public class SessionManagerTests
     public async Task SessionInfo_IsTimedOut_ShouldReturnFalseWithin8Hours()
     {
         // Arrange
-        var session = new SessionInfo
+        var session = new RemoteC.Host.Services.SessionInfo
         {
             StartTime = DateTime.UtcNow.AddHours(-7),
             Status = SessionStatus.Active
@@ -314,7 +314,7 @@ public class SessionManagerTests
         // Arrange
         var startTime = DateTime.UtcNow.AddMinutes(-30);
         var endTime = DateTime.UtcNow;
-        var session = new SessionInfo
+        var session = new RemoteC.Host.Services.SessionInfo
         {
             StartTime = startTime,
             EndTime = endTime

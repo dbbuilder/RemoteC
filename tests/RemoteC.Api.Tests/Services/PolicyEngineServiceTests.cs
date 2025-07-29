@@ -312,7 +312,7 @@ namespace RemoteC.Api.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Editor", result.Name);
-            Assert.Equal(2, result.Policies.Count);
+            // Check PolicyIds instead of Policies property
             Assert.Equal(2, result.PolicyIds.Count);
             Assert.Contains(readPolicy.Id, result.PolicyIds);
             Assert.Contains(writePolicy.Id, result.PolicyIds);
@@ -605,7 +605,7 @@ namespace RemoteC.Api.Tests.Services
         public async Task EvaluatePolicySetAsync_MultiplePolicies_CombinesCorrectly()
         {
             // Arrange
-            var policies = new List<PolicyDefinition>();
+            var policies = new List<Policy>();
             
             // Create a policy set with different access levels
             var p1 = await CreateTestPolicy("BaseAccess",
@@ -766,12 +766,7 @@ namespace RemoteC.Api.Tests.Services
 
             // Assert
             _auditMock.Verify(a => a.LogAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<object>(),
-                It.IsAny<object>(),
-                It.IsAny<object>()),
+                It.IsAny<AuditLogEntry>()),
                 Times.Once);
         }
 

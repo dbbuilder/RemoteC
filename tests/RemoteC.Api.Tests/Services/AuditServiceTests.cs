@@ -11,6 +11,7 @@ using Moq;
 using RemoteC.Api.Services;
 using RemoteC.Data;
 using RemoteC.Data.Entities;
+using RemoteC.Shared.Models;
 using Xunit;
 
 namespace RemoteC.Api.Tests.Services

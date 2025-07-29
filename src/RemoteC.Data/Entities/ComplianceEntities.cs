@@ -53,6 +53,8 @@ namespace RemoteC.Data.Entities
         [MaxLength(255)]
         public string UpdatedBy { get; set; } = string.Empty;
         
+        public bool IsActive { get; set; } = true; // Added for test compatibility
+        
         // Navigation property
         public virtual Organization Organization { get; set; } = null!;
     }

@@ -225,6 +225,7 @@ public class Session
     public Guid DeviceId { get; set; }
     public Guid CreatedBy { get; set; }
     public Guid OrganizationId { get; set; }
+    public Guid? UserId { get; set; }  // Added for test compatibility
     
     public SessionStatus Status { get; set; } = SessionStatus.Created;
     public SessionType Type { get; set; } = SessionType.RemoteControl;
@@ -235,6 +236,12 @@ public class Session
     
     public string? ConnectionInfo { get; set; }
     public bool RequirePin { get; set; } = true;
+    
+    [MaxLength(100)]
+    public string? Location { get; set; }  // Added for test compatibility
+    
+    [MaxLength(100)]
+    public string? DeviceType { get; set; }  // Added for test compatibility
     
     // Navigation properties
     public virtual Device Device { get; set; } = null!;

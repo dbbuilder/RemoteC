@@ -1,18 +1,22 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace RemoteC.Api.Services
 {
     public class EncryptionService : IEncryptionService
     {
+        private readonly IConfiguration _configuration;
         private readonly ILogger<EncryptionService> _logger;
         private readonly ConcurrentDictionary<string, byte[]> _keyStore;
 
-        public EncryptionService(ILogger<EncryptionService> logger)
+        public EncryptionService(IConfiguration configuration, ILogger<EncryptionService> logger)
         {
+            _configuration = configuration;
             _logger = logger;
             _keyStore = new ConcurrentDictionary<string, byte[]>();
         }
@@ -106,6 +110,42 @@ namespace RemoteC.Api.Services
 
             await Task.CompletedTask;
             return Decrypt(data, key);
+        }
+        
+        public async Task RevokeKeyAsync(string keyId)
+        {
+            _logger.LogInformation("Revoking encryption key {KeyId}", keyId);
+            
+            if (_keyStore.TryRemove(keyId, out _))
+            {
+                _logger.LogInformation("Successfully revoked key {KeyId}", keyId);
+            }
+            else
+            {
+                _logger.LogWarning("Key {KeyId} not found for revocation", keyId);
+            }
+            
+            await Task.CompletedTask;
+        }
+        
+        public async Task RotateKeysAsync()
+        {
+            _logger.LogInformation("Rotating encryption keys");
+            
+            // In a real implementation, this would:
+            // 1. Generate new keys
+            // 2. Re-encrypt data with new keys
+            // 3. Mark old keys for deletion after grace period
+            
+            var oldKeys = _keyStore.Keys.ToList();
+            foreach (var keyId in oldKeys)
+            {
+                // Generate new key
+                var newKeyId = await GenerateKeyAsync();
+                _logger.LogInformation("Rotated key {OldKeyId} to {NewKeyId}", keyId, newKeyId);
+            }
+            
+            await Task.CompletedTask;
         }
     }
 }

@@ -31,6 +31,9 @@ namespace RemoteC.Shared.Models
         public string Description { get; set; } = string.Empty;
         public ViolationSeverity Severity { get; set; }
         public string[] RemediationSteps { get; set; } = Array.Empty<string>();
+        public string Requirement { get; set; } = string.Empty; // Added for compatibility
+        public string Impact { get; set; } = string.Empty; // Added for compatibility
+        public DateTime DetectedAt { get; set; } = DateTime.UtcNow; // Added for compatibility
     }
 
     public class ComplianceControl
@@ -206,6 +209,54 @@ namespace RemoteC.Shared.Models
         public int TotalViolations { get; set; }
         public int CriticalViolations { get; set; }
         public byte[]? ExportedData { get; set; }
+    }
+
+    // Added for test compatibility
+    public class ComplianceDashboard
+    {
+        public Guid OrganizationId { get; set; }
+        public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+        public Dictionary<string, ComplianceValidationResult> FrameworkStatus { get; set; } = new();
+        public List<ComplianceViolation> RecentViolations { get; set; } = new();
+        public Dictionary<string, int> ViolationsByFramework { get; set; } = new();
+        public Dictionary<string, double> ComplianceScores { get; set; } = new();
+        public int TotalControls { get; set; }
+        public int PassingControls { get; set; }
+        public int FailingControls { get; set; }
+        public double OverallComplianceScore { get; set; }
+        public DateTime? LastAuditDate { get; set; }
+        public DateTime? NextAuditDate { get; set; }
+        public List<string> HighRiskAreas { get; set; } = new();
+        public Dictionary<string, List<string>> ActionItems { get; set; } = new();
+        
+        // Additional properties for compatibility
+        public List<ComplianceFrameworkStatus> ComplianceFrameworks { get; set; } = new();
+        public List<AuditSchedule> UpcomingAudits { get; set; } = new();
+        public double ComplianceScore { get; set; }
+        public Dictionary<string, double> Trends { get; set; } = new();
+        public int TotalActiveViolations { get; set; }
+        public int CriticalViolations { get; set; }
+    }
+    
+    // Support classes
+    public class ComplianceFrameworkStatus
+    {
+        public string Framework { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime? LastAssessmentDate { get; set; }
+        public DateTime? NextAssessmentDate { get; set; }
+        public double CompliancePercentage { get; set; }
+        public int ActiveViolations { get; set; }
+    }
+    
+    public class AuditSchedule
+    {
+        public Guid Id { get; set; }
+        public string Framework { get; set; } = string.Empty;
+        public DateTime ScheduledDate { get; set; }
+        public string AuditType { get; set; } = string.Empty;
+        public string Auditor { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
     }
 
 }

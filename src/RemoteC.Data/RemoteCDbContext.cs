@@ -39,6 +39,8 @@ public class RemoteCDbContext : DbContext
     // Analytics entities
     public DbSet<PerformanceMetric> PerformanceMetrics { get; set; } = null!;
     public DbSet<UserActivityLog> UserActivityLogs { get; set; } = null!;
+    public DbSet<UserActivity> UserActivities { get; set; } = null!; // Added for test compatibility
+    public DbSet<PHIAccess> PHIAccesses { get; set; } = null!; // Added for test compatibility
     public DbSet<BusinessEvent> BusinessEvents { get; set; } = null!;
     public DbSet<CustomAlertEntity> CustomAlerts { get; set; } = null!;
     public DbSet<AlertHistory> AlertHistory { get; set; } = null!;
