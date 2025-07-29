@@ -2,8 +2,6 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using WindowsInput;
-using WindowsInput.Native;
 using Microsoft.Extensions.Logging;
 using RemoteC.Shared.Models;
 

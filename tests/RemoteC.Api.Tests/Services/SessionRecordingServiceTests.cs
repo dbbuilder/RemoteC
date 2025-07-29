@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -122,7 +123,7 @@ namespace RemoteC.Api.Tests.Services
             Assert.NotNull(dbRecording);
 
             // Verify audit
-            _auditServiceMock.Verify(a => a.LogAsync(It.IsAny<AuditLogEntry>()), Times.Once);
+            _auditServiceMock.Verify(a => a.LogAsync(It.IsAny<AuditLogEntry>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -170,7 +171,7 @@ namespace RemoteC.Api.Tests.Services
             Assert.NotNull(dbRecording.EndedAt);
             Assert.True(dbRecording.Duration > TimeSpan.Zero);
 
-            _auditServiceMock.Verify(a => a.LogAsync(It.IsAny<AuditLogEntry>()), Times.Once);
+            _auditServiceMock.Verify(a => a.LogAsync(It.IsAny<AuditLogEntry>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
@@ -286,8 +287,8 @@ namespace RemoteC.Api.Tests.Services
 
             var exportOptions = new ExportOptions
             {
-                Format = ExportFormat.MP4,
-                Quality = ExportQuality.High,
+                Format = RemoteC.Shared.Models.ExportFormat.MP4,
+                Quality = (int)RemoteC.Shared.Models.ExportQuality.High,
                 IncludeAudio = true
             };
 
@@ -320,7 +321,7 @@ namespace RemoteC.Api.Tests.Services
             Assert.Equal(ExportStatus.Completed, result.Status);
             Assert.NotNull(result.DownloadUrl);
 
-            _auditServiceMock.Verify(a => a.LogAsync(It.IsAny<AuditLogEntry>()), Times.Once);
+            _auditServiceMock.Verify(a => a.LogAsync(It.IsAny<AuditLogEntry>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion

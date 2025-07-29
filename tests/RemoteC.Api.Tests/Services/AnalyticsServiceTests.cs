@@ -407,7 +407,7 @@ namespace RemoteC.Api.Tests.Services
                 StartDate = DateTime.UtcNow.AddDays(-30),
                 EndDate = DateTime.UtcNow,
                 Metrics = new[] { "Sessions", "Performance", "Users" },
-                Format = ReportFormat.Pdf,
+                Format = RemoteC.Shared.Models.ReportFormat.Pdf,
                 IncludeCharts = true
             };
 
@@ -417,7 +417,7 @@ namespace RemoteC.Api.Tests.Services
             // Assert
             Assert.NotNull(report);
             Assert.True(report.Data.Length > 0);
-            Assert.Equal(ReportFormat.Pdf, report.Format);
+            Assert.Equal(RemoteC.Shared.Models.ReportFormat.Pdf, report.Format);
             Assert.Contains("Sessions", report.Sections);
             Assert.Contains("Performance", report.Sections);
             Assert.Contains("Users", report.Sections);
@@ -438,7 +438,7 @@ namespace RemoteC.Api.Tests.Services
             {
                 OrganizationId = organizationId,
                 DataTypes = new[] { "Sessions", "Performance", "Users" },
-                Format = ExportFormat.Csv,
+                Format = RemoteC.Shared.Models.ExportFormat.Csv,
                 DateRange = new DateRange(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow)
             };
 
@@ -448,7 +448,7 @@ namespace RemoteC.Api.Tests.Services
             // Assert
             Assert.NotNull(export);
             Assert.True(export.FileSize > 0);
-            Assert.Equal(ExportFormat.Csv, export.Format);
+            Assert.Equal(RemoteC.Shared.Models.ExportFormat.Csv, export.Format);
             Assert.NotNull(export.DownloadUrl);
             Assert.True(export.ExpiresAt > DateTime.UtcNow);
         }
@@ -473,7 +473,7 @@ namespace RemoteC.Api.Tests.Services
                     DeviceId = Guid.NewGuid(),
                     StartedAt = startTime,
                     EndedAt = startTime.AddMinutes(random.Next(5, 120)),
-                    Status = RemoteC.Shared.Models.SessionStatus.Completed
+                    Status = RemoteC.Shared.Models.SessionStatus.Ended
                 });
             }
 
@@ -490,7 +490,7 @@ namespace RemoteC.Api.Tests.Services
                 UserId = Guid.NewGuid(),
                 DeviceId = Guid.NewGuid(),
                 StartedAt = DateTime.UtcNow.AddMinutes(-i),
-                Status = RemoteC.Shared.Models.SessionStatus.Active,
+                Status = (RemoteC.Data.Entities.SessionStatus)RemoteC.Shared.Models.SessionStatus.Active,
                 Location = i % 2 == 0 ? "US" : "EU",
                 DeviceType = i % 3 == 0 ? "Desktop" : "Mobile"
             });
@@ -522,7 +522,7 @@ namespace RemoteC.Api.Tests.Services
                             OrganizationId = organizationId,
                             StartedAt = date.AddHours(9 + i % 8), // Business hours
                             EndedAt = date.AddHours(9 + i % 8).AddMinutes(30),
-                            Status = RemoteC.Shared.Models.SessionStatus.Completed
+                            Status = RemoteC.Shared.Models.SessionStatus.Ended
                         });
                     }
                 }
@@ -796,26 +796,10 @@ namespace RemoteC.Api.Tests.Services
         Quarterly
     }
 
-    public enum ReportFormat
-    {
-        Pdf,
-        Excel,
-        Html,
-        Json
-    }
+    // Removed duplicate ReportFormat enum - using RemoteC.Shared.Models.ReportFormat
 
 
-    // Additional test entities
-    public class PerformanceMetric
-    {
-        public Guid Id { get; set; }
-        public Guid OrganizationId { get; set; }
-        public DateTime Timestamp { get; set; }
-        public double Latency { get; set; }
-        public double Throughput { get; set; }
-        public int ErrorCount { get; set; }
-        public int RequestCount { get; set; }
-    }
+    // Additional test entities - removed duplicate PerformanceMetric (using RemoteC.Data.Entities.PerformanceMetric)
 
     public class Subscription
     {

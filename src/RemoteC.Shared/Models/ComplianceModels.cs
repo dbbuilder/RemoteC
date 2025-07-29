@@ -34,6 +34,7 @@ namespace RemoteC.Shared.Models
         public string Requirement { get; set; } = string.Empty; // Added for compatibility
         public string Impact { get; set; } = string.Empty; // Added for compatibility
         public DateTime DetectedAt { get; set; } = DateTime.UtcNow; // Added for compatibility
+        public string Type { get; set; } = string.Empty; // Added for test compatibility
     }
 
     public class ComplianceControl
@@ -236,6 +237,14 @@ namespace RemoteC.Shared.Models
         public Dictionary<string, double> Trends { get; set; } = new();
         public int TotalActiveViolations { get; set; }
         public int CriticalViolations { get; set; }
+        
+        // Test compatibility properties
+        public ComplianceValidationResult? SOC2Status { get; set; }
+        public ComplianceValidationResult? GDPRStatus { get; set; }
+        public ComplianceValidationResult? HIPAAStatus { get; set; }
+        public List<object> RecentAudits { get; set; } = new();
+        public List<object> UpcomingTasks { get; set; } = new();
+        public double OverallScore { get; set; }
     }
     
     // Support classes

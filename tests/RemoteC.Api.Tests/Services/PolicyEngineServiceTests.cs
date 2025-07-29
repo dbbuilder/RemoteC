@@ -766,7 +766,8 @@ namespace RemoteC.Api.Tests.Services
 
             // Assert
             _auditMock.Verify(a => a.LogAsync(
-                It.IsAny<AuditLogEntry>()),
+                It.IsAny<AuditLogEntry>(),
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
