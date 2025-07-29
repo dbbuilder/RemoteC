@@ -5,6 +5,9 @@
 use crate::{Result, RemoteCError};
 use std::sync::Arc;
 
+pub mod monitor;
+pub use monitor::{Monitor, MonitorBounds, MonitorOrientation, VirtualDesktop};
+
 /// Represents a captured screen frame
 #[derive(Debug, Clone)]
 pub struct ScreenFrame {
@@ -21,14 +24,44 @@ pub struct ScreenFrame {
 /// Screen capture configuration
 #[derive(Debug, Clone)]
 pub struct CaptureConfig {
-    /// Target display index (0 for primary)
-    pub display_index: usize,
+    /// Capture mode
+    pub mode: CaptureMode,
     /// Target frames per second
     pub target_fps: u32,
     /// Whether to capture cursor
     pub capture_cursor: bool,
     /// Capture region (None for full screen)
     pub region: Option<CaptureRegion>,
+    /// Quality settings
+    pub quality: CaptureQuality,
+}
+
+/// Capture mode determines which monitors to capture
+#[derive(Debug, Clone)]
+pub enum CaptureMode {
+    /// Capture a single monitor by index
+    SingleMonitor(usize),
+    /// Capture the primary monitor
+    PrimaryMonitor,
+    /// Capture all monitors as one combined image
+    AllMonitors,
+    /// Capture specific monitors by indices
+    SelectedMonitors(Vec<usize>),
+    /// Capture the monitor containing a specific window
+    WindowMonitor(String), // Window title or ID
+}
+
+/// Quality settings for capture
+#[derive(Debug, Clone, Copy)]
+pub struct CaptureQuality {
+    /// Enable hardware acceleration if available
+    pub use_hardware_acceleration: bool,
+    /// Color depth (16, 24, or 32 bits)
+    pub color_depth: u8,
+    /// Enable frame differencing for optimization
+    pub enable_frame_diff: bool,
+    /// JPEG quality for compression (0-100)
+    pub jpeg_quality: u8,
 }
 
 /// Defines a region of the screen to capture
@@ -65,10 +98,38 @@ pub trait ScreenCapture: Send + Sync {
 impl Default for CaptureConfig {
     fn default() -> Self {
         Self {
-            display_index: 0,
+            mode: CaptureMode::PrimaryMonitor,
             target_fps: 30,
             capture_cursor: true,
             region: None,
+            quality: CaptureQuality::default(),
+        }
+    }
+}
+
+impl Default for CaptureQuality {
+    fn default() -> Self {
+        Self {
+            use_hardware_acceleration: true,
+            color_depth: 32,
+            enable_frame_diff: true,
+            jpeg_quality: 85,
+        }
+    }
+}
+
+impl CaptureMode {
+    /// Get the monitor indices to capture based on the mode
+    pub fn get_monitor_indices(&self, desktop: &VirtualDesktop) -> Vec<usize> {
+        match self {
+            CaptureMode::SingleMonitor(idx) => vec![*idx],
+            CaptureMode::PrimaryMonitor => vec![desktop.primary_index],
+            CaptureMode::AllMonitors => (0..desktop.monitors.len()).collect(),
+            CaptureMode::SelectedMonitors(indices) => indices.clone(),
+            CaptureMode::WindowMonitor(_) => {
+                // This requires window manager integration
+                vec![desktop.primary_index]
+            }
         }
     }
 }

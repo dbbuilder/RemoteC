@@ -1,15 +1,19 @@
 //! Windows-specific screen capture implementation
 
-use super::{CaptureConfig, ScreenCapture, ScreenFrame};
+use super::{CaptureConfig, ScreenCapture, ScreenFrame, CaptureMode};
+use super::monitor::{Monitor, MonitorBounds, MonitorOrientation, VirtualDesktop};
 use crate::{Result, RemoteCError};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use std::ffi::OsString;
+use std::os::windows::ffi::OsStringExt;
 
 #[cfg(target_os = "windows")]
 use winapi::{
-    shared::windef::{HDC, HBITMAP},
+    shared::windef::{HDC, HBITMAP, RECT, HMONITOR},
+    shared::minwindef::{BOOL, LPARAM, DWORD},
     um::wingdi::*,
     um::winuser::*,
 };
@@ -37,20 +41,63 @@ impl WindowsCapture {
     unsafe fn capture_screen(&self) -> Result<ScreenFrame> {
         use std::ptr::null_mut;
         
+        // Get virtual desktop info
+        let desktop = super::monitor::get_virtual_desktop()?;
+        
+        // Determine capture bounds based on mode
+        let (x, y, width, height) = match &self.config.mode {
+            CaptureMode::SingleMonitor(idx) => {
+                let monitor = desktop.get_monitor(*idx)
+                    .ok_or_else(|| RemoteCError::CaptureError(format!("Monitor {} not found", idx)))?;
+                (monitor.bounds.x, monitor.bounds.y, 
+                 monitor.bounds.width as i32, monitor.bounds.height as i32)
+            },
+            CaptureMode::PrimaryMonitor => {
+                let monitor = desktop.primary_monitor();
+                (monitor.bounds.x, monitor.bounds.y, 
+                 monitor.bounds.width as i32, monitor.bounds.height as i32)
+            },
+            CaptureMode::AllMonitors => {
+                (desktop.total_bounds.x, desktop.total_bounds.y,
+                 desktop.total_bounds.width as i32, desktop.total_bounds.height as i32)
+            },
+            CaptureMode::SelectedMonitors(indices) => {
+                // Calculate combined bounds of selected monitors
+                let mut combined_bounds = None;
+                for idx in indices {
+                    if let Some(monitor) = desktop.get_monitor(*idx) {
+                        match combined_bounds {
+                            None => combined_bounds = Some(monitor.bounds),
+                            Some(ref mut bounds) => *bounds = bounds.union(&monitor.bounds),
+                        }
+                    }
+                }
+                let bounds = combined_bounds
+                    .ok_or_else(|| RemoteCError::CaptureError("No valid monitors selected".to_string()))?;
+                (bounds.x, bounds.y, bounds.width as i32, bounds.height as i32)
+            },
+            CaptureMode::WindowMonitor(_) => {
+                // For now, capture primary monitor
+                let monitor = desktop.primary_monitor();
+                (monitor.bounds.x, monitor.bounds.y, 
+                 monitor.bounds.width as i32, monitor.bounds.height as i32)
+            },
+        };
+        
+        // Apply region if specified
+        let (x, y, width, height) = if let Some(region) = self.config.region {
+            (x + region.x, y + region.y, 
+             region.width.min(width as u32) as i32, 
+             region.height.min(height as u32) as i32)
+        } else {
+            (x, y, width, height)
+        };
+        
         // Get the device context of the screen
         let h_screen = GetDC(null_mut());
         if h_screen.is_null() {
             return Err(RemoteCError::CaptureError("Failed to get screen DC".to_string()));
         }
-        
-        // Get screen dimensions
-        let (x, y, width, height) = if let Some(region) = self.config.region {
-            (region.x, region.y, region.width as i32, region.height as i32)
-        } else {
-            let width = GetSystemMetrics(SM_CXSCREEN);
-            let height = GetSystemMetrics(SM_CYSCREEN);
-            (0, 0, width, height)
-        };
         
         // Create a compatible DC
         let h_dc = CreateCompatibleDC(h_screen);
@@ -281,4 +328,159 @@ impl WindowsCapture {
             "Windows capture only available on Windows".to_string()
         ))
     }
+}
+
+/// Monitor enumeration for Windows
+#[cfg(target_os = "windows")]
+pub fn enumerate_monitors_windows() -> Result<Vec<Monitor>> {
+    use std::ptr::null_mut;
+    use std::collections::HashMap;
+    
+    // Structure to hold monitor info during enumeration
+    struct MonitorInfo {
+        handle: HMONITOR,
+        rect: RECT,
+        work_rect: RECT,
+        is_primary: bool,
+        device_name: String,
+    }
+    
+    let mut monitors_info: Vec<MonitorInfo> = Vec::new();
+    
+    // Enumerate all monitors
+    unsafe extern "system" fn enum_monitors_proc(
+        h_monitor: HMONITOR,
+        _hdc_monitor: HDC,
+        _lprc_monitor: *mut RECT,
+        lp_param: LPARAM,
+    ) -> BOOL {
+        let monitors = &mut *(lp_param as *mut Vec<MonitorInfo>);
+        
+        let mut info = MONITORINFOEXW {
+            cbSize: std::mem::size_of::<MONITORINFOEXW>() as DWORD,
+            rcMonitor: RECT { left: 0, top: 0, right: 0, bottom: 0 },
+            rcWork: RECT { left: 0, top: 0, right: 0, bottom: 0 },
+            dwFlags: 0,
+            szDevice: [0; 32],
+        };
+        
+        if GetMonitorInfoW(h_monitor, &mut info as *mut _ as *mut MONITORINFO) != 0 {
+            // Convert device name from wide string
+            let device_name_slice = &info.szDevice[..];
+            let null_pos = device_name_slice.iter().position(|&c| c == 0).unwrap_or(32);
+            let device_name = OsString::from_wide(&device_name_slice[..null_pos])
+                .to_string_lossy()
+                .to_string();
+            
+            monitors.push(MonitorInfo {
+                handle: h_monitor,
+                rect: info.rcMonitor,
+                work_rect: info.rcWork,
+                is_primary: (info.dwFlags & MONITORINFOF_PRIMARY) != 0,
+                device_name,
+            });
+        }
+        
+        1 // Continue enumeration
+    }
+    
+    unsafe {
+        EnumDisplayMonitors(
+            null_mut(),
+            null_mut(),
+            Some(enum_monitors_proc),
+            &mut monitors_info as *mut _ as LPARAM,
+        );
+    }
+    
+    // Convert to our Monitor structure
+    let mut monitors = Vec::new();
+    for (index, info) in monitors_info.iter().enumerate() {
+        // Get display settings for this monitor
+        let mut dm = DEVMODEW {
+            dmSize: std::mem::size_of::<DEVMODEW>() as u16,
+            ..std::mem::zeroed()
+        };
+        
+        let mut device_name_wide = [0u16; 32];
+        let device_name_slice = info.device_name.encode_utf16().collect::<Vec<u16>>();
+        let copy_len = device_name_slice.len().min(31);
+        device_name_wide[..copy_len].copy_from_slice(&device_name_slice[..copy_len]);
+        
+        let (refresh_rate, bit_depth, orientation) = unsafe {
+            if EnumDisplaySettingsW(
+                device_name_wide.as_ptr(),
+                ENUM_CURRENT_SETTINGS,
+                &mut dm,
+            ) != 0 {
+                (
+                    dm.dmDisplayFrequency,
+                    dm.dmBitsPerPel,
+                    match dm.dmDisplayOrientation {
+                        DMDO_90 => MonitorOrientation::Portrait,
+                        DMDO_180 => MonitorOrientation::LandscapeFlipped,
+                        DMDO_270 => MonitorOrientation::PortraitFlipped,
+                        _ => MonitorOrientation::Landscape,
+                    },
+                )
+            } else {
+                (60, 32, MonitorOrientation::Landscape)
+            }
+        };
+        
+        // Get DPI for scale factor
+        let scale_factor = unsafe {
+            let dpi_x = GetDeviceCaps(GetDC(null_mut()), LOGPIXELSX);
+            dpi_x as f32 / 96.0
+        };
+        
+        monitors.push(Monitor {
+            id: format!("\\\\?\\DISPLAY#{}", index + 1),
+            index,
+            name: info.device_name.clone(),
+            is_primary: info.is_primary,
+            bounds: MonitorBounds {
+                x: info.rect.left,
+                y: info.rect.top,
+                width: (info.rect.right - info.rect.left) as u32,
+                height: (info.rect.bottom - info.rect.top) as u32,
+            },
+            work_area: MonitorBounds {
+                x: info.work_rect.left,
+                y: info.work_rect.top,
+                width: (info.work_rect.right - info.work_rect.left) as u32,
+                height: (info.work_rect.bottom - info.work_rect.top) as u32,
+            },
+            scale_factor,
+            refresh_rate: refresh_rate as u32,
+            bit_depth: bit_depth as u32,
+            orientation,
+        });
+    }
+    
+    // Sort by position to ensure consistent ordering
+    monitors.sort_by(|a, b| {
+        match a.bounds.y.cmp(&b.bounds.y) {
+            std::cmp::Ordering::Equal => a.bounds.x.cmp(&b.bounds.x),
+            other => other,
+        }
+    });
+    
+    // Update indices after sorting
+    for (i, monitor) in monitors.iter_mut().enumerate() {
+        monitor.index = i;
+    }
+    
+    if monitors.is_empty() {
+        Err(RemoteCError::CaptureError("No monitors found".to_string()))
+    } else {
+        Ok(monitors)
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn enumerate_monitors_windows() -> Result<Vec<Monitor>> {
+    Err(RemoteCError::UnsupportedPlatform(
+        "Windows monitor enumeration only available on Windows".to_string()
+    ))
 }
