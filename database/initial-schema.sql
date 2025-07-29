@@ -128,18 +128,96 @@ CREATE TABLE AuditLogs (
 )
 GO
 
+-- Create DeviceGroups table
+CREATE TABLE DeviceGroups (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    Name NVARCHAR(255) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CreatedBy UNIQUEIDENTIFIER NOT NULL,
+    FOREIGN KEY (CreatedBy) REFERENCES Users(Id)
+)
+GO
+
+-- Create DeviceGroupMembers junction table
+CREATE TABLE DeviceGroupMembers (
+    DeviceGroupId UNIQUEIDENTIFIER NOT NULL,
+    DeviceId UNIQUEIDENTIFIER NOT NULL,
+    AddedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    AddedBy UNIQUEIDENTIFIER NOT NULL,
+    PRIMARY KEY (DeviceGroupId, DeviceId),
+    FOREIGN KEY (DeviceGroupId) REFERENCES DeviceGroups(Id) ON DELETE CASCADE,
+    FOREIGN KEY (DeviceId) REFERENCES Devices(Id) ON DELETE CASCADE,
+    FOREIGN KEY (AddedBy) REFERENCES Users(Id)
+)
+GO
+
+-- Create SessionLogs table
+CREATE TABLE SessionLogs (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    SessionId UNIQUEIDENTIFIER NOT NULL,
+    EventType NVARCHAR(100) NOT NULL,
+    EventData NVARCHAR(MAX) NULL,
+    UserId UNIQUEIDENTIFIER NULL,
+    Timestamp DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE,
+    FOREIGN KEY (UserId) REFERENCES Users(Id)
+)
+GO
+
+-- Create SessionPins table
+CREATE TABLE SessionPins (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    SessionId UNIQUEIDENTIFIER NOT NULL,
+    Pin NVARCHAR(10) NOT NULL,
+    ExpiresAt DATETIME2 NOT NULL,
+    UsedAt DATETIME2 NULL,
+    UsedByIp NVARCHAR(45) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE
+)
+GO
+
+-- Create FileTransfers table
+CREATE TABLE FileTransfers (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    SessionId UNIQUEIDENTIFIER NOT NULL,
+    FileName NVARCHAR(500) NOT NULL,
+    FileSize BIGINT NOT NULL,
+    TransferDirection INT NOT NULL, -- 0=Upload, 1=Download
+    Status INT NOT NULL DEFAULT 0, -- 0=Pending, 1=InProgress, 2=Completed, 3=Failed
+    StartedAt DATETIME2 NULL,
+    CompletedAt DATETIME2 NULL,
+    TransferredBytes BIGINT NOT NULL DEFAULT 0,
+    ErrorMessage NVARCHAR(MAX) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CreatedBy UNIQUEIDENTIFIER NOT NULL,
+    FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE,
+    FOREIGN KEY (CreatedBy) REFERENCES Users(Id)
+)
+GO
+
 -- Create indexes for performance
 CREATE INDEX IX_Users_Email ON Users(Email)
-CREATE INDEX IX_Users_AzureAdB2CId ON Users(AzureAdB2CId)
-CREATE INDEX IX_Devices_MacAddress ON Devices(MacAddress)
+CREATE INDEX IX_Users_AzureAdB2CId ON Users(AzureAdB2CId) WHERE AzureAdB2CId IS NOT NULL
+CREATE INDEX IX_Devices_MacAddress ON Devices(MacAddress) WHERE MacAddress IS NOT NULL
+CREATE INDEX IX_Devices_IsOnline ON Devices(IsOnline)
 CREATE INDEX IX_Sessions_DeviceId ON Sessions(DeviceId)
 CREATE INDEX IX_Sessions_CreatedBy ON Sessions(CreatedBy)
 CREATE INDEX IX_Sessions_Status ON Sessions(Status)
+CREATE INDEX IX_Sessions_CreatedAt ON Sessions(CreatedAt DESC)
 CREATE INDEX IX_SessionParticipants_SessionId ON SessionParticipants(SessionId)
 CREATE INDEX IX_SessionParticipants_UserId ON SessionParticipants(UserId)
-CREATE INDEX IX_AuditLogs_Timestamp ON AuditLogs(Timestamp)
-CREATE INDEX IX_AuditLogs_UserId ON AuditLogs(UserId)
+CREATE INDEX IX_SessionLogs_SessionId ON SessionLogs(SessionId)
+CREATE INDEX IX_SessionLogs_Timestamp ON SessionLogs(Timestamp DESC)
+CREATE INDEX IX_SessionPins_SessionId ON SessionPins(SessionId)
+CREATE INDEX IX_SessionPins_Pin ON SessionPins(Pin) WHERE UsedAt IS NULL
+CREATE INDEX IX_FileTransfers_SessionId ON FileTransfers(SessionId)
+CREATE INDEX IX_FileTransfers_Status ON FileTransfers(Status)
+CREATE INDEX IX_AuditLogs_Timestamp ON AuditLogs(Timestamp DESC)
+CREATE INDEX IX_AuditLogs_UserId ON AuditLogs(UserId) WHERE UserId IS NOT NULL
 CREATE INDEX IX_AuditLogs_Action ON AuditLogs(Action)
+CREATE INDEX IX_AuditLogs_EntityType_EntityId ON AuditLogs(EntityType, EntityId) WHERE EntityType IS NOT NULL
 GO
 
 PRINT 'Database schema created successfully!'
