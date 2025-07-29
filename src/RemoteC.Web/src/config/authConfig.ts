@@ -1,16 +1,38 @@
-import { Configuration, PopupRequest } from '@azure/msal-browser';
+import { Configuration, LogLevel } from '@azure/msal-browser';
+
+// Azure AD B2C configuration
+const b2cPolicies = {
+  names: {
+    signUpSignIn: 'B2C_1_signupsignin',
+    forgotPassword: 'B2C_1_passwordreset',
+    editProfile: 'B2C_1_profileedit',
+  },
+  authorities: {
+    signUpSignIn: {
+      authority: `https://${process.env.REACT_APP_B2C_TENANT_NAME}.b2clogin.com/${process.env.REACT_APP_B2C_TENANT_NAME}.onmicrosoft.com/B2C_1_signupsignin`,
+    },
+    forgotPassword: {
+      authority: `https://${process.env.REACT_APP_B2C_TENANT_NAME}.b2clogin.com/${process.env.REACT_APP_B2C_TENANT_NAME}.onmicrosoft.com/B2C_1_passwordreset`,
+    },
+    editProfile: {
+      authority: `https://${process.env.REACT_APP_B2C_TENANT_NAME}.b2clogin.com/${process.env.REACT_APP_B2C_TENANT_NAME}.onmicrosoft.com/B2C_1_profileedit`,
+    },
+  },
+  authorityDomain: `${process.env.REACT_APP_B2C_TENANT_NAME}.b2clogin.com`,
+};
 
 // MSAL configuration
 export const msalConfig: Configuration = {
   auth: {
-    clientId: process.env.REACT_APP_AZURE_CLIENT_ID || 'YOUR_CLIENT_ID',
-    authority: process.env.REACT_APP_AZURE_AUTHORITY || 'https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/B2C_1_signupsignin1',
-    knownAuthorities: [process.env.REACT_APP_AZURE_KNOWN_AUTHORITY || 'YOUR_TENANT.b2clogin.com'],
+    clientId: process.env.REACT_APP_B2C_CLIENT_ID || '',
+    authority: b2cPolicies.authorities.signUpSignIn.authority,
+    knownAuthorities: [b2cPolicies.authorityDomain],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
+    navigateToLoginRequestUrl: true,
   },
   cache: {
-    cacheLocation: 'localStorage',
+    cacheLocation: 'sessionStorage',
     storeAuthStateInCookie: false,
   },
   system: {
@@ -20,43 +42,40 @@ export const msalConfig: Configuration = {
           return;
         }
         switch (level) {
-          case 0: // LogLevel.Error
-            console.error('[MSAL Error]', message);
-            break;
-          case 1: // LogLevel.Warning
-            console.warn('[MSAL Warning]', message);
-            break;
-          case 2: // LogLevel.Info
-            console.info('[MSAL Info]', message);
-            break;
-          case 3: // LogLevel.Verbose
-            console.debug('[MSAL Debug]', message);
-            break;
+          case LogLevel.Error:
+            console.error(message);
+            return;
+          case LogLevel.Info:
+            console.info(message);
+            return;
+          case LogLevel.Verbose:
+            console.debug(message);
+            return;
+          case LogLevel.Warning:
+            console.warn(message);
+            return;
           default:
-            console.log('[MSAL]', message);
-            break;
+            return;
         }
       },
-      piiLoggingEnabled: false,
     },
   },
 };
 
-// Scopes for token requests
-export const loginRequest: PopupRequest = {
-  scopes: ['openid', 'profile', 'email'],
-  prompt: 'select_account',
+// API scopes
+export const apiConfig = {
+  scopes: [`https://${process.env.REACT_APP_B2C_TENANT_NAME}.onmicrosoft.com/${process.env.REACT_APP_API_CLIENT_ID}/access_as_user`],
+  uri: process.env.REACT_APP_API_URL || 'https://localhost:5001',
 };
 
-// Additional scopes for API access
-export const apiScopes = {
-  read: [process.env.REACT_APP_API_SCOPE_READ || 'https://YOUR_TENANT.onmicrosoft.com/remotec-api/read'],
-  write: [process.env.REACT_APP_API_SCOPE_WRITE || 'https://YOUR_TENANT.onmicrosoft.com/remotec-api/write'],
-  admin: [process.env.REACT_APP_API_SCOPE_ADMIN || 'https://YOUR_TENANT.onmicrosoft.com/remotec-api/admin'],
+// Login request configuration
+export const loginRequest = {
+  scopes: ['openid', 'profile', ...apiConfig.scopes],
 };
 
-// Graph API configuration (if needed)
-export const graphConfig = {
-  graphMeEndpoint: 'https://graph.microsoft.com/v1.0/me',
-  graphScopes: ['User.Read'],
+// Silent request configuration
+export const silentRequest = {
+  scopes: apiConfig.scopes,
 };
+
+export { b2cPolicies };

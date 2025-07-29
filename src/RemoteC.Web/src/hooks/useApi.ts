@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useMsal } from '@azure/msal-react';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { appConfig } from '../config/appConfig';
+import { silentRequest } from '../config/authConfig';
 
 interface ApiError {
   message: string;
@@ -21,7 +22,7 @@ export const useApi = () => {
 
     try {
       const response = await instance.acquireTokenSilent({
-        scopes: ['api://remotec/access'],
+        ...silentRequest,
         account: accounts[0],
       });
       return response.accessToken;
@@ -29,7 +30,7 @@ export const useApi = () => {
       console.error('Token acquisition failed:', error);
       // Try interactive token acquisition
       const response = await instance.acquireTokenPopup({
-        scopes: ['api://remotec/access'],
+        ...silentRequest,
         account: accounts[0],
       });
       return response.accessToken;

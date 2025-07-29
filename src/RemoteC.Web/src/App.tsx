@@ -4,6 +4,7 @@ import { useIsAuthenticated, useMsal } from '@azure/msal-react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
+import { AuthProvider } from './contexts/AuthContext';
 import { SignalRProvider } from './contexts/SignalRContext';
 import { Layout } from './components/Layout/Layout';
 import { LoginPage } from './pages/LoginPage';
@@ -97,10 +98,11 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AuthenticatedTemplate>
-        <SignalRProvider>
-          <Layout onLogout={handleLogout}>
-            <Routes>
+      <AuthProvider>
+        <AuthenticatedTemplate>
+          <SignalRProvider>
+            <Layout onLogout={handleLogout}>
+              <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/sessions" element={<SessionsPage />} />
@@ -111,14 +113,15 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/404" element={<NotFoundPage />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
-            </Routes>
-          </Layout>
-        </SignalRProvider>
-      </AuthenticatedTemplate>
+              </Routes>
+            </Layout>
+          </SignalRProvider>
+        </AuthenticatedTemplate>
 
-      <UnauthenticatedTemplate>
-        <LoginPage onLogin={handleLogin} isLoading={isLoading} />
-      </UnauthenticatedTemplate>
+        <UnauthenticatedTemplate>
+          <LoginPage onLogin={handleLogin} isLoading={isLoading} />
+        </UnauthenticatedTemplate>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { useMsal } from '@azure/msal-react';
 import { appConfig } from '../config/appConfig';
+import { silentRequest } from '../config/authConfig';
 
 interface SignalRContextType {
   connection: HubConnection | null;
@@ -37,7 +38,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
       try {
         // Get access token
         const tokenResponse = await instance.acquireTokenSilent({
-          scopes: ['api://remotec/access'],
+          ...silentRequest,
           account: accounts[0],
         });
 
