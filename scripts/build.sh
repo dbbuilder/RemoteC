@@ -1,36 +1,106 @@
 #!/bin/bash
 
 # RemoteC Build Script
-# This script builds all components of the RemoteC solution
+# This script builds all components of the RemoteC application
 
 set -e
 
-echo "Building RemoteC Solution..."
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-# Navigate to solution root
-cd "$(dirname "$0")/.."
+# Functions
+log_info() {
+    echo -e "${GREEN}[BUILD]${NC} $1"
+}
+
+log_section() {
+    echo -e "\n${YELLOW}=== $1 ===${NC}\n"
+}
 
 # Build .NET solution
-echo "Building .NET solution..."
-dotnet restore
-dotnet build --configuration Release --no-restore
+build_dotnet() {
+    log_section "Building .NET Solution"
+    
+    log_info "Restoring NuGet packages..."
+    dotnet restore
+    
+    log_info "Building solution..."
+    dotnet build -c Release
+    
+    log_info "Running tests..."
+    dotnet test --no-build -c Release
+    
+    log_info ".NET build completed successfully"
+}
 
-# Run tests
-echo "Running unit tests..."
-dotnet test --no-build --configuration Release --verbosity normal
+# Build React application
+build_react() {
+    log_section "Building React Application"
+    
+    cd src/RemoteC.Web
+    
+    log_info "Installing npm packages..."
+    npm ci
+    
+    log_info "Running linter..."
+    npm run lint
+    
+    log_info "Running tests..."
+    npm test -- --run
+    
+    log_info "Building production bundle..."
+    npm run build
+    
+    cd ../..
+    
+    log_info "React build completed successfully"
+}
 
-# Build React frontend
-echo "Building React frontend..."
-cd src/RemoteC.Web
-npm ci
-npm run build
-cd ../..
+# Build Docker images
+build_docker() {
+    log_section "Building Docker Images"
+    
+    log_info "Building API image..."
+    docker build -f Dockerfile.api -t remotec-api:latest .
+    
+    log_info "Building Web image..."
+    docker build -f Dockerfile.web -t remotec-web:latest .
+    
+    log_info "Docker build completed successfully"
+}
 
-# Create deployment package
-echo "Creating deployment package..."
-mkdir -p deployment/build
-dotnet publish src/RemoteC.Api -c Release -o deployment/build/api --no-build
-cp -r src/RemoteC.Web/build deployment/build/web
+# Main execution
+main() {
+    log_section "RemoteC Build Process"
+    
+    # Parse arguments
+    BUILD_TARGET=${1:-all}
+    
+    case $BUILD_TARGET in
+        dotnet)
+            build_dotnet
+            ;;
+        react)
+            build_react
+            ;;
+        docker)
+            build_docker
+            ;;
+        all)
+            build_dotnet
+            build_react
+            build_docker
+            ;;
+        *)
+            echo "Usage: $0 [dotnet|react|docker|all]"
+            exit 1
+            ;;
+    esac
+    
+    log_section "Build Completed Successfully!"
+}
 
-echo "Build completed successfully!"
-echo "Deployment files are in: deployment/build/"
+# Run main function
+main "$@"

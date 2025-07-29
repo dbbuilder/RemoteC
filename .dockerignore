@@ -1,0 +1,53 @@
+**/.classpath
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/azds.yaml
+**/bin
+**/charts
+**/docker-compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+**/build
+**/dist
+LICENSE
+README.md
+
+# Specific excludes
+src/RemoteC.Web/node_modules
+src/RemoteC.Web/build
+src/RemoteC.Web/dist
+src/RemoteC.Web/.env
+src/RemoteC.Web/.env.local
+src/RemoteC.Web/.env.production
+
+# Test results
+**/TestResults
+**/*.trx
+**/coverage
+
+# Build artifacts
+artifacts/
+publish/
+
+# Database files
+*.mdf
+*.ldf
+*.ndf
+
+# Logs
+logs/
+*.log

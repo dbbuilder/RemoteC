@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # API service - Production
+  api:
+    image: ghcr.io/dbbuilder/remotec-api:latest
+    container_name: remotec-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__Redis=${REDIS_CONNECTION_STRING}
+      - AzureAdB2C__Instance=${B2C_INSTANCE}
+      - AzureAdB2C__Domain=${B2C_DOMAIN}
+      - AzureAdB2C__TenantId=${B2C_TENANT_ID}
+      - AzureAdB2C__ClientId=${B2C_CLIENT_ID}
+      - AzureAdB2C__SignUpSignInPolicyId=B2C_1_signupsignin
+      - ApplicationInsights__ConnectionString=${APP_INSIGHTS_CONNECTION_STRING}
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    networks:
+      - remotec-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Web UI - Production
+  web:
+    image: ghcr.io/dbbuilder/remotec-web:latest
+    container_name: remotec-web
+    ports:
+      - "80:8080"
+      - "443:8443"
+    depends_on:
+      - api
+    networks:
+      - remotec-network
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  remotec-network:
+    driver: bridge
