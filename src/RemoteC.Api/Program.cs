@@ -7,9 +7,11 @@ using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using RemoteC.Api.Hubs;
 using RemoteC.Api.Services;
+using RemoteC.Api.Middleware;
 using StackExchange.Redis;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace RemoteC.Api;
 
@@ -107,6 +109,20 @@ public class Program
             builder.Services.AddScoped<ICommandExecutionService, CommandExecutionService>();
             builder.Services.AddScoped<IFileTransferService, FileTransferService>();
             builder.Services.AddScoped<IAuditService, AuditService>();
+            builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+            builder.Services.AddHostedService<QueuedHostedService>();
+            
+            // Configure audit options
+            builder.Services.Configure<AuditOptions>(options =>
+            {
+                options.EnableBatching = true;
+                options.BatchSize = 100;
+                options.BatchIntervalSeconds = 5;
+                options.MinimumSeverity = AuditSeverity.Info;
+                options.RetentionDays = 365;
+                options.FailureAlertThreshold = 5;
+                options.ExcludedActions = new List<string> { "HealthCheck", "GetMetrics" };
+            });
 
             // Add HttpClient for ControlR integration
             builder.Services.AddHttpClient("ControlR", client =>
@@ -142,6 +158,15 @@ public class Program
 
             app.UseHttpsRedirection();
             app.UseCors("AllowReactApp");
+
+            // Add audit logging middleware
+            app.UseAuditLogging(options =>
+            {
+                options.CaptureRequestBody = true;
+                options.CaptureResponseBody = false;
+                options.ExcludedPaths = new[] { "/health", "/metrics", "/swagger", "/hangfire" };
+                options.CapturedHeaders = new[] { "X-Correlation-Id", "X-Request-Id", "X-Forwarded-For" };
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();
