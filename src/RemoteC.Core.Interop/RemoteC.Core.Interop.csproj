@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteC.Shared\RemoteC.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- Copy native library to output -->
+  <ItemGroup>
+    <Content Include="..\..\target\release\remotec_core.dll" Condition="'$(OS)' == 'Windows_NT'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>remotec_core.dll</Link>
+    </Content>
+    <Content Include="..\..\target\release\libremotec_core.so" Condition="'$(OS)' == 'Unix' And !$([MSBuild]::IsOSPlatform('OSX'))">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libremotec_core.so</Link>
+    </Content>
+    <Content Include="..\..\target\release\libremotec_core.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libremotec_core.dylib</Link>
+    </Content>
+  </ItemGroup>
+
+</Project>
