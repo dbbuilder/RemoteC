@@ -13,6 +13,7 @@ pub mod capture;
 pub mod encoding;
 pub mod ffi;
 pub mod input;
+pub mod logging;
 pub mod transport;
 pub mod video;
 
@@ -63,7 +64,7 @@ pub enum RemoteCError {
 
 /// Initialize the RemoteC Core library
 pub fn initialize() -> Result<()> {
-    env_logger::init();
+    logging::init_logging();
     log::info!("RemoteC Core initialized");
     Ok(())
 }

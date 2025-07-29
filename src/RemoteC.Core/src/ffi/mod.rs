@@ -103,13 +103,20 @@ pub extern "C" fn remotec_capture_create() -> *mut CaptureHandle {
 #[no_mangle]
 pub unsafe extern "C" fn remotec_capture_start(handle: *mut CaptureHandle) -> i32 {
     if handle.is_null() {
+        log::error!("remotec_capture_start: null handle");
         return -1;
     }
     
     let capture = &mut *(handle as *mut Box<dyn crate::capture::ScreenCapture>);
     match capture.start() {
-        Ok(_) => 0,
-        Err(_) => -1,
+        Ok(_) => {
+            log::info!("Screen capture started successfully");
+            0
+        }
+        Err(e) => {
+            log::error!("Failed to start screen capture: {}", e);
+            -1
+        }
     }
 }
 
