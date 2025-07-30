@@ -165,7 +165,7 @@ public class Program
             {
                 // Use memory cache when Redis is not available
                 builder.Services.AddMemoryCache();
-                builder.Services.AddSingleton<IDistributedCache, Microsoft.Extensions.Caching.Memory.MemoryDistributedCache>();
+                builder.Services.AddDistributedMemoryCache();
                 Log.Information("Using memory distributed cache (Redis disabled)");
             }
 
