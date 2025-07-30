@@ -1,0 +1,3 @@
+tests/RemoteC.Api.Tests/Services/AuditServiceTests.cs
+tests/RemoteC.Api.Tests/Services/CacheServiceTests.cs
+tests/RemoteC.Api.Tests/Services/PinServiceTests.cs

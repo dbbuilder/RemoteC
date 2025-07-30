@@ -193,7 +193,7 @@ namespace RemoteC.Api.Services
             return await _context.FileTransfers.FindAsync(transferId);
         }
 
-        public async Task<FileChunk?> DownloadChunkAsync(Guid transferId, int chunkNumber)
+        public async Task<FileChunk?> DownloadChunkAsync(Guid transferId, int chunkIndex)
         {
             var transfer = await _context.FileTransfers.FindAsync(transferId);
             if (transfer == null || transfer.Direction != RemoteC.Data.Entities.TransferDirection.Download)
@@ -201,7 +201,7 @@ namespace RemoteC.Api.Services
                 return null;
             }
 
-            if (chunkNumber < 0 || chunkNumber >= transfer.TotalChunks)
+            if (chunkIndex < 0 || chunkIndex >= transfer.TotalChunks)
             {
                 return null;
             }
@@ -212,7 +212,7 @@ namespace RemoteC.Api.Services
             }
 
             // Calculate chunk boundaries
-            var startOffset = (long)chunkNumber * transfer.ChunkSize;
+            var startOffset = (long)chunkIndex * transfer.ChunkSize;
             var chunkSize = (int)Math.Min(transfer.ChunkSize, transfer.TotalSize - startOffset);
 
             // Read chunk from file
@@ -238,7 +238,7 @@ namespace RemoteC.Api.Services
             return new FileChunk
             {
                 TransferId = transferId,
-                ChunkNumber = chunkNumber,
+                ChunkNumber = chunkIndex,
                 Data = chunkData,
                 Checksum = ComputeChecksum(chunkData),
                 IsCompressed = _options.EnableCompression

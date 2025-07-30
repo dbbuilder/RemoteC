@@ -1,0 +1,298 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_REGISTRY: 'ghcr.io'
+  IMAGE_NAME: 'remotec'
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+          - os: windows-latest
+            runtime: win-x64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run unit tests
+      run: dotnet test --no-build --configuration Release --filter "Category=Unit" --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: ./TestResults/*.trx
+
+    - name: Run code coverage
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet test --no-build --configuration Release --filter "Category=Unit" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./coverage/
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/*.opencover.xml
+        flags: unittests
+        name: codecov-${{ matrix.os }}
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: YourStrong@Passw0rd
+        options: >-
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'YourStrong@Passw0rd' -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 1433:1433
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run database migrations
+      run: |
+        dotnet tool install --global dotnet-ef
+        dotnet ef database update -p src/RemoteC.Data -s src/RemoteC.Api
+
+    - name: Run integration tests
+      run: dotnet test --no-build --configuration Release --filter "Category=Integration"
+      env:
+        ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RemoteCDb;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=true"
+        Redis__ConnectionString: "localhost:6379"
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install analyzers
+      run: |
+        dotnet tool install -g dotnet-format
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+
+    - name: Run code format check
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+
+    - name: Run code analysis
+      run: dotnet build /p:AnalysisMode=AllEnabledByDefault /p:TreatWarningsAsErrors=false
+
+    - name: Check for vulnerable packages
+      run: dotnet list package --vulnerable --include-transitive
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build-and-test, integration-tests]
+    if: github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push API image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./src/RemoteC.Api/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-api
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push Host image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./src/RemoteC.Host/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-host
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,windows/amd64
+
+    - name: Build and push Client image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./src/RemoteC.Client/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-client
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: docker-build
+
+    steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ env.DOCKER_REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-api'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.remotec.io
+
+    steps:
+    - name: Deploy to Kubernetes
+      run: |
+        echo "Deploying to staging environment..."
+        # Add kubectl commands or Helm deployment here
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [docker-build, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://remotec.io
+
+    steps:
+    - name: Deploy to Kubernetes
+      run: |
+        echo "Deploying to production environment..."
+        # Add kubectl commands or Helm deployment here
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [docker-build, security-scan]
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate changelog
+      id: changelog
+      uses: metcalfc/changelog-generator@v4.0.1
+      with:
+        myToken: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Changes in this Release:
+          ${{ steps.changelog.outputs.changelog }}
+        draft: false
+        prerelease: false

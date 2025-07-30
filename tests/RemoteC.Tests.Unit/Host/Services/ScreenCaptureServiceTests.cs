@@ -68,7 +68,7 @@ public class ScreenCaptureServiceTests
         {
             Width = 1920,
             Height = 1080,
-            Data = new byte[] { 1, 2, 3, 4, 5 },
+            Data = CreateDummyImageData(),
             Timestamp = DateTime.UtcNow,
             IsKeyFrame = true
         };
@@ -184,12 +184,11 @@ public class ScreenCaptureServiceTests
 
     private byte[] CreateDummyImageData()
     {
-        // Create a minimal valid JPEG header
-        return new byte[] 
-        { 
-            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 
-            0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01
-        };
+        // Create a minimal valid bitmap image
+        using var bitmap = new System.Drawing.Bitmap(10, 10);
+        using var ms = new System.IO.MemoryStream();
+        bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+        return ms.ToArray();
     }
 }
 

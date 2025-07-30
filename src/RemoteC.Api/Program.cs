@@ -15,6 +15,7 @@ using Hangfire.SqlServer;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace RemoteC.Api;
 
@@ -51,7 +52,59 @@ public class Program
             // Add services to the container
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "RemoteC API",
+                    Version = "v1",
+                    Description = "Enterprise Remote Control Solution API",
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                    {
+                        Name = "RemoteC Team",
+                        Email = "support@remotec.io",
+                        Url = new Uri("https://remotec.io")
+                    },
+                    License = new Microsoft.OpenApi.Models.OpenApiLicense
+                    {
+                        Name = "MIT License",
+                        Url = new Uri("https://opensource.org/licenses/MIT")
+                    }
+                });
+
+                // Add JWT Authentication to Swagger
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                {
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+
+                // Include XML comments
+                var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    c.IncludeXmlComments(xmlPath);
+                }
+            });
 
             // Add Entity Framework
             builder.Services.AddDbContext<RemoteCDbContext>(options =>
@@ -187,6 +240,20 @@ public class Program
             // Add Application Insights
             builder.Services.AddApplicationInsightsTelemetry();
 
+            // Register health check dependencies
+            builder.Services.AddSingleton<RedisHealthCheck>();
+            builder.Services.AddSingleton<ExternalServicesHealthCheck>();
+            builder.Services.AddSingleton<DiskSpaceHealthCheck>(sp => 
+                new DiskSpaceHealthCheck(1024L, sp.GetRequiredService<ILogger<DiskSpaceHealthCheck>>()));
+
+            // Add Health Checks
+            builder.Services.AddHealthChecks()
+                .AddDbContextCheck<RemoteCDbContext>("database", tags: new[] { "db", "sql" })
+                .AddCheck<RedisHealthCheck>("redis", tags: new[] { "cache", "redis" })
+                .AddCheck<ExternalServicesHealthCheck>("external-services", tags: new[] { "external" })
+                .AddCheck<DiskSpaceHealthCheck>("disk-space", tags: new[] { "infrastructure" })
+                .AddCheck("self", () => HealthCheckResult.Healthy("API is running"), tags: new[] { "self" });
+
             // Add CORS
             builder.Services.AddCors(options =>
             {
@@ -231,7 +298,40 @@ public class Program
             });
 
             // Health checks
-            app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
+            app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                ResponseWriter = async (context, report) =>
+                {
+                    context.Response.ContentType = "application/json";
+                    
+                    var response = new
+                    {
+                        status = report.Status.ToString(),
+                        checks = report.Entries.Select(x => new
+                        {
+                            component = x.Key,
+                            status = x.Value.Status.ToString(),
+                            description = x.Value.Description,
+                            duration = x.Value.Duration.TotalMilliseconds,
+                            tags = x.Value.Tags
+                        }),
+                        totalDuration = report.TotalDuration.TotalMilliseconds,
+                        timestamp = DateTime.UtcNow
+                    };
+                    
+                    await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+                }
+            });
+            
+            app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("db") || check.Tags.Contains("cache")
+            });
+            
+            app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("self")
+            });
 
             app.Run();
         }

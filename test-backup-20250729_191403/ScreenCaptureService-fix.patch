@@ -1,0 +1,32 @@
+--- a/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs
++++ b/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs
+@@ -73,8 +73,12 @@ public async Task CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData()
+         };
+         var quality = new QualitySettings { Quality = 85, CompressionType = "JPEG" };
+         
+-        _providerMock.Setup(p => p.CaptureScreenAsync(It.IsAny<string>()))
+-            .ReturnsAsync(expectedFrame);
++        // Fix: Ensure mock returns non-null value
++        _providerMock.Setup(p => p.CaptureScreenAsync(It.IsAny<string>()))
++            .ReturnsAsync(() => expectedFrame);
++            
++        _providerMock.Setup(p => p.GetScreenBounds(It.IsAny<string>()))
++            .Returns(new ScreenBounds { Width = 1920, Height = 1080 });
+ 
+         // Act
+         var result = await _service.CaptureScreenAsync(0, quality, CancellationToken.None);
+@@ -141,8 +145,12 @@ public async Task CaptureScreenAsync_WithScaling_ShouldApplyScale()
+             Timestamp = DateTime.UtcNow
+         };
+         
+-        _providerMock.Setup(p => p.CaptureScreenAsync(It.IsAny<string>()))
+-            .ReturnsAsync(originalFrame);
++        // Fix: Ensure mock returns non-null value  
++        _providerMock.Setup(p => p.CaptureScreenAsync(It.IsAny<string>()))
++            .ReturnsAsync(() => originalFrame);
++            
++        _providerMock.Setup(p => p.GetScreenBounds(It.IsAny<string>()))
++            .Returns(new ScreenBounds { Width = 1920, Height = 1080 });
+ 
+         // Act
+         var result = await _service.CaptureScreenAsync(0, quality, CancellationToken.None);

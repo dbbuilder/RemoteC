@@ -286,7 +286,7 @@ namespace RemoteC.Api.Tests.Services
             Assert.NotNull(signingKeys.PublicKey);
             Assert.NotNull(signingKeys.PrivateKey);
             Assert.Equal(32, signingKeys.PublicKey.Length); // Ed25519 public key
-            Assert.Equal(64, signingKeys.PrivateKey.Length); // Ed25519 private key
+            Assert.Equal(32, signingKeys.PrivateKey.Length); // Ed25519 private key (seed)
         }
 
         [Fact]
@@ -485,49 +485,5 @@ namespace RemoteC.Api.Tests.Services
         #endregion
     }
 
-    // Test models that should be in the actual implementation
-    public class E2EKeyPair
-    {
-        public byte[] PublicKey { get; set; } = Array.Empty<byte>();
-        public byte[] PrivateKey { get; set; } = Array.Empty<byte>();
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string KeyId { get; set; } = Guid.NewGuid().ToString();
-    }
-
-    // Removed duplicate SessionKeys - using RemoteC.Api.Services.SessionKeys from the service
-
-    public class EncryptedData
-    {
-        public byte[] Ciphertext { get; set; } = Array.Empty<byte>();
-        public byte[] Nonce { get; set; } = Array.Empty<byte>();
-        public byte[] Tag { get; set; } = Array.Empty<byte>();
-        public long Timestamp { get; set; }
-    }
-
-    public class StreamEncryptionMetadata
-    {
-        public int ChunkCount { get; set; }
-        public long OriginalSize { get; set; }
-        public long EncryptedSize { get; set; }
-        public byte[] FileHash { get; set; } = Array.Empty<byte>();
-    }
-
-    public class SigningKeyPair
-    {
-        public byte[] PublicKey { get; set; } = Array.Empty<byte>();
-        public byte[] PrivateKey { get; set; } = Array.Empty<byte>();
-        public string KeyId { get; set; } = Guid.NewGuid().ToString();
-    }
-
-    public class DeviceCertificate
-    {
-        public Guid DeviceId { get; set; }
-        public string DeviceName { get; set; } = string.Empty;
-        public byte[] PublicKey { get; set; } = Array.Empty<byte>();
-        public byte[] Signature { get; set; } = Array.Empty<byte>();
-        public DateTime ValidFrom { get; set; }
-        public DateTime ValidTo { get; set; }
-        public string Issuer { get; set; } = string.Empty;
-    }
 
 }

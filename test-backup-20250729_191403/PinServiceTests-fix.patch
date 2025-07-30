@@ -1,0 +1,30 @@
+--- a/tests/RemoteC.Api.Tests/Services/PinServiceTests.cs
++++ b/tests/RemoteC.Api.Tests/Services/PinServiceTests.cs
+@@ -25,11 +25,20 @@ namespace RemoteC.Api.Tests.Services
+             _configurationMock = new Mock<IConfiguration>();
+ 
+             // Setup default configuration
+-            _configurationMock.Setup(c => c.GetValue<int>("Security:PinLength", 6))
+-                .Returns(6);
+-            _configurationMock.Setup(c => c.GetValue<int>("Security:PinExpirationMinutes", 10))
+-                .Returns(10);
++            var pinLengthSection = new Mock<IConfigurationSection>();
++            pinLengthSection.Setup(x => x.Value).Returns("6");
++            _configurationMock.Setup(x => x.GetSection("Security:PinLength"))
++                .Returns(pinLengthSection.Object);
++            
++            var pinExpirationSection = new Mock<IConfigurationSection>();
++            pinExpirationSection.Setup(x => x.Value).Returns("10");
++            _configurationMock.Setup(x => x.GetSection("Security:PinExpirationMinutes"))
++                .Returns(pinExpirationSection.Object);
+ 
++            // Alternative: Use actual configuration
++            // var configuration = new ConfigurationBuilder()
++            //     .AddInMemoryCollection(new Dictionary<string, string> {
++            //         { "Security:PinLength", "6" },
++            //         { "Security:PinExpirationMinutes", "10" }
++            //     })
++            //     .Build();
++            
+             _service = new PinService(_cacheMock.Object, _loggerMock.Object, _configurationMock.Object);
+         }

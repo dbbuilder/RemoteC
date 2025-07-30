@@ -7,12 +7,12 @@ namespace RemoteC.Client
 {
     public class ViewLocator : IDataTemplate
     {
-        public Control Build(object? data)
+        public Control Build(object? param)
         {
-            if (data is null)
+            if (param is null)
                 return new TextBlock { Text = "No data provided" };
 
-            var name = data.GetType().FullName!.Replace("ViewModel", "View");
+            var name = param.GetType().FullName!.Replace("ViewModel", "View");
             var type = Type.GetType(name);
 
             if (type != null)

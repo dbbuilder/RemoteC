@@ -239,7 +239,7 @@ namespace RemoteC.Core.Interop
             _initLock?.Dispose();
         }
         
-        private void CleanupSession(SessionContext context)
+        private static void CleanupSession(SessionContext context)
         {
             if (context.CaptureHandle != IntPtr.Zero)
             {

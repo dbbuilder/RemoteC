@@ -5,6 +5,18 @@ using Serilog;
 
 namespace RemoteC.Api.Hubs;
 
+/// <summary>
+/// SignalR hub for real-time remote control session communication
+/// </summary>
+/// <remarks>
+/// The SessionHub manages real-time communication for remote control sessions including:
+/// - Mouse and keyboard input streaming
+/// - Screen updates
+/// - Session status notifications
+/// - Chat messages
+/// - Control handoffs
+/// All methods require authentication. Users are automatically grouped by session ID.
+/// </remarks>
 [Authorize]
 public class SessionHub : Hub
 {
@@ -15,6 +27,10 @@ public class SessionHub : Hub
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Called when a new connection is established with the hub
+    /// </summary>
+    /// <returns>A task that represents the asynchronous connect operation</returns>
     public override async Task OnConnectedAsync()
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
@@ -24,6 +40,11 @@ public class SessionHub : Hub
         await base.OnConnectedAsync();
     }
 
+    /// <summary>
+    /// Called when a connection with the hub is terminated
+    /// </summary>
+    /// <param name="exception">The exception that occurred, if any</param>
+    /// <returns>A task that represents the asynchronous disconnect operation</returns>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";
@@ -36,7 +57,12 @@ public class SessionHub : Hub
     /// <summary>
     /// Joins a session group for real-time updates
     /// </summary>
-    /// <param name="sessionId">Session ID to join</param>
+    /// <param name="sessionId">The unique identifier of the session to join</param>
+    /// <returns>A task that represents the asynchronous join operation</returns>
+    /// <remarks>
+    /// When a user joins a session, they are added to a SignalR group for that session.
+    /// All participants in the session will be notified of the new user joining.
+    /// </remarks>
     public async Task JoinSession(string sessionId)
     {
         var userId = Context.User?.Identity?.Name ?? "unknown";

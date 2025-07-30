@@ -6,8 +6,21 @@ using System.Security.Claims;
 
 namespace RemoteC.Api.Controllers;
 
+/// <summary>
+/// Handles authentication, authorization, and user profile management
+/// </summary>
+/// <remarks>
+/// The AuthController provides endpoints for:
+/// - Azure AD B2C authentication integration
+/// - User profile management
+/// - PIN-based session validation
+/// - Permission retrieval
+/// Most endpoints require authentication except login and PIN validation.
+/// </remarks>
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public class AuthController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -24,8 +37,19 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Validates Azure AD B2C token and creates/updates user
     /// </summary>
+    /// <param name="request">Login credentials including the Azure AD B2C token</param>
+    /// <returns>Login response with user details and token</returns>
+    /// <remarks>
+    /// This endpoint expects a pre-validated Azure AD B2C token.
+    /// It will create a new user record if one doesn't exist, or update existing user information.
+    /// The actual token validation is performed by the authentication middleware.
+    /// </remarks>
+    /// <response code="200">Successfully authenticated and user record created/updated</response>
+    /// <response code="401">Invalid or missing authentication token</response>
     [HttpPost("login")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
         try
@@ -73,8 +97,15 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Gets the current user's profile
     /// </summary>
+    /// <returns>The authenticated user's profile information</returns>
+    /// <response code="200">Returns the user profile</response>
+    /// <response code="401">User is not authenticated</response>
+    /// <response code="404">User profile not found (should not occur for authenticated users)</response>
     [HttpGet("profile")]
     [Authorize]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserDto>> GetProfile()
     {
         try
@@ -103,8 +134,16 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Updates the current user's profile
     /// </summary>
+    /// <param name="request">Updated user profile information</param>
+    /// <returns>The updated user profile</returns>
+    /// <response code="200">Profile successfully updated</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="401">User is not authenticated</response>
     [HttpPut("profile")]
     [Authorize]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserDto>> UpdateProfile([FromBody] UpdateUserRequest request)
     {
         try
@@ -128,8 +167,17 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Gets the current user's permissions
     /// </summary>
+    /// <returns>List of permission names assigned to the user</returns>
+    /// <remarks>
+    /// Returns a flat list of permission strings based on the user's assigned roles.
+    /// Permissions follow the format: "Resource.Action" (e.g., "Device.View", "Session.Create")
+    /// </remarks>
+    /// <response code="200">Returns the list of permissions</response>
+    /// <response code="401">User is not authenticated</response>
     [HttpGet("permissions")]
     [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IEnumerable<string>>> GetPermissions()
     {
         try
@@ -151,10 +199,19 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Validates a session PIN
+    /// Validates a session PIN for quick device access
     /// </summary>
+    /// <param name="request">PIN validation request containing the PIN code and optional session ID</param>
+    /// <returns>PIN validation result</returns>
+    /// <remarks>
+    /// This endpoint is used for PIN-based authentication, allowing quick access to remote sessions.
+    /// If no session ID is provided, a new session ID will be generated.
+    /// PINs are time-limited and single-use for security.
+    /// </remarks>
+    /// <response code="200">PIN validation result (check Success property)</response>
     [HttpPost("validate-pin")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(PinValidationResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<PinValidationResponse>> ValidatePin([FromBody] PinValidationRequest request)
     {
         try

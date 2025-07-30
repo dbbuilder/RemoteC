@@ -1,0 +1,273 @@
+Test run for /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/bin/Debug/net8.0/RemoteC.Tests.Integration.dll (.NETCoreApp,Version=v8.0)
+Microsoft (R) Test Execution Command Line Tool Version 17.8.0 (x64)
+Copyright (c) Microsoft Corporation.  All rights reserved.
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[testcontainers.org 00:00:01.63] Connected to Docker:
+  Host: unix:///var/run/docker.sock
+  Server Version: 28.2.2
+  Kernel Version: 6.6.87.2-microsoft-standard-WSL2
+  API Version: 1.50
+  Operating System: Docker Desktop
+  Total Memory: 15.40 GB
+[testcontainers.org 00:00:02.00] Searching Docker registry credential in Auths
+[testcontainers.org 00:00:02.00] Searching Docker registry credential in CredHelpers
+[testcontainers.org 00:00:02.00] Searching Docker registry credential in Auths
+[testcontainers.org 00:00:02.00] Searching Docker registry credential in CredsStore
+[testcontainers.org 00:00:02.77] Docker registry credential https://index.docker.io/v1/ found
+[xUnit.net 00:00:12.82]     RemoteC.Tests.Integration.Scenarios.RemoteSessionE2ETests.MultipleUsersInSession_ShouldTrackParticipants [FAIL]
+[xUnit.net 00:00:12.83]     RemoteC.Tests.Integration.Scenarios.RemoteSessionE2ETests.CompleteRemoteSessionLifecycle_ShouldWorkEndToEnd [FAIL]
+[xUnit.net 00:00:12.83]     RemoteC.Tests.Integration.Scenarios.RemoteSessionE2ETests.FileTransferDuringSession_ShouldTrackProperly [FAIL]
+[xUnit.net 00:00:13.03]     RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.RequestControl_ShouldNotifyHost [FAIL]
+[xUnit.net 00:00:13.03]     RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.SendInput_ShouldBroadcastToOtherClients [FAIL]
+[xUnit.net 00:00:13.04]     RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.JoinSession_WithValidSessionId_ShouldSucceed [FAIL]
+[xUnit.net 00:00:13.04]     RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.ConnectToHub_WithoutAuthentication_ShouldFail [FAIL]
+[xUnit.net 00:00:13.04]     RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.GetHealth_ReturnsHealthStatus [FAIL]
+[xUnit.net 00:00:13.06]     RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.GetSessions_ReturnsUnauthorized_WhenNoAuthToken [FAIL]
+  Failed RemoteC.Tests.Integration.Scenarios.RemoteSessionE2ETests.MultipleUsersInSession_ShouldTrackParticipants [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Scenarios.RemoteSessionE2ETests.CompleteRemoteSessionLifecycle_ShouldWorkEndToEnd [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Scenarios.RemoteSessionE2ETests.FileTransferDuringSession_ShouldTrackProperly [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.RequestControl_ShouldNotifyHost [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.SendInput_ShouldBroadcastToOtherClients [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.JoinSession_WithValidSessionId_ShouldSucceed [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Hubs.SessionHubIntegrationTests.ConnectToHub_WithoutAuthentication_ShouldFail [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.GetHealth_ReturnsHealthStatus [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.GetSessions_ReturnsUnauthorized_WhenNoAuthToken [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+[xUnit.net 00:00:13.06]     RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.GetHealthReady_ChecksDatabaseConnection [FAIL]
+[xUnit.net 00:00:13.06]     RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.DatabaseConnection_WorksWithTestContainer [FAIL]
+[xUnit.net 00:00:13.06]     RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.CreateSession_WithTestDatabase_CreatesSessionSuccessfully [FAIL]
+  Failed RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.GetHealthReady_ChecksDatabaseConnection [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.DatabaseConnection_WorksWithTestContainer [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+  Failed RemoteC.Tests.Integration.Api.SessionsControllerIntegrationTests.CreateSession_WithTestDatabase_CreatesSessionSuccessfully [1 ms]
+  Error Message:
+   Docker.DotNet.DockerApiException : Docker API responded with status code=InternalServerError, response={"message":"failed to resolve reference \"docker.io/testcontainers/ryuk:0.5.1\": failed to authorize: failed to fetch oauth token: Post \"https://auth.docker.io/token\": dialing auth.docker.io:443 container via direct connection because static system has no HTTPS proxy: connecting to auth.docker.io:443: dial tcp 98.85.153.80:443: bind: An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."}
+
+  Stack Trace:
+     at Docker.DotNet.DockerClient.HandleIfErrorResponseAsync(HttpStatusCode statusCode, HttpResponseMessage response)
+   at Docker.DotNet.DockerClient.MakeRequestForRawResponseAsync(HttpMethod method, String path, IQueryString queryString, IRequestContent body, IDictionary`2 headers, CancellationToken token)
+   at Docker.DotNet.Models.StreamUtil.MonitorResponseForMessagesAsync[T](Task`1 responseTask, DockerClient client, CancellationToken cancel, IProgress`1 progress)
+   at DotNet.Testcontainers.Clients.DockerImageOperations.CreateAsync(IImage image, IDockerRegistryAuthenticationConfiguration dockerRegistryAuthConfig, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.PullImageAsync(IImage image, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartNewAsync(Guid sessionId, IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, IImage resourceReaperImage, IMount dockerSocket, Boolean requiresPrivilegedMode, TimeSpan initTimeout, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.ResourceReaper.GetAndStartDefaultAsync(IDockerEndpointAuthenticationConfiguration dockerEndpointAuthConfig, Boolean isWindowsEngineEnabled, CancellationToken ct)
+   at DotNet.Testcontainers.Clients.TestcontainersClient.RunAsync(IContainerConfiguration configuration, CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.UnsafeCreateAsync(CancellationToken ct)
+   at DotNet.Testcontainers.Containers.DockerContainer.StartAsync(CancellationToken ct)
+   at RemoteC.Tests.Integration.TestFixtures.DatabaseFixture.InitializeAsync() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestFixtures/DatabaseFixture.cs:line 34
+Results File: /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/TestResults/_DesktopL920Win11_2025-07-29_19_06_12.trx
+
+Failed!  - Failed:    12, Passed:    10, Skipped:     0, Total:    22, Duration: 11 s - RemoteC.Tests.Integration.dll (net8.0)

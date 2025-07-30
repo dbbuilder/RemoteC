@@ -5,9 +5,23 @@ using RemoteC.Shared.Models;
 
 namespace RemoteC.Api.Controllers;
 
+/// <summary>
+/// Manages device registration, status updates, and device-related operations
+/// </summary>
+/// <remarks>
+/// The DevicesController provides endpoints for device management including:
+/// - Device registration and discovery
+/// - Status monitoring (online/offline)
+/// - Device information retrieval
+/// - Device deletion
+/// All endpoints require authentication via JWT bearer token.
+/// </remarks>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public class DevicesController : ControllerBase
 {
     private readonly IDeviceRepository _deviceRepository;
@@ -20,9 +34,16 @@ public class DevicesController : ControllerBase
     }
 
     /// <summary>
-    /// Gets all devices for the current user
+    /// Gets all devices for the current user with pagination support
     /// </summary>
+    /// <param name="pageNumber">Page number (1-based, default: 1)</param>
+    /// <param name="pageSize">Number of items per page (default: 25, max: 100)</param>
+    /// <param name="onlineOnly">Filter to show only online devices (default: false)</param>
+    /// <returns>Paginated list of devices</returns>
+    /// <response code="200">Returns the paginated list of devices</response>
+    /// <response code="401">User is not authenticated</response>
     [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<DeviceDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<DeviceDto>>> GetDevices(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 25,
@@ -49,7 +70,14 @@ public class DevicesController : ControllerBase
     /// <summary>
     /// Gets a specific device by ID
     /// </summary>
+    /// <param name="id">The unique identifier of the device</param>
+    /// <returns>The device details</returns>
+    /// <response code="200">Returns the device details</response>
+    /// <response code="401">User is not authenticated</response>
+    /// <response code="404">Device not found or user doesn't have access</response>
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DeviceDto>> GetDevice(Guid id)
     {
         try
@@ -76,9 +104,20 @@ public class DevicesController : ControllerBase
     }
 
     /// <summary>
-    /// Registers or updates a device
+    /// Registers a new device or updates an existing device
     /// </summary>
+    /// <param name="request">Device registration details</param>
+    /// <returns>The registered or updated device</returns>
+    /// <remarks>
+    /// If a device with the same MAC address already exists for the user, it will be updated.
+    /// The device will be marked as online upon successful registration.
+    /// </remarks>
+    /// <response code="200">Device successfully registered or updated</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="401">User is not authenticated</response>
     [HttpPost("register")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<DeviceDto>> RegisterDevice([FromBody] RegisterDeviceRequest request)
     {
         try
@@ -109,9 +148,17 @@ public class DevicesController : ControllerBase
     }
 
     /// <summary>
-    /// Updates device status
+    /// Updates device online/offline status
     /// </summary>
+    /// <param name="id">The unique identifier of the device</param>
+    /// <param name="request">Status update details</param>
+    /// <returns>No content on success</returns>
+    /// <response code="204">Status successfully updated</response>
+    /// <response code="401">User is not authenticated</response>
+    /// <response code="404">Device not found or user doesn't have access</response>
     [HttpPatch("{id}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateDeviceStatus(Guid id, [FromBody] UpdateDeviceStatusRequest request)
     {
         try
@@ -140,9 +187,19 @@ public class DevicesController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a device
+    /// Permanently deletes a device
     /// </summary>
+    /// <param name="id">The unique identifier of the device to delete</param>
+    /// <returns>No content on success</returns>
+    /// <remarks>
+    /// This operation is permanent and cannot be undone. All associated sessions and data will be deleted.
+    /// </remarks>
+    /// <response code="204">Device successfully deleted</response>
+    /// <response code="401">User is not authenticated</response>
+    /// <response code="404">Device not found or user doesn't have access</response>
     [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteDevice(Guid id)
     {
         try
@@ -170,6 +227,10 @@ public class DevicesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Extracts the user ID from the authentication claims
+    /// </summary>
+    /// <returns>The user's GUID if found, otherwise null</returns>
     private Guid? GetUserId()
     {
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -181,27 +242,93 @@ public class DevicesController : ControllerBase
     }
 }
 
+/// <summary>
+/// Request model for device registration
+/// </summary>
 public class RegisterDeviceRequest
 {
+    /// <summary>
+    /// Friendly name for the device
+    /// </summary>
+    /// <example>John's Workstation</example>
     public string Name { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// MAC address of the device (required for unique identification)
+    /// </summary>
+    /// <example>00:1B:44:11:3A:B7</example>
     public string MacAddress { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Network hostname of the device
+    /// </summary>
+    /// <example>DESKTOP-ABC123</example>
     public string? HostName { get; set; }
+    
+    /// <summary>
+    /// Current IP address of the device
+    /// </summary>
+    /// <example>192.168.1.100</example>
     public string? IpAddress { get; set; }
+    
+    /// <summary>
+    /// Operating system name and version
+    /// </summary>
+    /// <example>Windows 11 Pro</example>
     public string? OperatingSystem { get; set; }
+    
+    /// <summary>
+    /// Agent/client version installed on the device
+    /// </summary>
+    /// <example>1.0.0</example>
     public string? Version { get; set; }
 }
 
+/// <summary>
+/// Request model for updating device status
+/// </summary>
 public class UpdateDeviceStatusRequest
 {
+    /// <summary>
+    /// Indicates whether the device is currently online
+    /// </summary>
     public bool IsOnline { get; set; }
+    
+    /// <summary>
+    /// Current IP address of the device (optional)
+    /// </summary>
+    /// <example>192.168.1.100</example>
     public string? IpAddress { get; set; }
 }
 
+/// <summary>
+/// Generic paginated result container
+/// </summary>
+/// <typeparam name="T">The type of items in the result set</typeparam>
 public class PagedResult<T>
 {
+    /// <summary>
+    /// The items in the current page
+    /// </summary>
     public IEnumerable<T> Items { get; set; } = new List<T>();
+    
+    /// <summary>
+    /// Total number of items across all pages
+    /// </summary>
     public int TotalCount { get; set; }
+    
+    /// <summary>
+    /// Current page number (1-based)
+    /// </summary>
     public int PageNumber { get; set; }
+    
+    /// <summary>
+    /// Number of items per page
+    /// </summary>
     public int PageSize { get; set; }
+    
+    /// <summary>
+    /// Total number of pages available
+    /// </summary>
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }

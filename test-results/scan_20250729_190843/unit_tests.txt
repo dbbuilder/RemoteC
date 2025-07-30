@@ -1,0 +1,102 @@
+Build started 07/29/2025 19:09:02.
+Test run for /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/bin/Debug/net8.0/RemoteC.Tests.Unit.dll (.NETCoreApp,Version=v8.0)
+Microsoft (R) Test Execution Command Line Tool Version 17.8.0 (x64)
+Copyright (c) Microsoft Corporation.  All rights reserved.
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.4.1+b9eacec401 (64-bit .NET 8.0.17)
+[xUnit.net 00:00:00.21]   Discovering: RemoteC.Tests.Unit
+[xUnit.net 00:00:00.30]   Discovered:  RemoteC.Tests.Unit
+[xUnit.net 00:00:00.30]   Starting:    RemoteC.Tests.Unit
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.GetMonitorsAsync_ShouldReturnMonitorInfo [191 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.ValidateSessionAsync_WithValidPin_ShouldReturnTrue [216 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.ValidateSessionAsync_WhenExceptionOccurs_ShouldReturnFalse [16 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.SessionInfo_Duration_ShouldCalculateCorrectly [2 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.IsSessionActive_WithActiveSession_ShouldReturnTrue [7 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.EndSessionAsync_WithActiveSession_ShouldMarkAsEnded [11 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.SessionInfo_IsTimedOut_ShouldReturnTrueAfter8Hours [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.GetSessionAsync_WithExistingSession_ShouldReturnSession [2 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.UpdateQualitySettingsAsync_WithExistingSession_ShouldUpdateQuality [7 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.ValidateSessionAsync_WithInvalidPin_ShouldReturnFalse [5 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.UpdateQualitySettingsAsync_WithNonExistentSession_ShouldNotThrow [< 1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.IsSessionActive_AfterEndingSession_ShouldReturnFalse [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.GetSessionAsync_WithNonExistentSession_ShouldReturnNull [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.SessionInfo_IsTimedOut_ShouldReturnFalseWithin8Hours [< 1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.CreateSessionAsync_WithoutQualitySettings_ShouldUseDefaults [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.CreateSessionAsync_ShouldCreateSessionWithCorrectProperties [11 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.EndSessionAsync_WithNonExistentSession_ShouldNotThrow [1 ms]
+[xUnit.net 00:00:00.80]     RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale [FAIL]
+[xUnit.net 00:00:00.80]       Expected result not to be <null>.
+[xUnit.net 00:00:00.80]       Stack Trace:
+[xUnit.net 00:00:00.80]            at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+[xUnit.net 00:00:00.80]            at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+[xUnit.net 00:00:00.80]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.80]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.80]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.80]            at FluentAssertions.Execution.AssertionScope.FailWith(String message)
+[xUnit.net 00:00:00.80]            at FluentAssertions.Primitives.ReferenceTypeAssertions`2.NotBeNull(String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.80]         /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs(147,0): at RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale()
+[xUnit.net 00:00:00.80]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.82]     RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData [FAIL]
+[xUnit.net 00:00:00.82]       Expected result not to be <null>.
+[xUnit.net 00:00:00.82]       Stack Trace:
+[xUnit.net 00:00:00.82]            at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+[xUnit.net 00:00:00.82]            at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+[xUnit.net 00:00:00.82]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:00.82]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.82]            at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+[xUnit.net 00:00:00.82]            at FluentAssertions.Execution.AssertionScope.FailWith(String message)
+[xUnit.net 00:00:00.82]            at FluentAssertions.Primitives.ReferenceTypeAssertions`2.NotBeNull(String because, Object[] becauseArgs)
+[xUnit.net 00:00:00.82]         /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs(83,0): at RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData()
+[xUnit.net 00:00:00.82]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.83]   Finished:    RemoteC.Tests.Unit
+  Passed RemoteC.Tests.Unit.Host.Services.SessionManagerTests.ValidateSessionAsync_WithoutPermission_ShouldReturnFalse [5 ms]
+  Failed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale [180 ms]
+  Error Message:
+   Expected result not to be <null>.
+  Stack Trace:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message)
+   at FluentAssertions.Primitives.ReferenceTypeAssertions`2.NotBeNull(String because, Object[] becauseArgs)
+   at RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs:line 147
+--- End of stack trace from previous location ---
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenNotInitialized_ShouldThrowException [3 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.InitializeAsync_ShouldInitializeProvider [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_ShouldHandleExceptions [7 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.DisposeAsync_ShouldCompleteSuccessfully [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.InitializeAsync_WhenProviderFailsToInitialize_ShouldThrowException [1 ms]
+  Passed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenProviderReturnsNull_ShouldReturnNull [2 ms]
+  Failed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData [9 ms]
+  Error Message:
+   Expected result not to be <null>.
+  Stack Trace:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message)
+   at FluentAssertions.Primitives.ReferenceTypeAssertions`2.NotBeNull(String because, Object[] becauseArgs)
+   at RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs:line 83
+--- End of stack trace from previous location ---
+
+Test Run Failed.
+Total tests: 26
+     Passed: 24
+     Failed: 2
+ Total time: 1.7934 Seconds
+     1>Project "/mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/RemoteC.Tests.Unit.csproj" on node 1 (VSTest target(s)).
+     1>VSTest:
+         MSB4181: The "Microsoft.TestPlatform.Build.Tasks.VSTestTask" task returned false but did not log an error.
+     1>Done Building Project "/mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/RemoteC.Tests.Unit.csproj" (VSTest target(s)) -- FAILED.
+
+Build FAILED.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.61

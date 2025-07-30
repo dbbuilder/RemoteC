@@ -22,6 +22,17 @@ namespace RemoteC.Shared.Models
         public DateTime ValidatedAt { get; set; }
         public List<ComplianceViolation> Violations { get; set; } = new();
         public List<ComplianceControl> Controls { get; set; } = new();
+        
+        // GDPR specific properties
+        public bool HasPrivacyPolicy { get; set; }
+        public bool HasDataProcessingAgreements { get; set; }
+        public bool HasConsentMechanism { get; set; }
+        
+        // HIPAA specific properties
+        public bool HasEncryptionAtRest { get; set; }
+        public bool HasEncryptionInTransit { get; set; }
+        public bool HasAccessControls { get; set; }
+        public bool HasAuditControls { get; set; }
     }
 
     public class ComplianceViolation
@@ -266,6 +277,41 @@ namespace RemoteC.Shared.Models
         public string AuditType { get; set; } = string.Empty;
         public string Auditor { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+    }
+    
+    // Data retention models
+    public class DataRetentionResult
+    {
+        public int RecordsDeleted { get; set; }
+        public int SessionsDeleted { get; set; }
+        public int LogsDeleted { get; set; }
+        public TimeSpan Duration { get; set; }
+    }
+    
+    public class DataRetentionStatus
+    {
+        public int TotalRecords { get; set; }
+        public int RecordsToDelete { get; set; }
+        public int RecordsToRetain { get; set; }
+    }
+    
+    // Security Breach model for HIPAA breach reporting
+    public class SecurityBreach
+    {
+        public DateTime BreachDate { get; set; }
+        public DateTime DiscoveryDate { get; set; }
+        public int AffectedRecords { get; set; }
+        public string BreachType { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+    
+    public class HIPAABreachReport
+    {
+        public bool RequiresNotification { get; set; }
+        public List<string> AffectedIndividuals { get; set; } = new();
+        public string RiskAssessment { get; set; } = string.Empty;
+        public List<string> MitigationSteps { get; set; } = new();
+        public List<string> NotificationRequirements { get; set; } = new();
     }
 
 }

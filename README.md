@@ -1,330 +1,191 @@
 # RemoteC - Enterprise Remote Control Solution
 
-A high-performance, enterprise-grade remote control solution that combines rapid deployment with RustDesk-level performance and enhanced enterprise features including React UI, advanced RBAC, OAuth, Azure AD, and B2C integration.
+RemoteC is an enterprise-grade remote control solution designed for secure, high-performance remote access and support. Built with modern .NET 8.0 and designed for scalability, RemoteC provides a comprehensive platform for remote desktop access, file transfer, and system management.
 
-## Repository Information
-- **GitHub Repository**: `https://github.com/dbbuilder/RemoteC`
-- **Primary Branch**: `main`
-- **Development Branch**: `develop`
+## 🚀 Features
 
-## Project Overview
+### Phase 1 - Core Features (Current)
+- **Remote Desktop Control**: Full remote control capabilities with screen sharing
+- **File Transfer**: Secure file transfer between host and client machines
+- **Session Management**: Comprehensive session tracking and management
+- **Enterprise Authentication**: Azure AD B2C integration with multi-factor authentication
+- **Real-time Communication**: SignalR-based real-time updates and control
+- **PIN-based Quick Access**: Simplified connection mechanism for support scenarios
 
-RemoteC is designed as a three-phase evolution from proof-of-concept to enterprise-grade remote control solution:
+### Phase 2 - Performance Engine (Upcoming)
+- **Rust Performance Core**: Native performance optimization for screen capture and encoding
+- **Hardware Acceleration**: GPU-accelerated video encoding/decoding
+- **Ultra-low Latency**: Sub-50ms latency for local network connections
 
-### Phase 1: ControlR Integration MVP (Months 1-6)
-- Rapid deployment using ControlR for core remote control functionality
-- React-based management UI with modern UX
-- Azure AD B2C integration for authentication
-- Basic RBAC and session management
-- PIN-based quick access for user convenience
+### Phase 3 - Enterprise Features (Planned)
+- **Advanced RBAC**: Role-based access control with granular permissions
+- **Compliance**: SOC2, HIPAA, and GDPR compliance features
+- **Multi-tenancy**: Full isolation between organizations
+- **Audit Logging**: Comprehensive audit trail for all actions
+- **Session Recording**: Record and playback remote sessions
+- **Analytics Dashboard**: Real-time analytics and reporting
 
-### Phase 2: Custom Performance Engine (Months 7-12)
-- Replace ControlR with custom Rust-based performance components
-- Achieve RustDesk-level latency (<50ms) and throughput
-- Hardware-accelerated video encoding (NVENC, Quick Sync, VCE)
-- Advanced networking protocols with UDP/TCP optimization
-- Enhanced security with end-to-end encryption
+## 📋 Prerequisites
 
-### Phase 3: Enterprise Excellence (Months 13-18)
-- Full enterprise feature suite with advanced RBAC
-- OAuth 2.0/OIDC provider integration
-- SOC 2, GDPR, HIPAA compliance capabilities
-- Global scalability with edge deployment
-- Advanced analytics and monitoring
-
-## Technology Stack
-
-### Frontend
-- **React 18**: Modern component-based UI framework
-- **TypeScript**: Type-safe development
-- **Material-UI (MUI)**: Enterprise-grade component library
-- **React Query**: Efficient data fetching and caching
-- **React Router**: Client-side routing
-- **SignalR Client**: Real-time communication
-
-### Backend
-- **ASP.NET Core 8.0**: Web API and service orchestration
-- **Entity Framework Core**: Database access with stored procedures
-- **SignalR**: Real-time communication hub
-- **Azure AD B2C**: Identity and access management
-- **Azure Key Vault**: Secrets management
-- **Application Insights**: Monitoring and analytics
-
-### Performance Layer (Phase 2+)
-- **Rust**: High-performance components for screen capture and encoding
-- **FFI Interface**: C-compatible interop between .NET and Rust
-- **Hardware Acceleration**: GPU-based encoding when available
-- **Custom Protocols**: UDP-based media streaming with TCP fallback
-
-### Infrastructure
-- **Azure App Services**: Containerized application hosting
-- **SQL Server**: Primary data storage
-- **Redis**: Session state and caching
-- **Docker**: Containerization
-- **Kubernetes**: Orchestration (Phase 3)
-
-## Quick Start
-
-### Prerequisites
 - .NET 8.0 SDK
-- Node.js 18+ with npm
-- Docker Desktop
-- SQL Server 2019+ or SQL Server Express
-- Azure CLI (for cloud deployments)
-- Visual Studio 2022 or VS Code
+- SQL Server 2019+ or Azure SQL Database
+- Redis 6.0+ (for distributed caching)
+- Docker (optional, for containerized deployment)
+- Windows 10/11 or Windows Server 2019+ (for host application)
 
-### Development Setup
+## 🛠️ Installation
 
-1. **Clone Repository**
+### Quick Start with Docker
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/remotec.git
+cd remotec
+
+# Run with Docker Compose
+docker-compose up -d
+```
+
+### Manual Installation
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/dbbuilder/RemoteC.git
-   cd RemoteC
+   git clone https://github.com/your-org/remotec.git
+   cd remotec
    ```
 
-2. **Backend Setup**
+2. **Set up the database**
    ```bash
-   cd src/RemoteC.Api
-   dotnet restore
+   # Run database migrations
+   dotnet ef database update -p src/RemoteC.Data -s src/RemoteC.Api
+   ```
+
+3. **Configure application settings**
+   ```bash
+   # Copy and edit the configuration
+   cp src/RemoteC.Api/appsettings.json src/RemoteC.Api/appsettings.Development.json
+   # Edit appsettings.Development.json with your configuration
+   ```
+
+4. **Build and run**
+   ```bash
+   # Build the solution
    dotnet build
+
+   # Run the API
+   cd src/RemoteC.Api
+   dotnet run
    ```
 
-3. **Frontend Setup**
-   ```bash
-   cd src/RemoteC.Web
-   npm install
-   npm start
-   ```
+## 🔧 Configuration
 
-4. **Database Setup**
-   ```bash
-   cd database
-   sqlcmd -S localhost -i setup-database.sql
-   ```
+### Database Connection
+Configure your SQL Server connection in `appsettings.json`:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=RemoteCDb;User Id=sa;Password=YourPassword;TrustServerCertificate=true"
+  }
+}
+```
 
-5. **Configuration**
-   ```bash
-   cp src/RemoteC.Api/appsettings.Development.json.template src/RemoteC.Api/appsettings.Development.json
-   # Edit configuration values as needed
-   ```
+### Redis Configuration
+```json
+{
+  "Redis": {
+    "ConnectionString": "localhost:6379"
+  }
+}
+```
 
-### Docker Development
+### Authentication (Azure AD B2C)
+```json
+{
+  "AzureAdB2C": {
+    "Instance": "https://your-tenant.b2clogin.com",
+    "Domain": "your-tenant.onmicrosoft.com",
+    "TenantId": "your-tenant-id",
+    "ClientId": "your-client-id",
+    "SignUpSignInPolicyId": "B2C_1_signupsignin"
+  }
+}
+```
+
+## 🏗️ Architecture
+
+RemoteC follows a clean architecture pattern with the following projects:
+
+- **RemoteC.Api**: ASP.NET Core Web API with SignalR hubs
+- **RemoteC.Client**: Cross-platform Avalonia UI client application
+- **RemoteC.Host**: Windows service for the host machine
+- **RemoteC.Data**: Entity Framework Core data access layer
+- **RemoteC.Shared**: Shared models and interfaces
+- **RemoteC.Core.Interop**: Rust FFI bindings (Phase 2)
+
+## 🧪 Testing
+
+Run all tests:
 ```bash
-docker-compose up -d
+dotnet test
 ```
 
-## Project Structure
-
-```
-RemoteC/
-├── docs/                           # Documentation
-│   ├── REQUIREMENTS.md            # Detailed requirements
-│   ├── TODO.md                    # Implementation roadmap
-│   ├── FUTURE.md                  # Future enhancements
-│   ├── architecture/              # Architecture documentation
-│   └── api/                       # API documentation
-├── src/                           # Source code
-│   ├── RemoteC.Api/               # ASP.NET Core Web API
-│   ├── RemoteC.Web/               # React frontend application
-│   ├── RemoteC.Core/              # Rust performance components (Phase 2+)
-│   ├── RemoteC.Data/              # Entity Framework data layer
-│   ├── RemoteC.Shared/            # Shared models and utilities
-│   ├── RemoteC.Host/              # Windows host application
-│   └── RemoteC.Client/            # Cross-platform client
-├── tests/                         # Test projects
-│   ├── RemoteC.Tests.Unit/        # Unit tests
-│   ├── RemoteC.Tests.Integration/ # Integration tests
-│   └── RemoteC.Tests.Performance/ # Performance tests
-├── database/                      # Database scripts
-│   ├── migrations/                # EF Core migrations
-│   ├── stored-procedures/         # T-SQL stored procedures
-│   └── setup-database.sql         # Initial setup
-├── deployment/                    # Deployment configurations
-│   ├── docker/                    # Docker files
-│   ├── kubernetes/                # K8s manifests
-│   └── azure/                     # Azure deployment scripts
-└── scripts/                       # Build and utility scripts
-```
-
-## Phase 1 Implementation Strategy
-
-### ControlR Integration Approach
-- License ControlR for remote control functionality
-- Create abstraction layer for future component replacement
-- Focus on UI/UX excellence and enterprise authentication
-- Implement comprehensive session management and audit logging
-
-### Performance Targets (Phase 1)
-- **Latency**: <100ms end-to-end on LAN connections
-- **Concurrent Sessions**: 100+ simultaneous connections
-- **Reliability**: 99% session success rate
-- **User Experience**: <30 second connection establishment
-
-### Key Features (Phase 1)
-- PIN-based quick access with SMS/email delivery
-- React-based management portal with modern UX
-- Azure AD B2C integration with seamless SSO
-- Role-based access control with configurable permissions
-- Direct PowerShell/terminal execution
-- Basic file transfer capabilities
-- Comprehensive audit logging
-
-## Phase 2 Performance Goals
-
-### RustDesk Performance Parity
-- **Latency**: <50ms end-to-end (matching RustDesk standards)
-- **Frame Rate**: 60 FPS at 1080p resolution
-- **Compression**: Hardware-accelerated H.264/H.265 encoding
-- **Bandwidth**: 90% compression vs uncompressed streams
-- **CPU Usage**: <10% during idle sessions, <25% during active use
-
-### Custom Component Architecture
-- Rust-based screen capture with platform-specific optimization
-- FFI interface for seamless .NET integration
-- Custom UDP protocols for low-latency media streaming
-- Memory-efficient buffer management
-- Cross-platform compatibility (Windows, macOS, Linux)
-
-## Enterprise Features Roadmap
-
-### Advanced Authentication (Phase 2-3)
-- OAuth 2.0/OIDC provider support
-- SAML 2.0 single sign-on
-- Certificate-based authentication
-- Multi-factor authentication (TOTP, SMS, hardware tokens)
-- Zero-trust security model
-
-### Enhanced RBAC (All Phases)
-- Granular permission management
-- Role inheritance and delegation
-- Dynamic permission evaluation
-- Resource-based access control
-- Audit trail for all permission changes
-
-### Compliance and Security (Phase 3)
-- SOC 2 Type II compliance
-- GDPR data protection controls
-- HIPAA compliance capabilities
-- End-to-end encryption with modern algorithms
-- Comprehensive security monitoring
-
-## Contributing
-
-### Development Workflow
-1. Create feature branch from `develop`
-2. Implement changes with comprehensive tests
-3. Update documentation as needed
-4. Submit pull request with detailed description
-5. Code review and approval process
-6. Merge to `develop` and deploy to staging
-
-### Code Standards
-- **C#**: Microsoft coding conventions with EditorConfig
-- **TypeScript/React**: Airbnb style guide with ESLint/Prettier
-- **T-SQL**: Consistent formatting with stored procedure patterns
-- **Documentation**: Comprehensive XML docs for APIs
-- **Testing**: Minimum 80% code coverage requirement
-
-### Branching Strategy
-- `main`: Production-ready code
-- `develop`: Integration branch for features
-- `feature/*`: Individual feature development
-- `hotfix/*`: Critical production fixes
-- `release/*`: Release preparation branches
-
-## Deployment
-
-### Local Development
+Run specific test categories:
 ```bash
-# Start all services
-docker-compose up -d
+# Unit tests only
+dotnet test --filter Category=Unit
 
-# Run specific service
-npm run dev:web      # React frontend
-dotnet run --project src/RemoteC.Api  # Backend API
+# Integration tests
+dotnet test --filter Category=Integration
+
+# Performance benchmarks
+dotnet run -c Release --project tests/RemoteC.Tests.Performance
 ```
 
-### Azure Deployment
-```bash
-# Deploy infrastructure
-./deployment/azure/deploy-infrastructure.sh
+## 📊 Performance
 
-# Deploy applications
-./deployment/azure/deploy-applications.sh
-```
+RemoteC is designed for high performance with the following targets:
 
-### Environment Configuration
-- **Development**: Local development with Docker services
-- **Staging**: Azure environment for testing and validation
-- **Production**: Azure with high availability and monitoring
+- **Latency**: <100ms on LAN (Phase 1), <50ms (Phase 2)
+- **Frame Rate**: 30-60 FPS depending on quality settings
+- **Concurrent Sessions**: 1,000+ per server
+- **File Transfer**: 100+ MB/s on gigabit networks
 
-## Monitoring and Observability
+## 🔒 Security
 
-### Application Insights Integration
-- Custom metrics for session performance
-- Real-time latency and throughput monitoring
-- User experience analytics
-- Error tracking and alerting
-- Performance trend analysis
+- **End-to-end Encryption**: All communication is encrypted using industry-standard protocols
+- **Zero Trust Architecture**: No implicit trust, continuous verification
+- **Compliance Ready**: Built with SOC2, HIPAA, and GDPR requirements in mind
+- **Audit Logging**: Comprehensive audit trail for all actions
+- **Role-based Access**: Granular permissions system
 
-### Health Monitoring
-- Endpoint health checks
-- Database connectivity monitoring
-- Redis cache performance
-- External dependency monitoring
-- Custom business metric tracking
+## 🤝 Contributing
 
-## Security Considerations
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Authentication Flow
-1. User authenticates via Azure AD B2C
-2. JWT token issued with role claims
-3. Session creation with security validation
-4. PIN generation for device access
-5. Secure session establishment with encryption
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Data Protection
-- All data encrypted in transit (TLS 1.3)
-- Sensitive data encrypted at rest
-- Azure Key Vault for secrets management
-- Automatic PII detection and protection
-- Comprehensive audit logging
+## 📝 License
 
-## Performance Benchmarking
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Continuous Performance Monitoring
-- Automated latency measurements
-- Throughput testing under load
-- Resource usage optimization
-- Comparative analysis against competitors
-- Performance regression detection
+## 🙏 Acknowledgments
 
-### Benchmark Targets
-- **Phase 1**: Competitive with market standards
-- **Phase 2**: Match RustDesk performance benchmarks
-- **Phase 3**: Exceed RustDesk with enhanced features
+- Built with [ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet)
+- UI powered by [Avalonia](https://avaloniaui.net/)
+- Real-time communication via [SignalR](https://dotnet.microsoft.com/apps/aspnet/signalr)
+- Performance core (Phase 2) built with [Rust](https://www.rust-lang.org/)
 
-## Support and Documentation
+## 📞 Support
 
-### Documentation
-- API documentation with OpenAPI/Swagger
-- User guides and tutorials
-- Administrator documentation
-- Troubleshooting guides
-- Architecture decision records
+- **Documentation**: [docs.remotec.io](https://docs.remotec.io)
+- **Issues**: [GitHub Issues](https://github.com/your-org/remotec/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/remotec/discussions)
+- **Email**: support@remotec.io
 
-### Community and Support
-- GitHub Issues for bug reports and feature requests
-- Discussion forums for community support
-- Enterprise support for commercial customers
-- Regular release notes and updates
+---
 
-## License
-
-[License to be determined - likely proprietary for commercial use]
-
-## Contact
-
-For questions, support, or collaboration opportunities, please contact:
-- **Repository**: https://github.com/dbbuilder/RemoteC
-- **Issues**: https://github.com/dbbuilder/RemoteC/issues
-- **Discussions**: https://github.com/dbbuilder/RemoteC/discussions
+**RemoteC** - Enterprise Remote Control Made Simple, Secure, and Fast 🚀

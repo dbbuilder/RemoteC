@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -200,8 +201,8 @@ namespace RemoteC.Api.Tests.Services
                     Action = i < 5 ? "Action1" : "Action2",
                     ResourceType = "Resource",
                     Timestamp = DateTime.UtcNow.AddHours(-i),
-                    Severity = i < 3 ? AuditSeverity.Error : AuditSeverity.Info,
-                    Category = AuditCategory.General,
+                    Severity = (int)(i < 3 ? RemoteC.Shared.Models.AuditSeverity.Error : RemoteC.Shared.Models.AuditSeverity.Info),
+                    Category = (int)RemoteC.Shared.Models.AuditCategory.General,
                     Success = true
                 });
             }
@@ -237,10 +238,10 @@ namespace RemoteC.Api.Tests.Services
             var resourceId = "123";
             var cachedData = "[{\"Action\":\"CachedAction\"}]";
             
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 It.Is<string>(key => key.Contains(resourceType) && key.Contains(resourceId)),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(cachedData);
+                .ReturnsAsync(Encoding.UTF8.GetBytes(cachedData));
 
             // Act
             var result = await _auditService.GetByResourceAsync(resourceType, resourceId);
@@ -248,7 +249,7 @@ namespace RemoteC.Api.Tests.Services
             // Assert
             Assert.Single(result);
             Assert.Equal("CachedAction", result[0].Action);
-            _cacheMock.Verify(c => c.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _cacheMock.Verify(c => c.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -270,8 +271,8 @@ namespace RemoteC.Api.Tests.Services
                     Action = "OldAction",
                     ResourceType = "Resource",
                     Timestamp = cutoffDate.AddDays(-i - 1),
-                    Severity = AuditSeverity.Info,
-                    Category = AuditCategory.General,
+                    Severity = (int)RemoteC.Shared.Models.AuditSeverity.Info,
+                    Category = (int)RemoteC.Shared.Models.AuditCategory.General,
                     Success = true
                 });
             }
@@ -286,8 +287,8 @@ namespace RemoteC.Api.Tests.Services
                     Action = "RecentAction",
                     ResourceType = "Resource",
                     Timestamp = DateTime.UtcNow.AddDays(-i),
-                    Severity = AuditSeverity.Info,
-                    Category = AuditCategory.General,
+                    Severity = (int)RemoteC.Shared.Models.AuditSeverity.Info,
+                    Category = (int)RemoteC.Shared.Models.AuditCategory.General,
                     Success = true
                 });
             }
@@ -313,8 +314,8 @@ namespace RemoteC.Api.Tests.Services
             var userId2 = Guid.NewGuid();
             
             _context.Organizations.Add(new Organization { Id = organizationId, Name = "Test Org" });
-            _context.Users.Add(new User { Id = userId1, Email = "user1@example.com", Name = "User1" });
-            _context.Users.Add(new User { Id = userId2, Email = "user2@example.com", Name = "User2" });
+            _context.Users.Add(new User { Id = userId1, Email = "user1@example.com", FirstName = "User", LastName = "One" });
+            _context.Users.Add(new User { Id = userId2, Email = "user2@example.com", FirstName = "User", LastName = "Two" });
             
             var startDate = DateTime.UtcNow.Date;
             var endDate = startDate.AddDays(1);
@@ -326,12 +327,12 @@ namespace RemoteC.Api.Tests.Services
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     UserId = userId1,
-                    UserName = "User1",
+                    UserName = "User One",
                     Action = "Login",
                     ResourceType = "Session",
                     Timestamp = startDate.AddHours(1),
-                    Severity = AuditSeverity.Info,
-                    Category = AuditCategory.Authentication,
+                    Severity = (int)RemoteC.Shared.Models.AuditSeverity.Info,
+                    Category = (int)RemoteC.Shared.Models.AuditCategory.Authentication,
                     Success = true,
                     Duration = TimeSpan.FromMilliseconds(100)
                 },
@@ -340,12 +341,12 @@ namespace RemoteC.Api.Tests.Services
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     UserId = userId1,
-                    UserName = "User1",
+                    UserName = "User One",
                     Action = "Login",
                     ResourceType = "Session",
                     Timestamp = startDate.AddHours(2),
-                    Severity = AuditSeverity.Info,
-                    Category = AuditCategory.Authentication,
+                    Severity = (int)RemoteC.Shared.Models.AuditSeverity.Info,
+                    Category = (int)RemoteC.Shared.Models.AuditCategory.Authentication,
                     Success = true,
                     Duration = TimeSpan.FromMilliseconds(150)
                 },
@@ -354,12 +355,12 @@ namespace RemoteC.Api.Tests.Services
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     UserId = userId2,
-                    UserName = "User2",
+                    UserName = "User Two",
                     Action = "UpdateProfile",
                     ResourceType = "User",
                     Timestamp = startDate.AddHours(3),
-                    Severity = AuditSeverity.Info,
-                    Category = AuditCategory.DataModification,
+                    Severity = (int)RemoteC.Shared.Models.AuditSeverity.Info,
+                    Category = (int)RemoteC.Shared.Models.AuditCategory.DataModification,
                     Success = false,
                     Duration = TimeSpan.FromMilliseconds(200)
                 }

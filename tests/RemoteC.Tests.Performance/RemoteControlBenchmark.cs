@@ -262,24 +262,4 @@ namespace RemoteC.Tests.Performance
         }
     }
 
-    /// <summary>
-    /// Benchmark runner
-    /// </summary>
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            // Run BenchmarkDotNet benchmarks
-            Console.WriteLine("Running performance benchmarks...");
-            var summary = BenchmarkRunner.Run<RemoteControlBenchmark>();
-
-            // Run latency measurements
-            Console.WriteLine("\nMeasuring latency...");
-            using var latencyTest = new LatencyMeasurement();
-            var report = await latencyTest.MeasureLatency();
-            report.PrintReport();
-
-            Console.WriteLine("\nBenchmark complete!");
-        }
-    }
 }

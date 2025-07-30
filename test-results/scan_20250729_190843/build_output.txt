@@ -1,0 +1,17 @@
+MSBuild version 17.8.27+3ab07f0cf for .NET
+  RemoteC.Shared -> /mnt/d/dev2/remotec/src/RemoteC.Shared/bin/Debug/net8.0/RemoteC.Shared.dll
+  RemoteC.Core.Interop -> /mnt/d/dev2/remotec/src/RemoteC.Core.Interop/bin/Debug/net8.0/RemoteC.Core.Interop.dll
+  RemoteC.Data -> /mnt/d/dev2/remotec/src/RemoteC.Data/bin/Debug/net8.0/RemoteC.Data.dll
+  RemoteC.Client -> /mnt/d/dev2/remotec/src/RemoteC.Client/bin/Debug/net8.0/linux-x64/RemoteC.Client.dll
+  RemoteC.Host -> /mnt/d/dev2/remotec/src/RemoteC.Host/bin/Debug/net8.0/win-x64/RemoteC.Host.dll
+  RemoteC.Api -> /mnt/d/dev2/remotec/src/RemoteC.Api/bin/Debug/net8.0/RemoteC.Api.dll
+  RemoteC.Api.Tests -> /mnt/d/dev2/remotec/tests/RemoteC.Api.Tests/bin/Debug/net8.0/RemoteC.Api.Tests.dll
+  RemoteC.Tests.Integration -> /mnt/d/dev2/remotec/tests/RemoteC.Tests.Integration/bin/Debug/net8.0/RemoteC.Tests.Integration.dll
+  RemoteC.Tests.Unit -> /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/bin/Debug/net8.0/RemoteC.Tests.Unit.dll
+  RemoteC.Tests.Performance -> /mnt/d/dev2/remotec/tests/RemoteC.Tests.Performance/bin/Debug/net8.0/RemoteC.Tests.Performance.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:17.59

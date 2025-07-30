@@ -1,0 +1,1 @@
+  /mnt/d/dev2/remotec/test-results/scan_20250729_190843/coverage/28e10b5e-6df6-4fdc-90b2-b33802b54a33/coverage.cobertura.xml

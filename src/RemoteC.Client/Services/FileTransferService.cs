@@ -55,5 +55,15 @@ namespace RemoteC.Client.Services
             await Task.CompletedTask;
             return new List<FileTransferStatus>();
         }
+        
+        protected virtual void OnTransferProgressChanged(FileTransferProgressEventArgs e)
+        {
+            TransferProgressChanged?.Invoke(this, e);
+        }
+        
+        protected virtual void OnTransferCompleted(FileTransferCompletedEventArgs e)
+        {
+            TransferCompleted?.Invoke(this, e);
+        }
     }
 }

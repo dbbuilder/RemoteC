@@ -1,0 +1,37 @@
+Test run for /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/bin/Debug/net8.0/RemoteC.Tests.Unit.dll (.NETCoreApp,Version=v8.0)
+Microsoft (R) Test Execution Command Line Tool Version 17.8.0 (x64)
+Copyright (c) Microsoft Corporation.  All rights reserved.
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.47]     RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale [FAIL]
+[xUnit.net 00:00:01.53]     RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData [FAIL]
+  Failed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale [269 ms]
+  Error Message:
+   Expected result not to be <null>.
+  Stack Trace:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message)
+   at FluentAssertions.Primitives.ReferenceTypeAssertions`2.NotBeNull(String because, Object[] becauseArgs)
+   at RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WithScaling_ShouldApplyScale() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs:line 147
+--- End of stack trace from previous location ---
+  Failed RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData [25 ms]
+  Error Message:
+   Expected result not to be <null>.
+  Stack Trace:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message)
+   at FluentAssertions.Primitives.ReferenceTypeAssertions`2.NotBeNull(String because, Object[] becauseArgs)
+   at RemoteC.Tests.Unit.Host.Services.ScreenCaptureServiceTests.CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData() in /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs:line 83
+--- End of stack trace from previous location ---
+Results File: /mnt/d/dev2/remotec/tests/RemoteC.Tests.Unit/TestResults/_DesktopL920Win11_2025-07-29_19_05_42.trx
+
+Failed!  - Failed:     2, Passed:    24, Skipped:     0, Total:    26, Duration: 351 ms - RemoteC.Tests.Unit.dll (net8.0)

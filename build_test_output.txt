@@ -1,0 +1,7 @@
+MSBuild version 17.8.27+3ab07f0cf for .NET
+MSBUILD : error MSB1008: Only one project can be specified.
+    Full command line: '/usr/lib/dotnet/sdk/8.0.117/MSBuild.dll -maxcpucount -verbosity:m -restore -consoleloggerparameters:Summary tests/RemoteC.Api.Tests/RemoteC.Api.Tests.csproj 2'
+  Switches appended by response files:
+Switch: 2
+
+For switch syntax, type "MSBuild -help"

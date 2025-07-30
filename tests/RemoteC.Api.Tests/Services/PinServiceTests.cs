@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,10 +26,15 @@ namespace RemoteC.Api.Tests.Services
             _configurationMock = new Mock<IConfiguration>();
 
             // Setup default configuration
-            _configurationMock.Setup(c => c.GetValue<int>("Security:PinLength", 6))
-                .Returns(6);
-            _configurationMock.Setup(c => c.GetValue<int>("Security:PinExpirationMinutes", 10))
-                .Returns(10);
+            var pinLengthSection = new Mock<IConfigurationSection>();
+            pinLengthSection.Setup(x => x.Value).Returns("6");
+            _configurationMock.Setup(x => x.GetSection("Security:PinLength"))
+                .Returns(pinLengthSection.Object);
+            
+            var pinExpirationSection = new Mock<IConfigurationSection>();
+            pinExpirationSection.Setup(x => x.Value).Returns("10");
+            _configurationMock.Setup(x => x.GetSection("Security:PinExpirationMinutes"))
+                .Returns(pinExpirationSection.Object);
 
             _service = new PinService(_cacheMock.Object, _loggerMock.Object, _configurationMock.Object);
         }
@@ -40,9 +46,9 @@ namespace RemoteC.Api.Tests.Services
         {
             // Arrange
             var sessionId = Guid.NewGuid();
-            _cacheMock.Setup(c => c.SetStringAsync(
+            _cacheMock.Setup(c => c.SetAsync(
                 It.IsAny<string>(),
-                It.IsAny<string>(),
+                It.IsAny<byte[]>(),
                 It.IsAny<DistributedCacheEntryOptions>(),
                 It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
@@ -55,9 +61,9 @@ namespace RemoteC.Api.Tests.Services
             Assert.Equal(6, pin.Length);
             Assert.True(int.TryParse(pin, out _), "PIN should contain only digits");
             
-            _cacheMock.Verify(c => c.SetStringAsync(
+            _cacheMock.Verify(c => c.SetAsync(
                 $"pin:session:{sessionId}",
-                It.IsAny<string>(),
+                It.IsAny<byte[]>(),
                 It.IsAny<DistributedCacheEntryOptions>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -67,8 +73,12 @@ namespace RemoteC.Api.Tests.Services
         {
             // Arrange
             var sessionId = Guid.NewGuid();
-            _configurationMock.Setup(c => c.GetValue<int>("Security:PinLength", 6))
-                .Returns(8);
+            
+            // Override the default configuration
+            var pinLengthSection = new Mock<IConfigurationSection>();
+            pinLengthSection.Setup(x => x.Value).Returns("8");
+            _configurationMock.Setup(x => x.GetSection("Security:PinLength"))
+                .Returns(pinLengthSection.Object);
 
             var service = new PinService(_cacheMock.Object, _loggerMock.Object, _configurationMock.Object);
 
@@ -86,13 +96,13 @@ namespace RemoteC.Api.Tests.Services
             var sessionId = Guid.NewGuid();
             string? storedData = null;
             
-            _cacheMock.Setup(c => c.SetStringAsync(
+            _cacheMock.Setup(c => c.SetAsync(
                 It.IsAny<string>(),
-                It.IsAny<string>(),
+                It.IsAny<byte[]>(),
                 It.IsAny<DistributedCacheEntryOptions>(),
                 It.IsAny<CancellationToken>()))
-                .Callback<string, string, DistributedCacheEntryOptions, CancellationToken>(
-                    (key, value, options, token) => storedData = value)
+                .Callback<string, byte[], DistributedCacheEntryOptions, CancellationToken>(
+                    (key, value, options, token) => storedData = Encoding.UTF8.GetString(value))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -122,20 +132,20 @@ namespace RemoteC.Api.Tests.Services
             
             // First generate the PIN to get the hash
             string? storedData = null;
-            _cacheMock.Setup(c => c.SetStringAsync(
+            _cacheMock.Setup(c => c.SetAsync(
                 It.IsAny<string>(),
-                It.IsAny<string>(),
+                It.IsAny<byte[]>(),
                 It.IsAny<DistributedCacheEntryOptions>(),
                 It.IsAny<CancellationToken>()))
-                .Callback<string, string, DistributedCacheEntryOptions, CancellationToken>(
-                    (key, value, options, token) => storedData = value)
+                .Callback<string, byte[], DistributedCacheEntryOptions, CancellationToken>(
+                    (key, value, options, token) => storedData = Encoding.UTF8.GetString(value))
                 .Returns(Task.CompletedTask);
 
             // Generate a PIN (we'll use 123456 for validation)
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 $"pin:session:{sessionId}",
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => storedData);
+                .ReturnsAsync(() => storedData != null ? Encoding.UTF8.GetBytes(storedData) : null);
 
             // Create PIN data with known hash for "123456"
             var pinData = JsonSerializer.Serialize(new
@@ -146,10 +156,10 @@ namespace RemoteC.Api.Tests.Services
                 IsUsed = false
             });
 
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 $"pin:session:{sessionId}",
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(pinData);
+                .ReturnsAsync(Encoding.UTF8.GetBytes(pinData));
 
             _cacheMock.Setup(c => c.RemoveAsync(
                 It.IsAny<string>(),
@@ -179,10 +189,10 @@ namespace RemoteC.Api.Tests.Services
                 IsUsed = false
             });
 
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 $"pin:session:{sessionId}",
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(pinData);
+                .ReturnsAsync(Encoding.UTF8.GetBytes(pinData));
 
             // Act
             var result = await _service.ValidatePinAsync(sessionId, "999999"); // Wrong PIN
@@ -207,10 +217,10 @@ namespace RemoteC.Api.Tests.Services
                 IsUsed = true // Already used
             });
 
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 $"pin:session:{sessionId}",
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(pinData);
+                .ReturnsAsync(Encoding.UTF8.GetBytes(pinData));
 
             // Act
             var result = await _service.ValidatePinAsync(sessionId, "123456");
@@ -224,10 +234,10 @@ namespace RemoteC.Api.Tests.Services
         {
             // Arrange
             var sessionId = Guid.NewGuid();
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 $"pin:session:{sessionId}",
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string?)null);
+                .ReturnsAsync((byte[]?)null);
 
             // Act
             var result = await _service.ValidatePinAsync(sessionId, "123456");
@@ -276,10 +286,10 @@ namespace RemoteC.Api.Tests.Services
                 IsUsed = false
             });
 
-            _cacheMock.Setup(c => c.GetStringAsync(
+            _cacheMock.Setup(c => c.GetAsync(
                 $"pin:session:{sessionId}",
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(pinData);
+                .ReturnsAsync(Encoding.UTF8.GetBytes(pinData));
 
             // Act
             var result = await _service.IsPinValidAsync(sessionId, "123456");

@@ -1,0 +1,18 @@
+--- a/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs
++++ b/tests/RemoteC.Tests.Unit/Host/Services/ScreenCaptureServiceTests.cs
+@@ -64,6 +64,7 @@ public async Task CaptureScreenAsync_WhenInitialized_ShouldReturnScreenData()
+         // Arrange
+         await InitializeService();
+         var quality = new QualitySettings { Quality = 85, TargetFps = 30 };
++        _providerMock.Setup(p => p.GetScreenBounds(It.IsAny<string>())).Returns(new ScreenBounds { Width = 1920, Height = 1080 });
+         var expectedFrame = new ScreenFrame
+         {
+             Width = 1920,
+@@ -120,6 +121,7 @@ public async Task CaptureScreenAsync_WithScaling_ShouldApplyScale()
+         // Arrange
+         await InitializeService();
+         var quality = new QualitySettings { Quality = 85, Scale = 0.5f, CompressionType = RemoteC.Host.Services.CompressionType.Jpeg };
++        _providerMock.Setup(p => p.GetScreenBounds(It.IsAny<string>())).Returns(new ScreenBounds { Width = 1920, Height = 1080 });
+         
+         var originalFrame = new ScreenFrame
+         {

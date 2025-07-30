@@ -35,5 +35,10 @@ namespace RemoteC.Client.Services
         {
             // TODO: Stop clipboard monitoring
         }
+        
+        protected virtual void OnClipboardChanged(ClipboardChangedEventArgs e)
+        {
+            ClipboardChanged?.Invoke(this, e);
+        }
     }
 }

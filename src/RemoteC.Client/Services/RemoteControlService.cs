@@ -125,5 +125,20 @@ namespace RemoteC.Client.Services
             await Task.CompletedTask;
             _logger.Information("Quality mode changed to {Mode} for session {SessionId}", mode, sessionId);
         }
+        
+        protected virtual void OnScreenUpdated(ScreenUpdateEventArgs e)
+        {
+            ScreenUpdated?.Invoke(this, e);
+        }
+        
+        protected virtual void OnSessionStatusChanged(SessionStatusEventArgs e)
+        {
+            SessionStatusChanged?.Invoke(this, e);
+        }
+        
+        protected virtual void OnPermissionRequested(PermissionRequestEventArgs e)
+        {
+            PermissionRequested?.Invoke(this, e);
+        }
     }
 }

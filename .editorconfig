@@ -212,6 +212,18 @@ dotnet_diagnostic.CA1854.severity = suggestion
 # CA1869: Cache and reuse JsonSerializerOptions
 dotnet_diagnostic.CA1869.severity = suggestion
 
+# CA1861: Avoid constant arrays as arguments
+dotnet_diagnostic.CA1861.severity = suggestion
+
+# CA1416: Platform compatibility
+dotnet_diagnostic.CA1416.severity = suggestion
+
+# CA2012: Use ValueTasks correctly
+dotnet_diagnostic.CA2012.severity = warning
+
+# CA1725: Parameter names should match base declaration
+dotnet_diagnostic.CA1725.severity = suggestion
+
 # CS0618: Member is obsolete
 dotnet_diagnostic.CS0618.severity = warning
 

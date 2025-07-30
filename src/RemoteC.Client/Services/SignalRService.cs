@@ -101,7 +101,21 @@ namespace RemoteC.Client.Services
 
         public void Dispose()
         {
-            _hubConnection?.DisposeAsync().GetAwaiter().GetResult();
+            // Use async disposal pattern to properly handle ValueTask
+            if (_hubConnection != null)
+            {
+                var disposeTask = _hubConnection.DisposeAsync();
+                if (disposeTask.IsCompletedSuccessfully)
+                {
+                    // Already completed, no need to wait
+                    disposeTask.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    // Convert to Task and wait
+                    disposeTask.AsTask().GetAwaiter().GetResult();
+                }
+            }
         }
     }
 }

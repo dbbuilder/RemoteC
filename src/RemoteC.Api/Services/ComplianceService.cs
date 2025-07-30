@@ -1035,6 +1035,102 @@ namespace RemoteC.Api.Services
             return dashboard;
         }
         
+        public async Task<bool> CheckPHIAccessAsync(Guid userId, Guid resourceId, string purpose)
+        {
+            // Check if user has valid PHI access for the given purpose
+            var access = await _context.PHIAccesses
+                .Where(a => a.UserId == userId && 
+                           a.ResourceId == resourceId && 
+                           a.Purpose == purpose &&
+                           a.ExpiresAt > DateTime.UtcNow)
+                .FirstOrDefaultAsync();
+                
+            return access != null;
+        }
+        
+        public async Task<HIPAABreachReport> GenerateHIPAABreachReportAsync(SecurityBreach breach)
+        {
+            var report = new HIPAABreachReport
+            {
+                RequiresNotification = breach.AffectedRecords > 500,
+                AffectedIndividuals = new List<string>(),
+                RiskAssessment = "High risk due to unauthorized access",
+                MitigationSteps = new List<string>
+                {
+                    "Reset all affected user passwords",
+                    "Enable MFA for all accounts",
+                    "Conduct security audit",
+                    "Implement additional access controls"
+                },
+                NotificationRequirements = new List<string>()
+            };
+            
+            // Add notification requirements based on scale
+            if (breach.AffectedRecords > 500)
+            {
+                report.NotificationRequirements.Add("HHS");
+                report.NotificationRequirements.Add("Media outlets");
+            }
+            report.NotificationRequirements.Add("Affected individuals within 60 days");
+            
+            // Generate mock affected individuals list
+            for (int i = 0; i < Math.Min(breach.AffectedRecords, 10); i++)
+            {
+                report.AffectedIndividuals.Add($"Individual{i:000}");
+            }
+            
+            return report;
+        }
+        
+        public async Task<DataRetentionResult> ApplyDataRetentionPolicyAsync(Guid organizationId)
+        {
+            var result = new DataRetentionResult();
+            var cutoffDate = DateTime.UtcNow.AddDays(-_options.DataRetentionDays);
+            
+            // Delete old sessions
+            var oldSessions = await _context.Sessions
+                .Where(s => s.EndedAt != null && s.EndedAt < cutoffDate)
+                .ToListAsync();
+            _context.Sessions.RemoveRange(oldSessions);
+            result.SessionsDeleted = oldSessions.Count;
+            
+            // Delete old audit logs
+            var oldLogs = await _context.AuditLogs
+                .Where(l => l.Timestamp < cutoffDate)
+                .ToListAsync();
+            _context.AuditLogs.RemoveRange(oldLogs);
+            result.LogsDeleted = oldLogs.Count;
+            
+            // Delete other old records
+            result.RecordsDeleted = result.SessionsDeleted + result.LogsDeleted;
+            
+            await _context.SaveChangesAsync();
+            
+            return result;
+        }
+        
+        public async Task<DataRetentionStatus> GetDataRetentionStatusAsync(Guid organizationId)
+        {
+            var cutoffDate = DateTime.UtcNow.AddDays(-_options.DataRetentionDays);
+            
+            var totalSessions = await _context.Sessions.CountAsync();
+            var sessionsToDelete = await _context.Sessions
+                .Where(s => s.EndedAt != null && s.EndedAt < cutoffDate)
+                .CountAsync();
+                
+            var totalLogs = await _context.AuditLogs.CountAsync();
+            var logsToDelete = await _context.AuditLogs
+                .Where(l => l.Timestamp < cutoffDate)
+                .CountAsync();
+                
+            return new DataRetentionStatus
+            {
+                TotalRecords = totalSessions + totalLogs,
+                RecordsToDelete = sessionsToDelete + logsToDelete,
+                RecordsToRetain = (totalSessions - sessionsToDelete) + (totalLogs - logsToDelete)
+            };
+        }
+        
         #endregion
     }
 }
