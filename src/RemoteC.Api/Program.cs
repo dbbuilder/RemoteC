@@ -41,12 +41,23 @@ public class Program
             if (!builder.Environment.IsDevelopment())
             {
                 var keyVaultName = builder.Configuration["KeyVault:VaultName"];
-                if (!string.IsNullOrEmpty(keyVaultName))
+                if (!string.IsNullOrEmpty(keyVaultName) && keyVaultName != "your_keyvault_name")
                 {
-                    var credential = new DefaultAzureCredential();
-                    var client = new SecretClient(new Uri($"https://{keyVaultName}.vault.azure.net/"), credential);
-                    builder.Configuration.AddAzureKeyVault(client, new Azure.Extensions.AspNetCore.Configuration.Secrets.AzureKeyVaultConfigurationOptions());
+                    try
+                    {
+                        var credential = new DefaultAzureCredential();
+                        var client = new SecretClient(new Uri($"https://{keyVaultName}.vault.azure.net/"), credential);
+                        builder.Configuration.AddAzureKeyVault(client, new Azure.Extensions.AspNetCore.Configuration.Secrets.AzureKeyVaultConfigurationOptions());
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning("Failed to configure Azure Key Vault: {Message}. Continuing without Key Vault.", ex.Message);
+                    }
                 }
+            }
+            else
+            {
+                Log.Information("Running in Development mode - Azure Key Vault is disabled");
             }
 
             // Add services to the container
@@ -108,7 +119,17 @@ public class Program
 
             // Add Entity Framework
             builder.Services.AddDbContext<RemoteCDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                if (connectionString?.Contains(".db") == true)
+                {
+                    options.UseSqlite(connectionString);
+                }
+                else
+                {
+                    options.UseSqlServer(connectionString);
+                }
+            });
 
             // Add Azure AD B2C Authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -140,14 +161,24 @@ public class Program
                 });
             }
 
-            // Add Hangfire for background jobs
-            builder.Services.AddHangfire(configuration => configuration
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // Add Hangfire for background jobs (conditionally)
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", true);
+            
+            if (hangfireEnabled && !string.IsNullOrEmpty(connectionString) && !connectionString.Contains(".db"))
+            {
+                builder.Services.AddHangfire(configuration => configuration
+                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                    .UseSimpleAssemblyNameTypeSerializer()
+                    .UseRecommendedSerializerSettings()
+                    .UseSqlServerStorage(connectionString));
 
-            builder.Services.AddHangfireServer();
+                builder.Services.AddHangfireServer();
+            }
+            else
+            {
+                Log.Information("Hangfire is disabled (SQLite database or Hangfire:Enabled=false)");
+            }
 
             // Add AutoMapper
             builder.Services.AddAutoMapper(typeof(Program));
@@ -291,11 +322,21 @@ public class Program
             app.MapControllers();
             app.MapHub<SessionHub>("/hubs/session");
 
-            // Add Hangfire Dashboard
-            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            // Add Hangfire Dashboard (conditionally)
+            try
             {
-                Authorization = new[] { new HangfireAuthorizationFilter() }
-            });
+                if (app.Services.GetService<Hangfire.IGlobalConfiguration>() != null)
+                {
+                    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+                    {
+                        Authorization = new[] { new HangfireAuthorizationFilter() }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Hangfire dashboard not available: {Message}", ex.Message);
+            }
 
             // Health checks
             app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

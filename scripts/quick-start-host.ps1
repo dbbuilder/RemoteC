@@ -24,8 +24,8 @@ if (-not (Test-Path "src\RemoteC.Host\bin\Release\net8.0\RemoteC.Host.exe")) {
 Write-Host "Creating configuration..." -ForegroundColor Yellow
 $config = @{
     ApiSettings = @{
-        ApiUrl = "http://${ServerIP}:7001"
-        SignalRUrl = "http://${ServerIP}:7002/hubs/session"
+        ApiUrl = "http://${ServerIP}:17001"
+        SignalRUrl = "http://${ServerIP}:17002/hubs/session"
     }
     HostSettings = @{
         MachineName = $env:COMPUTERNAME

@@ -17,12 +17,12 @@ echo Configuration:
 echo - Path: D:\dev2\remotec
 echo - Database: SQLite (no SQL Server needed)
 echo - Cache: In-Memory (no Redis needed)
-echo - URL: http://localhost:7001
+echo - URL: http://localhost:17001
 echo.
 
 :: Set environment for development
 set ASPNETCORE_ENVIRONMENT=Development
-set ASPNETCORE_URLS=http://localhost:7001
+set ASPNETCORE_URLS=http://localhost:17001
 
 :: Use SQLite instead of SQL Server
 set ConnectionStrings__DefaultConnection=Data Source=remotec.db
@@ -43,7 +43,7 @@ if errorlevel 1 (
     echo.
     echo Server failed to start. Common issues:
     echo 1. Missing .NET 8.0 SDK - Install from https://dotnet.microsoft.com/download/dotnet/8.0
-    echo 2. Port 7001 already in use - Check with: netstat -an ^| findstr :7001
+    echo 2. Port 17001 already in use - Check with: netstat -an ^| findstr :17001
     echo 3. Build errors - Try: dotnet build src\RemoteC.Api\RemoteC.Api.csproj
     pause
 )

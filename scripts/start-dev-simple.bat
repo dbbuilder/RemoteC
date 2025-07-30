@@ -7,7 +7,7 @@ cd /d D:\dev2\remotec
 
 :: Set environment for in-memory database and no Redis
 set ASPNETCORE_ENVIRONMENT=Development
-set ASPNETCORE_URLS=http://localhost:7001
+set ASPNETCORE_URLS=http://localhost:17001
 set ConnectionStrings__DefaultConnection=Data Source=:memory:
 set ConnectionStrings__UseInMemoryDatabase=true
 set Cache__Provider=Memory
