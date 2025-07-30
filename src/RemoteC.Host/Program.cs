@@ -52,6 +52,9 @@ public class Program
             {
                 var configuration = hostContext.Configuration;
 
+                // HTTP client
+                services.AddHttpClient();
+                
                 // Core services
                 services.AddSingleton<IScreenCaptureService, ScreenCaptureService>();
                 services.AddSingleton<IInputControlService, InputControlService>();
