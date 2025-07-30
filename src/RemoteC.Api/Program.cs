@@ -367,6 +367,7 @@ public class Program
 
             app.MapControllers();
             app.MapHub<SessionHub>("/hubs/session");
+            app.MapHub<HostHub>("/hubs/host");
 
             // Add Hangfire Dashboard (conditionally)
             try

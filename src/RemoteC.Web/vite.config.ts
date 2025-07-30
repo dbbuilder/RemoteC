@@ -12,14 +12,15 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: '0.0.0.0', // Allow access from network
     proxy: {
       '/api': {
-        target: 'https://localhost:7001',
+        target: 'http://localhost:17001', // Updated to correct port
         changeOrigin: true,
         secure: false,
       },
       '/hubs': {
-        target: 'https://localhost:7001',
+        target: 'http://localhost:17001', // Updated to correct port
         changeOrigin: true,
         secure: false,
         ws: true,
