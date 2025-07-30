@@ -84,17 +84,3 @@ public class MappingProfile : Profile
         };
     }
 }
-
-public class DeviceDto
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string? HostName { get; set; }
-    public string? IpAddress { get; set; }
-    public string? MacAddress { get; set; }
-    public string? OperatingSystem { get; set; }
-    public bool IsOnline { get; set; }
-    public DateTime LastSeenAt { get; set; }
-    public string CreatedBy { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-}

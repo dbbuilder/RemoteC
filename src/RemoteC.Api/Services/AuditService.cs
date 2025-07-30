@@ -50,7 +50,17 @@ namespace RemoteC.Api.Services
             if (_options.EnableBatching)
             {
                 _batchTimer = new Timer(
-                    async _ => await FlushBatchAsync(),
+                    async _ => 
+                    {
+                        try
+                        {
+                            await FlushBatchAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error in batch timer callback");
+                        }
+                    },
                     null,
                     TimeSpan.FromSeconds(_options.BatchIntervalSeconds),
                     TimeSpan.FromSeconds(_options.BatchIntervalSeconds));
@@ -489,10 +499,18 @@ namespace RemoteC.Api.Services
                 var toFlush = _batchBuffer.ToList();
                 _batchBuffer.Clear();
 
-                // Queue background task
-                await _taskQueue.QueueBackgroundWorkItemAsync(async token =>
+                // Process immediately instead of queuing to avoid disposal issues
+                // In production, this would use a more robust background processing mechanism
+                _ = Task.Run(async () =>
                 {
-                    await LogBatchAsync(toFlush, token);
+                    try
+                    {
+                        await LogBatchAsync(toFlush, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing audit batch");
+                    }
                 });
             }
             finally

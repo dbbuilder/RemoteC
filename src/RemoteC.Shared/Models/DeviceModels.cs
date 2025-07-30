@@ -5,7 +5,7 @@ namespace RemoteC.Shared.Models;
 /// </summary>
 public class DeviceDto
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? HostName { get; set; }
     public string? IpAddress { get; set; }
@@ -15,7 +15,7 @@ public class DeviceDto
     public bool IsOnline { get; set; }
     public DateTime LastSeenAt { get; set; }
     public DateTime CreatedAt { get; set; }
-    public Guid CreatedBy { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
     public string? CreatedByName { get; set; }
 }
 

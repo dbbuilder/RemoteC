@@ -1,6 +1,8 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using RemoteC.Data.Entities;
+using RemoteC.Shared.Models;
+using AutoMapper;
 using System.Data;
 
 namespace RemoteC.Data.Repositories;
@@ -8,13 +10,15 @@ namespace RemoteC.Data.Repositories;
 public class DeviceRepository : IDeviceRepository
 {
     private readonly RemoteCDbContext _context;
+    private readonly IMapper _mapper;
 
-    public DeviceRepository(RemoteCDbContext context)
+    public DeviceRepository(RemoteCDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<PagedResult<Device>> GetUserDevicesAsync(Guid userId, int pageNumber = 1, int pageSize = 25, bool onlineOnly = false)
+    public async Task<PagedResult<DeviceDto>> GetUserDevicesAsync(Guid userId, int pageNumber = 1, int pageSize = 25, bool onlineOnly = false)
     {
         var parameters = new[]
         {
@@ -55,16 +59,19 @@ public class DeviceRepository : IDeviceRepository
                 totalCount = reader.GetInt32(reader.GetOrdinal("TotalCount"));
         }
 
-        return new PagedResult<Device>
+        // Map entities to DTOs
+        var deviceDtos = devices.Select(d => _mapper.Map<DeviceDto>(d)).ToList();
+        
+        return new PagedResult<DeviceDto>
         {
-            Items = devices,
+            Items = deviceDtos,
             TotalCount = totalCount,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
     }
 
-    public async Task<Device?> GetDeviceDetailsAsync(Guid deviceId, Guid? userId = null)
+    public async Task<DeviceDto?> GetDeviceDetailsAsync(Guid deviceId, Guid? userId = null)
     {
         var parameters = new[]
         {
@@ -102,10 +109,10 @@ public class DeviceRepository : IDeviceRepository
             };
         }
 
-        return device;
+        return device != null ? _mapper.Map<DeviceDto>(device) : null;
     }
 
-    public async Task<Device> UpsertDeviceAsync(string name, string macAddress, Guid createdBy, 
+    public async Task<DeviceDto> UpsertDeviceAsync(string name, string macAddress, Guid createdBy, 
         string? hostName = null, string? ipAddress = null, string? operatingSystem = null, 
         string? version = null, bool isOnline = true)
     {
@@ -160,7 +167,7 @@ public class DeviceRepository : IDeviceRepository
         return false;
     }
 
-    public async Task<IEnumerable<Device>> GetDevicesInGroupAsync(Guid deviceGroupId, int pageNumber = 1, int pageSize = 25)
+    public async Task<IEnumerable<DeviceDto>> GetDevicesInGroupAsync(Guid deviceGroupId, int pageNumber = 1, int pageSize = 25)
     {
         var parameters = new[]
         {
@@ -194,7 +201,7 @@ public class DeviceRepository : IDeviceRepository
             });
         }
 
-        return devices;
+        return devices.Select(d => _mapper.Map<DeviceDto>(d)).ToList();
     }
 
     public async Task<bool> AddDeviceToGroupAsync(Guid deviceGroupId, Guid deviceId, Guid addedBy)

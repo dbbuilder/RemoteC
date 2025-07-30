@@ -23,9 +23,11 @@ namespace RemoteC.Api.Authentication
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             // Create a fake user for development
+            var devUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "dev-user-001"),
+                new Claim(ClaimTypes.NameIdentifier, devUserId.ToString()),
+                new Claim("sub", devUserId.ToString()), // Add sub claim as well
                 new Claim(ClaimTypes.Name, "Development User"),
                 new Claim(ClaimTypes.Email, "dev@localhost.com"),
                 new Claim(ClaimTypes.Role, "Admin"),

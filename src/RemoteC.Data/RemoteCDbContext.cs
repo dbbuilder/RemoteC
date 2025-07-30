@@ -216,16 +216,16 @@ public class RemoteCDbContext : DbContext
         // Seed default permissions
         var permissions = new[]
         {
-            new Permission { Id = Guid.NewGuid(), Name = "session.create", Description = "Create new sessions" },
-            new Permission { Id = Guid.NewGuid(), Name = "session.view", Description = "View session details" },
-            new Permission { Id = Guid.NewGuid(), Name = "session.control", Description = "Control remote sessions" },
-            new Permission { Id = Guid.NewGuid(), Name = "session.admin", Description = "Administer all sessions" },
-            new Permission { Id = Guid.NewGuid(), Name = "device.view", Description = "View device information" },
-            new Permission { Id = Guid.NewGuid(), Name = "device.admin", Description = "Administer devices" },
-            new Permission { Id = Guid.NewGuid(), Name = "user.view", Description = "View user information" },
-            new Permission { Id = Guid.NewGuid(), Name = "user.admin", Description = "Administer users" },
-            new Permission { Id = Guid.NewGuid(), Name = "audit.view", Description = "View audit logs" },
-            new Permission { Id = Guid.NewGuid(), Name = "system.admin", Description = "System administration" }
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Name = "session.create", Description = "Create new sessions", Resource = "session", Action = "create" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), Name = "session.view", Description = "View session details", Resource = "session", Action = "view" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000003"), Name = "session.control", Description = "Control remote sessions", Resource = "session", Action = "control" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000004"), Name = "session.admin", Description = "Administer all sessions", Resource = "session", Action = "admin" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000005"), Name = "device.view", Description = "View device information", Resource = "device", Action = "view" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000006"), Name = "device.admin", Description = "Administer devices", Resource = "device", Action = "admin" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000007"), Name = "user.view", Description = "View user information", Resource = "user", Action = "view" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000008"), Name = "user.admin", Description = "Administer users", Resource = "user", Action = "admin" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000009"), Name = "audit.view", Description = "View audit logs", Resource = "audit", Action = "view" },
+            new Permission { Id = Guid.Parse("10000000-0000-0000-0000-000000000010"), Name = "system.admin", Description = "System administration", Resource = "system", Action = "admin" }
         };
 
         modelBuilder.Entity<Permission>().HasData(permissions);

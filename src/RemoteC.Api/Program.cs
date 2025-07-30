@@ -212,13 +212,21 @@ public class Program
             }
 
             // Add AutoMapper
-            builder.Services.AddAutoMapper(typeof(Program));
+            builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
             // Add Repositories
             builder.Services.AddScoped<Data.Repositories.IUserRepository, Data.Repositories.UserRepository>();
             builder.Services.AddScoped<Data.Repositories.ISessionRepository, Data.Repositories.SessionRepository>();
             builder.Services.AddScoped<Data.Repositories.IAuditRepository, Data.Repositories.AuditRepository>();
-            builder.Services.AddScoped<Data.Repositories.IDeviceRepository, Data.Repositories.DeviceRepository>();
+            // Use development repository in development mode
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Services.AddScoped<Data.Repositories.IDeviceRepository, Data.Repositories.DeviceRepositoryDev>();
+            }
+            else
+            {
+                builder.Services.AddScoped<Data.Repositories.IDeviceRepository, Data.Repositories.DeviceRepository>();
+            }
 
             // Add Application Services
             builder.Services.AddScoped<ISessionService, SessionService>();
@@ -245,6 +253,7 @@ public class Program
             builder.Services.AddScoped<IMetricsService, MetricsService>();
             builder.Services.AddScoped<IIdentityProviderService, IdentityProviderService>();
             builder.Services.AddScoped<ICertificateService, CertificateService>();
+            builder.Services.AddScoped<IPolicyEngineService, PolicyEngineService>();
             
             // Configure file transfer options
             builder.Services.Configure<FileTransferOptions>(builder.Configuration.GetSection("FileTransfer"));
