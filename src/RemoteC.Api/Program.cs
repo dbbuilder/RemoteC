@@ -132,20 +132,6 @@ public class Program
                 }
             });
 
-            // Add DbContext factory for background services
-            builder.Services.AddDbContextFactory<RemoteCDbContext>(options =>
-            {
-                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-                if (connectionString?.Contains(".db") == true)
-                {
-                    options.UseSqlite(connectionString);
-                }
-                else
-                {
-                    options.UseSqlServer(connectionString);
-                }
-            });
-
             // Add Azure AD B2C Authentication (disabled in development for faster startup)
             if (!builder.Environment.IsDevelopment())
             {

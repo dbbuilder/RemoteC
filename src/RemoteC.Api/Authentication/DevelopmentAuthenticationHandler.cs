@@ -29,7 +29,7 @@ namespace RemoteC.Api.Authentication
                 new Claim(ClaimTypes.Name, "Development User"),
                 new Claim(ClaimTypes.Email, "dev@localhost.com"),
                 new Claim(ClaimTypes.Role, "Admin"),
-                new Claim("organizationId", "a1b2c3d4-e5f6-7890-abcd-ef1234567890") // Default org
+                new Claim("OrganizationId", "a1b2c3d4-e5f6-7890-abcd-ef1234567890") // Default org
             };
 
             var identity = new ClaimsIdentity(claims, "Development");

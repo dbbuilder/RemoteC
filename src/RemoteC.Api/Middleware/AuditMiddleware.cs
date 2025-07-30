@@ -152,8 +152,8 @@ namespace RemoteC.Api.Middleware
                     Timestamp = DateTime.UtcNow,
                     OrganizationId = string.IsNullOrEmpty(organizationId) 
                         ? Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890") // Default organization
-                        : Guid.Parse(organizationId),
-                    UserId = string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId),
+                        : (Guid.TryParse(organizationId, out var orgGuid) ? orgGuid : Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890")),
+                    UserId = string.IsNullOrEmpty(userId) ? null : (Guid.TryParse(userId, out var userGuid) ? userGuid : null),
                     UserName = userName,
                     UserEmail = userEmail,
                     IpAddress = GetClientIpAddress(context),
