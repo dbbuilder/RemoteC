@@ -15,7 +15,17 @@ This guide explains how to set up RemoteC server and host across machines on a l
 ```powershell
 # On the server machine, find your local IP
 ipconfig
-# Look for IPv4 Address (e.g., 192.168.1.100)
+
+# Look for IPv4 Address under your active network adapter
+# It will be something like:
+#   - 192.168.1.XXX (common home network)
+#   - 192.168.0.XXX (alternate home network)
+#   - 10.0.0.XXX (some corporate networks)
+#   - 172.16.X.XXX (other private networks)
+# 
+# Example output:
+# Ethernet adapter Ethernet:
+#    IPv4 Address. . . . . . . . . . . : 192.168.1.100  <-- This is YOUR server IP
 ```
 
 ### 2. Configure Firewall
@@ -41,8 +51,9 @@ dotnet run --urls "http://0.0.0.0:17001"
 # From the server machine
 curl http://localhost:17001/health
 
-# From another machine on the network (replace with your server IP)
-curl http://192.168.1.100:17001/health
+# From another machine on the network
+# IMPORTANT: Replace 192.168.1.100 with YOUR actual server IP from step 1!
+curl http://192.168.1.100:17001/health   # <-- Replace this IP!
 ```
 
 ## Host Setup (Machine 2)
@@ -60,13 +71,16 @@ Update `appsettings.json`:
 ```json
 {
   "RemoteControl": {
-    "ServerUrl": "http://192.168.1.100:17001",  // Replace with your server IP
+    "ServerUrl": "http://YOUR_SERVER_IP:17001",  // ← REPLACE WITH YOUR ACTUAL SERVER IP!
     "DeviceId": "auto",
     "DeviceName": "auto",
     "AllowedViewers": [],
     "RequireConsent": true
   }
 }
+
+// Example with real IP (yours will be different):
+// "ServerUrl": "http://192.168.1.100:17001",
 ```
 
 ### 2. Start the Host
@@ -104,7 +118,11 @@ dotnet run --urls "http://0.0.0.0:17001"
 echo Starting RemoteC Host...
 cd /d "%~dp0\..\src\RemoteC.Host"
 
-set /p SERVER_IP="Enter server IP address (e.g., 192.168.1.100): "
+echo.
+echo First, find your server's IP address by running 'ipconfig' on the server machine.
+echo It will be something like 192.168.1.XXX or 10.0.0.XXX
+echo.
+set /p SERVER_IP="Enter YOUR server's IP address: "
 echo.
 echo Connecting to server at http://%SERVER_IP%:17001
 echo.
@@ -135,8 +153,11 @@ dotnet run
 
 3. **Verify Network Connectivity**
    ```powershell
-   # From host machine, ping server
-   ping 192.168.1.100
+   # From host machine, ping server (use YOUR server's IP)
+   ping YOUR_SERVER_IP
+   
+   # Example:
+   # ping 192.168.1.100
    ```
 
 ### Host Cannot Connect to Server

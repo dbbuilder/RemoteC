@@ -22,7 +22,10 @@ if ($result.TcpTestSucceeded) {
         $response = Invoke-RestMethod -Uri "http://${ServerIP}:${Port}/health" -Method Get
         Write-Host "✓ API is healthy!" -ForegroundColor Green
         Write-Host "  Status: $($response.status)" -ForegroundColor Gray
-        Write-Host "  Database: $($response.checks | Where-Object {$_.component -eq 'database'} | Select-Object -ExpandProperty status)" -ForegroundColor Gray
+        $dbCheck = $response.checks | Where-Object {$_.component -eq 'database'}
+        if ($dbCheck) {
+            Write-Host "  Database: $($dbCheck.status)" -ForegroundColor Gray
+        }
     } catch {
         Write-Host "✗ API health check failed" -ForegroundColor Red
         Write-Host "  Error: $_" -ForegroundColor Red
