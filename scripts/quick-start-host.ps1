@@ -11,7 +11,7 @@ Write-Host ""
 $currentDir = Get-Location
 
 # Build the Host if needed
-if (-not (Test-Path "src\RemoteC.Host\bin\Release\net8.0\RemoteC.Host.exe")) {
+if (-not (Test-Path "src\RemoteC.Host\bin\Release\net8.0\win-x64\RemoteC.Host.exe")) {
     Write-Host "Building RemoteC Host..." -ForegroundColor Yellow
     dotnet build src\RemoteC.Host\RemoteC.Host.csproj -c Release
     if ($LASTEXITCODE -ne 0) {
@@ -39,7 +39,7 @@ $config = @{
     }
 } | ConvertTo-Json -Depth 10
 
-$config | Out-File -FilePath "src\RemoteC.Host\bin\Release\net8.0\appsettings.json" -Encoding UTF8
+$config | Out-File -FilePath "src\RemoteC.Host\bin\Release\net8.0\win-x64\appsettings.json" -Encoding UTF8
 
 Write-Host ""
 Write-Host "Starting RemoteC Host..." -ForegroundColor Green
@@ -48,7 +48,7 @@ Write-Host "Machine: $env:COMPUTERNAME" -ForegroundColor White
 Write-Host ""
 
 # Start the Host
-Start-Process -FilePath "src\RemoteC.Host\bin\Release\net8.0\RemoteC.Host.exe" -WorkingDirectory "$currentDir\src\RemoteC.Host\bin\Release\net8.0"
+Start-Process -FilePath "src\RemoteC.Host\bin\Release\net8.0\win-x64\RemoteC.Host.exe" -WorkingDirectory "$currentDir\src\RemoteC.Host\bin\Release\net8.0\win-x64"
 
 Write-Host "RemoteC Host is starting..." -ForegroundColor Green
 Write-Host "Look for the RemoteC icon in your system tray." -ForegroundColor Yellow
