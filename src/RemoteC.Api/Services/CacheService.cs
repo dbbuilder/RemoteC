@@ -19,12 +19,6 @@ namespace RemoteC.Api.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
         
-        // Constructor for tests that use IDistributedCache
-        public CacheService(IDistributedCache distributedCache, ILogger<CacheService> logger)
-            : this(new MemoryCache(new MemoryCacheOptions()), logger)
-        {
-            // This constructor is for test compatibility
-        }
 
         public async Task<T?> GetAsync<T>(string key) where T : class
         {
