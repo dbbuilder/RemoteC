@@ -218,6 +218,7 @@ public class Program
             builder.Services.AddScoped<Data.Repositories.IUserRepository, Data.Repositories.UserRepository>();
             builder.Services.AddScoped<Data.Repositories.ISessionRepository, Data.Repositories.SessionRepository>();
             builder.Services.AddScoped<Data.Repositories.IAuditRepository, Data.Repositories.AuditRepository>();
+            builder.Services.AddScoped<Data.Repositories.IDeviceRepository, Data.Repositories.DeviceRepository>();
 
             // Add Application Services
             builder.Services.AddScoped<ISessionService, SessionService>();
