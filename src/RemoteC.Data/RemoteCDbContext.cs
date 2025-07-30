@@ -18,6 +18,7 @@ public class RemoteCDbContext : DbContext
     public DbSet<RolePermission> RolePermissions { get; set; } = null!;
     public DbSet<Device> Devices { get; set; } = null!;
     public DbSet<DeviceGroup> DeviceGroups { get; set; } = null!;
+    public DbSet<DeviceGroupMember> DeviceGroupMembers { get; set; } = null!;
     public DbSet<Session> Sessions { get; set; } = null!;
     public DbSet<SessionParticipant> SessionParticipants { get; set; } = null!;
     public DbSet<SessionLog> SessionLogs { get; set; } = null!;
@@ -78,6 +79,9 @@ public class RemoteCDbContext : DbContext
 
         modelBuilder.Entity<RolePermission>()
             .HasKey(rp => new { rp.RoleId, rp.PermissionId });
+
+        modelBuilder.Entity<DeviceGroupMember>()
+            .HasKey(dgm => new { dgm.DeviceGroupId, dgm.DeviceId });
 
         // Configure relationships
         modelBuilder.Entity<User>()
