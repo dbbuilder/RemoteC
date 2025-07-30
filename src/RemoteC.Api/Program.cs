@@ -151,7 +151,7 @@ public class Program
 
             // Add Redis for caching and session state
             var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-            if (!string.IsNullOrEmpty(redisConnectionString))
+            if (!string.IsNullOrEmpty(redisConnectionString) && redisConnectionString != "localhost:6379")
             {
                 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
                     ConnectionMultiplexer.Connect(redisConnectionString));
@@ -159,6 +159,14 @@ public class Program
                 {
                     options.Configuration = redisConnectionString;
                 });
+                Log.Information("Redis distributed cache enabled: {ConnectionString}", redisConnectionString);
+            }
+            else
+            {
+                // Use memory cache when Redis is not available
+                builder.Services.AddMemoryCache();
+                builder.Services.AddSingleton<IDistributedCache, Microsoft.Extensions.Caching.Memory.MemoryDistributedCache>();
+                Log.Information("Using memory distributed cache (Redis disabled)");
             }
 
             // Add Hangfire for background jobs (conditionally)
@@ -272,18 +280,23 @@ public class Program
             builder.Services.AddApplicationInsightsTelemetry();
 
             // Register health check dependencies
-            builder.Services.AddSingleton<RedisHealthCheck>();
             builder.Services.AddSingleton<ExternalServicesHealthCheck>();
             builder.Services.AddSingleton<DiskSpaceHealthCheck>(sp => 
                 new DiskSpaceHealthCheck(1024L, sp.GetRequiredService<ILogger<DiskSpaceHealthCheck>>()));
 
             // Add Health Checks
-            builder.Services.AddHealthChecks()
+            var healthChecksBuilder = builder.Services.AddHealthChecks()
                 .AddDbContextCheck<RemoteCDbContext>("database", tags: new[] { "db", "sql" })
-                .AddCheck<RedisHealthCheck>("redis", tags: new[] { "cache", "redis" })
                 .AddCheck<ExternalServicesHealthCheck>("external-services", tags: new[] { "external" })
                 .AddCheck<DiskSpaceHealthCheck>("disk-space", tags: new[] { "infrastructure" })
                 .AddCheck("self", () => HealthCheckResult.Healthy("API is running"), tags: new[] { "self" });
+
+            // Only add Redis health check if Redis is enabled
+            if (!string.IsNullOrEmpty(redisConnectionString) && redisConnectionString != "localhost:6379")
+            {
+                builder.Services.AddSingleton<RedisHealthCheck>();
+                healthChecksBuilder.AddCheck<RedisHealthCheck>("redis", tags: new[] { "cache", "redis" });
+            }
 
             // Add CORS
             builder.Services.AddCors(options =>
