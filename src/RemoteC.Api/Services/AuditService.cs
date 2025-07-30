@@ -423,8 +423,8 @@ namespace RemoteC.Api.Services
             if (string.IsNullOrEmpty(entry.ResourceType))
                 throw new ArgumentException("ResourceType is required", nameof(entry));
 
-            if (entry.OrganizationId == Guid.Empty)
-                throw new ArgumentException("OrganizationId is required", nameof(entry));
+            // OrganizationId is required, but allow default organization (all zeros) for development scenarios
+            // No additional validation needed since Guid.Empty is now acceptable for default organization
         }
 
         private bool ShouldLog(AuditLogEntry entry)

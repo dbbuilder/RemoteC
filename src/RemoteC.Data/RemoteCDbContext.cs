@@ -166,6 +166,20 @@ public class RemoteCDbContext : DbContext
 
     private void SeedData(ModelBuilder modelBuilder)
     {
+        // Seed default organization
+        var defaultOrgId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+        var defaultOrganization = new Organization
+        {
+            Id = defaultOrgId,
+            Name = "Default Organization",
+            Description = "Default organization for development and initial setup",
+            Domain = "localhost",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        modelBuilder.Entity<Organization>().HasData(defaultOrganization);
+
         // Seed default roles
         var adminRoleId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var operatorRoleId = Guid.Parse("00000000-0000-0000-0000-000000000002");
