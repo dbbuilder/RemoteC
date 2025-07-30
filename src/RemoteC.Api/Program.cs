@@ -16,6 +16,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using RemoteC.Api.Authentication;
 
 namespace RemoteC.Api;
 
@@ -131,9 +132,37 @@ public class Program
                 }
             });
 
-            // Add Azure AD B2C Authentication
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2C"));
+            // Add DbContext factory for background services
+            builder.Services.AddDbContextFactory<RemoteCDbContext>(options =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                if (connectionString?.Contains(".db") == true)
+                {
+                    options.UseSqlite(connectionString);
+                }
+                else
+                {
+                    options.UseSqlServer(connectionString);
+                }
+            });
+
+            // Add Azure AD B2C Authentication (disabled in development for faster startup)
+            if (!builder.Environment.IsDevelopment())
+            {
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2C"));
+                    
+                Log.Information("Azure AD B2C authentication enabled for production");
+            }
+            else
+            {
+                // Use simple development authentication
+                builder.Services.AddAuthentication("Development")
+                    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, 
+                        DevelopmentAuthenticationHandler>("Development", options => { });
+                        
+                Log.Information("Development authentication enabled (Azure AD B2C disabled for faster startup)");
+            }
 
             // Add Authorization
             builder.Services.AddAuthorization(options =>
@@ -171,21 +200,29 @@ public class Program
 
             // Add Hangfire for background jobs (conditionally)
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", true);
+            var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", false); // Default to false for development
             
-            if (hangfireEnabled && !string.IsNullOrEmpty(connectionString) && !connectionString.Contains(".db"))
+            if (hangfireEnabled && !string.IsNullOrEmpty(connectionString) && !connectionString.Contains(".db") && !connectionString.Contains("LocalDB"))
             {
-                builder.Services.AddHangfire(configuration => configuration
-                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                    .UseSimpleAssemblyNameTypeSerializer()
-                    .UseRecommendedSerializerSettings()
-                    .UseSqlServerStorage(connectionString));
+                try
+                {
+                    builder.Services.AddHangfire(configuration => configuration
+                        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                        .UseSimpleAssemblyNameTypeSerializer()
+                        .UseRecommendedSerializerSettings()
+                        .UseSqlServerStorage(connectionString));
 
-                builder.Services.AddHangfireServer();
+                    builder.Services.AddHangfireServer();
+                    Log.Information("Hangfire enabled with SQL Server storage");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning("Failed to configure Hangfire: {Message}. Continuing without Hangfire.", ex.Message);
+                }
             }
             else
             {
-                Log.Information("Hangfire is disabled (SQLite database or Hangfire:Enabled=false)");
+                Log.Information("Hangfire is disabled (SQLite database, LocalDB, or Hangfire:Enabled=false)");
             }
 
             // Add AutoMapper

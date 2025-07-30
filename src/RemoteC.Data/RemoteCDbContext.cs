@@ -83,6 +83,25 @@ public class RemoteCDbContext : DbContext
         modelBuilder.Entity<DeviceGroupMember>()
             .HasKey(dgm => new { dgm.DeviceGroupId, dgm.DeviceId });
 
+        // Configure owned types for edge deployment
+        modelBuilder.Entity<EdgeNodeEntity>()
+            .OwnsOne(e => e.Capacity, capacity =>
+            {
+                capacity.Property(c => c.CPU).HasColumnName("CapacityCPU");
+                capacity.Property(c => c.MemoryGB).HasColumnName("CapacityMemoryGB");
+                capacity.Property(c => c.StorageGB).HasColumnName("CapacityStorageGB");
+                capacity.Property(c => c.NetworkMbps).HasColumnName("CapacityNetworkMbps");
+            });
+
+        modelBuilder.Entity<EdgeNodeEntity>()
+            .OwnsOne(e => e.AvailableCapacity, capacity =>
+            {
+                capacity.Property(c => c.CPU).HasColumnName("AvailableCapacityCPU");
+                capacity.Property(c => c.MemoryGB).HasColumnName("AvailableCapacityMemoryGB");
+                capacity.Property(c => c.StorageGB).HasColumnName("AvailableCapacityStorageGB");
+                capacity.Property(c => c.NetworkMbps).HasColumnName("AvailableCapacityNetworkMbps");
+            });
+
         // Configure relationships
         modelBuilder.Entity<User>()
             .HasMany(u => u.UserRoles)
@@ -167,7 +186,7 @@ public class RemoteCDbContext : DbContext
     private void SeedData(ModelBuilder modelBuilder)
     {
         // Seed default organization
-        var defaultOrgId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+        var defaultOrgId = Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
         var defaultOrganization = new Organization
         {
             Id = defaultOrgId,

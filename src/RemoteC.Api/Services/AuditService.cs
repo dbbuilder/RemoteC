@@ -22,7 +22,7 @@ namespace RemoteC.Api.Services
     /// </summary>
     public class AuditService : IAuditService
     {
-        private readonly RemoteCDbContext _context;
+        private readonly IDbContextFactory<RemoteCDbContext> _contextFactory;
         private readonly IDistributedCache _cache;
         private readonly ILogger<AuditService> _logger;
         private readonly AuditOptions _options;
@@ -32,13 +32,13 @@ namespace RemoteC.Api.Services
         private readonly Timer? _batchTimer;
 
         public AuditService(
-            RemoteCDbContext context,
+            IDbContextFactory<RemoteCDbContext> contextFactory,
             IDistributedCache cache,
             ILogger<AuditService> logger,
             IOptions<AuditOptions> options,
             IBackgroundTaskQueue taskQueue)
         {
-            _context = context;
+            _contextFactory = contextFactory;
             _cache = cache;
             _logger = logger;
             _options = options.Value;
@@ -118,9 +118,12 @@ namespace RemoteC.Api.Services
                 // Convert to entities
                 var auditLogs = validEntries.Select(e => ConvertToEntity(e)).ToList();
 
+                // Use a new context for batch operations
+                using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+                
                 // Batch insert
-                await _context.AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
+                await context.AuditLogs.AddRangeAsync(auditLogs, cancellationToken);
+                await context.SaveChangesAsync(cancellationToken);
 
                 // Check for alerts
                 foreach (var entry in validEntries)
@@ -139,7 +142,8 @@ namespace RemoteC.Api.Services
         /// </summary>
         public async Task<AuditLogQueryResult> QueryAsync(AuditLogQuery query, CancellationToken cancellationToken = default)
         {
-            var queryable = _context.AuditLogs.AsQueryable();
+            using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var queryable = context.AuditLogs.AsQueryable();
 
             // Apply filters
             if (query.OrganizationId.HasValue)
@@ -223,7 +227,8 @@ namespace RemoteC.Api.Services
                 return JsonSerializer.Deserialize<List<AuditLogEntry>>(cached) ?? new List<AuditLogEntry>();
             }
 
-            var logs = await _context.AuditLogs
+            using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var logs = await context.AuditLogs
                 .Where(a => a.ResourceType == resourceType && a.ResourceId == resourceId)
                 .OrderByDescending(a => a.Timestamp)
                 .Take(limit)
@@ -253,7 +258,8 @@ namespace RemoteC.Api.Services
             int limit = 100,
             CancellationToken cancellationToken = default)
         {
-            var query = _context.AuditLogs
+            using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var query = context.AuditLogs
                 .Where(a => a.UserId == userId);
 
             if (startDate.HasValue)
@@ -276,7 +282,8 @@ namespace RemoteC.Api.Services
             AuditLogExportOptions options,
             CancellationToken cancellationToken = default)
         {
-            var query = _context.AuditLogs
+            using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var query = context.AuditLogs
                 .Where(a => a.OrganizationId == options.OrganizationId &&
                            a.Timestamp >= options.StartDate &&
                            a.Timestamp <= options.EndDate);
@@ -321,15 +328,16 @@ namespace RemoteC.Api.Services
 
             while (true)
             {
-                var toDelete = await _context.AuditLogs
+                using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+                var toDelete = await context.AuditLogs
                     .Where(a => a.Timestamp < cutoffDate)
                     .Take(batchSize)
                     .ToListAsync(cancellationToken);
 
                 if (!toDelete.Any()) break;
 
-                _context.AuditLogs.RemoveRange(toDelete);
-                var deleted = await _context.SaveChangesAsync(cancellationToken);
+                context.AuditLogs.RemoveRange(toDelete);
+                var deleted = await context.SaveChangesAsync(cancellationToken);
                 totalDeleted += deleted;
 
                 _logger.LogInformation("Deleted {Count} old audit logs", deleted);
@@ -355,7 +363,8 @@ namespace RemoteC.Api.Services
                 return JsonSerializer.Deserialize<AuditStatistics>(cached) ?? new AuditStatistics();
             }
 
-            var logs = await _context.AuditLogs
+            using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var logs = await context.AuditLogs
                 .Where(a => a.OrganizationId == organizationId &&
                            a.Timestamp >= startDate &&
                            a.Timestamp <= endDate)
@@ -487,9 +496,10 @@ namespace RemoteC.Api.Services
 
         private async Task LogDirectlyAsync(AuditLogEntry entry, CancellationToken cancellationToken)
         {
+            using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
             var entity = ConvertToEntity(entry);
-            _context.AuditLogs.Add(entity);
-            await _context.SaveChangesAsync(cancellationToken);
+            context.AuditLogs.Add(entity);
+            await context.SaveChangesAsync(cancellationToken);
         }
 
         private async Task CheckForAlertsAsync(AuditLogEntry entry, CancellationToken cancellationToken)
@@ -762,8 +772,9 @@ namespace RemoteC.Api.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
                 // Get logs older than cutoff date
-                var logsToArchive = await _context.AuditLogs
+                var logsToArchive = await context.AuditLogs
                     .Where(al => al.Timestamp < cutoffDate)
                     .ToListAsync(cancellationToken);
                 
@@ -789,7 +800,7 @@ namespace RemoteC.Api.Services
                     log.ArchivedAt = DateTime.UtcNow;
                 }
                 
-                await _context.SaveChangesAsync(cancellationToken);
+                await context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Successfully archived {Count} audit logs", logsToArchive.Count);
             }
             catch (Exception ex)
