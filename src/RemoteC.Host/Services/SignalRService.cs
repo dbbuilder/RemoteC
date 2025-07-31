@@ -75,12 +75,24 @@ public class SignalRService : ISignalRService, IAsyncDisposable
 
             // Get authentication token
             var token = await _authService.GetHostTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new InvalidOperationException("Failed to obtain authentication token");
+            }
+
+            _logger.LogDebug("Obtained host token successfully");
 
             // Build connection
             _hubConnection = new HubConnectionBuilder()
                 .WithUrl($"{serverUrl}/hubs/host", options =>
                 {
-                    options.AccessTokenProvider = () => Task.FromResult(token);
+                    options.AccessTokenProvider = async () => 
+                    {
+                        // Get fresh token if needed
+                        var currentToken = await _authService.GetHostTokenAsync();
+                        _logger.LogDebug("Providing token for SignalR connection");
+                        return currentToken;
+                    };
                 })
                 .WithAutomaticReconnect(new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30) })
                 .Build();

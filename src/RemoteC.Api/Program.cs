@@ -335,10 +335,26 @@ public class Program
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp", policy =>
-                    policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials());
+                    policy.WithOrigins(
+                        "http://localhost:3000", 
+                        "https://localhost:3000",
+                        "http://localhost:17002",
+                        "http://10.0.0.91:17001",
+                        "http://10.0.0.91:17002"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials());
+                
+                // Add a more permissive policy for SignalR in development
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.AddPolicy("SignalRDevelopment", policy =>
+                        policy.SetIsOriginAllowed(_ => true)
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials());
+                }
             });
 
             var app = builder.Build();
@@ -351,7 +367,16 @@ public class Program
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowReactApp");
+            
+            // Use appropriate CORS policy based on environment
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseCors("SignalRDevelopment");
+            }
+            else
+            {
+                app.UseCors("AllowReactApp");
+            }
 
             // Add audit logging middleware
             app.UseAuditLogging(options =>
@@ -366,8 +391,18 @@ public class Program
             app.UseAuthorization();
 
             app.MapControllers();
-            app.MapHub<SessionHub>("/hubs/session");
-            app.MapHub<HostHub>("/hubs/host");
+            
+            // Map SignalR hubs with appropriate CORS policy
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapHub<SessionHub>("/hubs/session").RequireCors("SignalRDevelopment");
+                app.MapHub<HostHub>("/hubs/host").RequireCors("SignalRDevelopment");
+            }
+            else
+            {
+                app.MapHub<SessionHub>("/hubs/session").RequireCors("AllowReactApp");
+                app.MapHub<HostHub>("/hubs/host").RequireCors("AllowReactApp");
+            }
 
             // Add Hangfire Dashboard (conditionally)
             try
