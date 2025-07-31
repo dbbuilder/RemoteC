@@ -360,7 +360,12 @@ public class AuthController : ControllerBase
         // In development, return a simple token
         // In production, this should generate a proper JWT token
         var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-        var key = System.Text.Encoding.ASCII.GetBytes("development-secret-key-for-remotec-host-authentication");
+        
+        // Use the same secret as DevelopmentAuthenticationHandler
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var jwtSecret = configuration["Jwt:Secret"] ?? "development-secret-key-for-testing-only-change-in-production";
+        var key = System.Text.Encoding.UTF8.GetBytes(jwtSecret);
+        
         var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]
