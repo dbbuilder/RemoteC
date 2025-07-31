@@ -60,7 +60,7 @@ if (-not $SkipDatabaseCheck) {
         Write-Host "Try with -UseRemoteDatabase flag for remote SQL server" -ForegroundColor Yellow
         exit 1
     }
-    Write-Host "✓ Database connection successful" -ForegroundColor Green
+    Write-Host " Database connection successful" -ForegroundColor Green
 }
 
 # Start API if not already running
@@ -79,7 +79,7 @@ if (-not $apiRunning) {
         try {
             $response = Invoke-RestMethod -Uri "$ApiUrl/health" -Method Get -ErrorAction SilentlyContinue
             if ($response.status -eq "Healthy") {
-                Write-Host "✓ API server is ready" -ForegroundColor Green
+                Write-Host " API server is ready" -ForegroundColor Green
                 break
             }
         }
@@ -94,7 +94,7 @@ if (-not $apiRunning) {
     }
 }
 else {
-    Write-Host "✓ Using existing API server on port 17001" -ForegroundColor Green
+    Write-Host " Using existing API server on port 17001" -ForegroundColor Green
 }
 
 # Start UI if not already running
@@ -107,10 +107,10 @@ if (-not $uiRunning) {
     # Set environment variable for API URL if needed
     $env:REACT_APP_API_URL = $ApiUrl
     
-    $uiProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$uiPath'; Write-Host 'Starting RemoteC UI...' -ForegroundColor Green; npm start" -PassThru
+    $uiProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$uiPath'; Write-Host 'Starting RemoteC UI...' -ForegroundColor Green; npm run dev" -PassThru
 }
 else {
-    Write-Host "✓ Using existing UI on port $UiPort" -ForegroundColor Green
+    Write-Host " Using existing UI on port $UiPort" -ForegroundColor Green
 }
 
 Write-Host ""

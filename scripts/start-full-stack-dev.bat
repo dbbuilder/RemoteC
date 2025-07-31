@@ -42,7 +42,7 @@ if %errorlevel% neq 0 (
 REM Start the React UI in a new window
 echo.
 echo [3] Starting React UI on http://localhost:17002
-start "RemoteC UI" cmd /k "cd /d %~dp0..\src\RemoteC.Web && echo Starting RemoteC UI... && npm start"
+start "RemoteC UI" cmd /k "cd /d %~dp0..\src\RemoteC.Web && echo Starting RemoteC UI... && npm run dev"
 
 echo.
 echo =========================================
