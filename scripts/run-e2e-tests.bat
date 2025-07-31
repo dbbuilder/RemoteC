@@ -14,11 +14,17 @@ if not exist "node_modules\@playwright\test" (
 )
 
 echo.
-echo [2] Starting API server and UI...
+echo [2] Cleaning Vite cache to prevent permission errors...
+if exist "node_modules\.vite" (
+    rmdir /s /q "node_modules\.vite" 2>nul
+)
+
+echo.
+echo [3] Starting API server and UI...
 echo Note: Tests will automatically start the servers
 echo.
 
-echo [3] Running E2E tests...
+echo [4] Running E2E tests...
 echo.
 call npm run test:e2e
 

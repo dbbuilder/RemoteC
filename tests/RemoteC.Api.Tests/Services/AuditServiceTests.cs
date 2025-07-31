@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -23,6 +24,7 @@ namespace RemoteC.Api.Tests.Services
         private readonly Mock<IDistributedCache> _cacheMock;
         private readonly Mock<ILogger<AuditService>> _loggerMock;
         private readonly Mock<IBackgroundTaskQueue> _taskQueueMock;
+        private readonly IServiceProvider _serviceProvider;
         private readonly AuditService _auditService;
         private readonly AuditOptions _options;
 
@@ -39,6 +41,11 @@ namespace RemoteC.Api.Tests.Services
             _loggerMock = new Mock<ILogger<AuditService>>();
             _taskQueueMock = new Mock<IBackgroundTaskQueue>();
 
+            // Setup service provider
+            var services = new ServiceCollection();
+            services.AddScoped(_ => _context);
+            _serviceProvider = services.BuildServiceProvider();
+
             // Setup options
             _options = new AuditOptions
             {
@@ -49,7 +56,7 @@ namespace RemoteC.Api.Tests.Services
 
             // Create service
             _auditService = new AuditService(
-                _context,
+                _serviceProvider,
                 _cacheMock.Object,
                 _loggerMock.Object,
                 Options.Create(_options),
@@ -384,6 +391,7 @@ namespace RemoteC.Api.Tests.Services
         {
             _context?.Dispose();
             _auditService?.Dispose();
+            (_serviceProvider as IDisposable)?.Dispose();
         }
     }
 }

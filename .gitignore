@@ -1,5 +1,14 @@
 # .gitignore for RemoteC Solution
 
+# Playwright test outputs
+playwright-report/
+test-results/
+playwright/.cache/
+
+# Test output files
+testout.txt
+*.test.log
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
