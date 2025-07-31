@@ -6,12 +6,16 @@ import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import App from './App'
 import DevApp from './DevApp'
+import { SimpleApp } from './SimpleApp'
 import { msalConfig } from './config/authConfig'
 import { config } from './config/config'
 import './index.css'
 
-// Create MSAL instance
-const msalInstance = new PublicClientApplication(msalConfig)
+// Check if we should use simple auth
+const useSimpleAuth = import.meta.env.VITE_USE_SIMPLE_AUTH === 'true'
+
+// Create MSAL instance only if not using simple auth
+const msalInstance = !useSimpleAuth ? new PublicClientApplication(msalConfig) : null
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -24,19 +28,18 @@ const queryClient = new QueryClient({
   },
 })
 
-// Choose the appropriate app based on environment
-const AppComponent = config.features.useDevAuth ? DevApp : App
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {config.features.useDevAuth ? (
+    {useSimpleAuth ? (
+      <SimpleApp />
+    ) : config.features.useDevAuth ? (
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <DevApp />
         </BrowserRouter>
       </QueryClientProvider>
     ) : (
-      <MsalProvider instance={msalInstance}>
+      <MsalProvider instance={msalInstance!}>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
             <App />

@@ -23,6 +23,15 @@ export interface Device {
   user?: User
   createdAt: string
   updatedAt: string
+  health?: HostHealth
+}
+
+export interface HostHealth {
+  cpuUsage: number
+  memoryUsage: number
+  diskUsage: number
+  temperature?: number
+  lastReported: string
 }
 
 export interface Session {

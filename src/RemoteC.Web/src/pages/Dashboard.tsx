@@ -1,17 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useApi } from '@/hooks/useApi'
+import { useUnifiedApi } from '@/hooks/useUnifiedApi'
 import { Activity, Monitor, Server, Users } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export function Dashboard() {
-  const api = useApi()
+  const api = useUnifiedApi()
 
-  // Fetch dashboard statistics
+  // Fetch dashboard statistics with auto-refresh every 5 seconds
   const { data: stats } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => api.get('/api/dashboard/stats'),
+    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchIntervalInBackground: true,
   })
 
   // Mock data for the chart
