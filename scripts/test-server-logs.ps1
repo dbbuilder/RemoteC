@@ -11,18 +11,18 @@ Write-Host ""
 Write-Host "[1] Checking server health at $ServerUrl/health" -ForegroundColor Yellow
 try {
     $healthResponse = Invoke-RestMethod -Uri "$ServerUrl/health" -Method GET
-    Write-Host "✓ Server is healthy" -ForegroundColor Green
+    Write-Host "[OK] Server is healthy" -ForegroundColor Green
     Write-Host "  Status: $($healthResponse.status)" -ForegroundColor Gray
     Write-Host "  Total Duration: $($healthResponse.totalDuration)ms" -ForegroundColor Gray
     
     foreach ($check in $healthResponse.checks) {
-        $icon = if ($check.status -eq "Healthy") { "✓" } else { "✗" }
+        $icon = if ($check.status -eq "Healthy") { "[OK]" } else { "[FAIL]" }
         $color = if ($check.status -eq "Healthy") { "Green" } else { "Red" }
         Write-Host "  $icon $($check.component): $($check.status)" -ForegroundColor $color
     }
 }
 catch {
-    Write-Host "✗ Server health check failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Server health check failed: $_" -ForegroundColor Red
 }
 
 Write-Host ""

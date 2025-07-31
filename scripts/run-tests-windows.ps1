@@ -121,9 +121,9 @@ foreach ($testProject in $projectsToTest) {
     }
     
     if ($exitCode -eq 0) {
-        Write-Host "✓ Tests passed!" -ForegroundColor Green
+        Write-Host "[OK] Tests passed!" -ForegroundColor Green
     } else {
-        Write-Host "✗ Tests failed!" -ForegroundColor Red
+        Write-Host "[FAIL] Tests failed!" -ForegroundColor Red
         $failedProjects += $testProject
         
         # Show failed test details
@@ -170,9 +170,9 @@ $hasDrawingIssues = $false
 foreach ($drawingTest in $drawingTests) {
     $testResult = & dotnet test tests/RemoteC.Tests.Unit/RemoteC.Tests.Unit.csproj --filter "FullyQualifiedName~$drawingTest" --no-build -c $Configuration 2>&1
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ $drawingTest passed on Windows!" -ForegroundColor Green
+        Write-Host "[OK] $drawingTest passed on Windows!" -ForegroundColor Green
     } else {
-        Write-Host "✗ $drawingTest still failing on Windows" -ForegroundColor Red
+        Write-Host "[FAIL] $drawingTest still failing on Windows" -ForegroundColor Red
         $hasDrawingIssues = $true
     }
 }

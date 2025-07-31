@@ -50,9 +50,9 @@ $exitCode = $LASTEXITCODE
 
 # Display result
 if ($exitCode -eq 0) {
-    Write-Host "`n✓ Test passed!" -ForegroundColor Green
+    Write-Host "`n[OK] Test passed!" -ForegroundColor Green
 } else {
-    Write-Host "`n✗ Test failed!" -ForegroundColor Red
+    Write-Host "`n[FAIL] Test failed!" -ForegroundColor Red
     
     # Check for specific errors
     if ($result -match "System.PlatformNotSupportedException") {

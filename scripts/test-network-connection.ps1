@@ -14,24 +14,24 @@ Write-Host "Testing connection to $ServerIP`:$Port..." -ForegroundColor Yellow
 $result = Test-NetConnection -ComputerName $ServerIP -Port $Port -WarningAction SilentlyContinue
 
 if ($result.TcpTestSucceeded) {
-    Write-Host "✓ TCP connection successful!" -ForegroundColor Green
+    Write-Host "[OK] TCP connection successful!" -ForegroundColor Green
     
     # Test API endpoint
     Write-Host "`nTesting API health endpoint..." -ForegroundColor Yellow
     try {
         $response = Invoke-RestMethod -Uri "http://${ServerIP}:${Port}/health" -Method Get
-        Write-Host "✓ API is healthy!" -ForegroundColor Green
+        Write-Host "[OK] API is healthy!" -ForegroundColor Green
         Write-Host "  Status: $($response.status)" -ForegroundColor Gray
         $dbCheck = $response.checks | Where-Object {$_.component -eq 'database'}
         if ($dbCheck) {
             Write-Host "  Database: $($dbCheck.status)" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "✗ API health check failed" -ForegroundColor Red
+        Write-Host "[FAIL] API health check failed" -ForegroundColor Red
         Write-Host "  Error: $_" -ForegroundColor Red
     }
 } else {
-    Write-Host "✗ Cannot connect to server" -ForegroundColor Red
+    Write-Host "[FAIL] Cannot connect to server" -ForegroundColor Red
     Write-Host "  Please check:" -ForegroundColor Yellow
     Write-Host "  1. Server is running on $ServerIP" -ForegroundColor White
     Write-Host "  2. Port $Port is not blocked by firewall" -ForegroundColor White

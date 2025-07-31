@@ -22,13 +22,13 @@ try {
         -ContentType "application/json" `
         -Body $tokenBody
     
-    Write-Host "✓ Successfully got token" -ForegroundColor Green
+    Write-Host "[OK] Successfully got token" -ForegroundColor Green
     Write-Host "  Token: $($tokenResponse.token.Substring(0, 50))..." -ForegroundColor Gray
     Write-Host "  Type: $($tokenResponse.tokenType)" -ForegroundColor Gray
     Write-Host "  Expires in: $($tokenResponse.expiresIn) seconds" -ForegroundColor Gray
 }
 catch {
-    Write-Host "✗ Failed to get token: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Failed to get token: $_" -ForegroundColor Red
     exit 1
 }
 
@@ -48,7 +48,7 @@ try {
         -Headers $headers `
         -ContentType "application/json"
     
-    Write-Host "✓ SignalR negotiation successful" -ForegroundColor Green
+    Write-Host "[OK] SignalR negotiation successful" -ForegroundColor Green
     Write-Host "  Connection ID: $($negotiateResponse.connectionId)" -ForegroundColor Gray
     Write-Host "  Available transports:" -ForegroundColor Gray
     foreach ($transport in $negotiateResponse.availableTransports) {
@@ -56,7 +56,7 @@ try {
     }
 }
 catch {
-    Write-Host "✗ SignalR negotiation failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] SignalR negotiation failed: $_" -ForegroundColor Red
     if ($_.Exception.Response) {
         $statusCode = [int]$_.Exception.Response.StatusCode
         Write-Host "  Status Code: $statusCode" -ForegroundColor Red
@@ -82,11 +82,11 @@ try {
         -Method GET `
         -Headers $headers
     
-    Write-Host "✓ API authentication successful" -ForegroundColor Green
+    Write-Host "[OK] API authentication successful" -ForegroundColor Green
     Write-Host "  Retrieved $($devicesResponse.Count) devices" -ForegroundColor Gray
 }
 catch {
-    Write-Host "✗ API authentication failed: $_" -ForegroundColor Red
+    Write-Host "[FAIL] API authentication failed: $_" -ForegroundColor Red
     if ($_.Exception.Response) {
         $statusCode = [int]$_.Exception.Response.StatusCode
         Write-Host "  Status Code: $statusCode" -ForegroundColor Red

@@ -30,7 +30,7 @@ $apiRunning = Test-Port 17001
 $uiRunning = Test-Port $UiPort
 
 if ($apiRunning) {
-    Write-Host "✓ API server detected on port 17001" -ForegroundColor Green
+    Write-Host "[OK] API server detected on port 17001" -ForegroundColor Green
 }
 else {
     Write-Host "WARNING: API server not detected on port 17001" -ForegroundColor Yellow
@@ -64,7 +64,7 @@ if (-not $SkipDatabaseCheck) {
         Write-Host "Try with -UseRemoteDatabase flag for remote SQL server" -ForegroundColor Yellow
         exit 1
     }
-    Write-Host "✓ Database connection successful" -ForegroundColor Green
+    Write-Host "[OK] Database connection successful" -ForegroundColor Green
 }
 
 # Start UI in production mode
@@ -83,7 +83,7 @@ VITE_API_URL=$ApiUrl
     $envPath = Join-Path $uiPath ".env.local"
     $envContent | Out-File -FilePath $envPath -Encoding UTF8
     
-    Write-Host "✓ Created .env.local with simple auth configuration" -ForegroundColor Green
+    Write-Host "[OK] Created .env.local with simple auth configuration" -ForegroundColor Green
     
     # Start the UI with simple auth
     $uiProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", @"
@@ -97,7 +97,7 @@ npm run dev
     Start-Sleep -Seconds 3
 }
 else {
-    Write-Host "✓ Using existing UI on port $UiPort" -ForegroundColor Green
+    Write-Host "[OK] Using existing UI on port $UiPort" -ForegroundColor Green
 }
 
 Write-Host ""
