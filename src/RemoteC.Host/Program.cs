@@ -48,6 +48,20 @@ public class Program
                 options.ServiceName = "RemoteC Host Service";
             })
             .UseSerilog()
+            .ConfigureAppConfiguration((hostContext, config) =>
+            {
+                // Add command line configuration source
+                config.AddCommandLine(args, new Dictionary<string, string>
+                {
+                    { "--host-id", "Host:Id" },
+                    { "--host-secret", "Host:Secret" },
+                    { "--server", "Api:BaseUrl" },
+                    { "--token-endpoint", "Api:TokenEndpoint" },
+                    { "--id", "Host:Id" }, // Short form
+                    { "--secret", "Host:Secret" }, // Short form
+                    { "-s", "Api:BaseUrl" }, // Short form
+                });
+            })
             .ConfigureServices((hostContext, services) =>
             {
                 var configuration = hostContext.Configuration;
