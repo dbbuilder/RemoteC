@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,25 @@ public class ControlRProvider : IRemoteControlProvider
         _configuration = configuration;
         _logger = LoggerFactory.Create(builder => builder.AddConsole())
             .CreateLogger<ControlRProvider>();
+    }
+    
+    public ControlRProvider(string apiUrl, string apiKey, bool enableLogging, int connectionTimeoutMs)
+    {
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                { "RemoteControlProvider:Settings:ServerUrl", apiUrl },
+                { "RemoteControlProvider:Settings:LicenseKey", apiKey },
+                { "RemoteControlProvider:Settings:EnableLogging", enableLogging.ToString() },
+                { "RemoteControlProvider:Settings:ConnectionTimeoutMs", connectionTimeoutMs.ToString() }
+            })
+            .Build();
+            
+        _logger = LoggerFactory.Create(builder => 
+        {
+            if (enableLogging)
+                builder.AddConsole();
+        }).CreateLogger<ControlRProvider>();
     }
 
     public async Task<bool> InitializeAsync()

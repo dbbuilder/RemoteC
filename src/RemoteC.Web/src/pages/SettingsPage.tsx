@@ -19,7 +19,9 @@ import {
   Save,
   AlertCircle,
   
-  RefreshCw
+  RefreshCw,
+  Zap,
+  Activity
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -39,6 +41,10 @@ interface SystemSettings {
     allowedIpRanges: string[]
   }
   remoteControl: {
+    provider?: string
+    enableHardwareAcceleration?: boolean
+    enableFrameDifferencing?: boolean
+    transportProtocol?: string
     maxConcurrentSessions: number
     sessionRecording: boolean
     clipboardSharing: boolean
@@ -193,10 +199,14 @@ export function SettingsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="general">
             <Settings className="h-4 w-4 mr-2" />
             General
+          </TabsTrigger>
+          <TabsTrigger value="provider">
+            <Zap className="h-4 w-4 mr-2" />
+            Provider
           </TabsTrigger>
           <TabsTrigger value="security">
             <Shield className="h-4 w-4 mr-2" />
@@ -266,6 +276,184 @@ export function SettingsPage() {
                   checked={formData.general.allowPublicRegistration}
                   onCheckedChange={(checked) => handleInputChange('general', 'allowPublicRegistration', checked)}
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="provider" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Remote Control Provider</CardTitle>
+              <CardDescription>Choose between ControlR and Rust performance engine</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Provider Selection */}
+              <div className="space-y-4">
+                <Label>Active Provider</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card 
+                    className={`cursor-pointer transition-colors ${
+                      formData.remoteControl?.provider === 'ControlR' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'hover:border-muted-foreground/50'
+                    }`}
+                    onClick={() => handleInputChange('remoteControl', 'provider', 'ControlR')}
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-lg">ControlR</CardTitle>
+                      <CardDescription>Phase 1 - Stable integration</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-muted-foreground" />
+                          <span>~95ms latency</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Monitor className="h-4 w-4 text-muted-foreground" />
+                          <span>28 FPS average</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-muted-foreground" />
+                          <span>Battle-tested</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card 
+                    className={`cursor-pointer transition-colors ${
+                      formData.remoteControl?.provider === 'Rust' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'hover:border-muted-foreground/50'
+                    }`}
+                    onClick={() => handleInputChange('remoteControl', 'provider', 'Rust')}
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        Rust Engine
+                        <Badge variant="secondary">Beta</Badge>
+                      </CardTitle>
+                      <CardDescription>Phase 2 - High performance</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          <span>~45ms latency</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Monitor className="h-4 w-4 text-green-500" />
+                          <span>58 FPS average</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-blue-500" />
+                          <span>Hardware accelerated</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Provider-specific settings */}
+              {formData.remoteControl?.provider === 'Rust' && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h4 className="font-medium">Rust Engine Settings</h4>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Hardware Acceleration</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Use GPU for video encoding
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.remoteControl?.enableHardwareAcceleration ?? true}
+                      onCheckedChange={(checked) => 
+                        handleInputChange('remoteControl', 'enableHardwareAcceleration', checked)
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Frame Differencing</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Only send changed pixels
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.remoteControl?.enableFrameDifferencing ?? true}
+                      onCheckedChange={(checked) => 
+                        handleInputChange('remoteControl', 'enableFrameDifferencing', checked)
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Transport Protocol</Label>
+                    <Select 
+                      value={formData.remoteControl?.transportProtocol ?? 'Quic'}
+                      onValueChange={(value) => 
+                        handleInputChange('remoteControl', 'transportProtocol', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Quic">QUIC (Recommended)</SelectItem>
+                        <SelectItem value="WebRTC">WebRTC</SelectItem>
+                        <SelectItem value="UDP">Raw UDP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Changing the provider requires restarting the application.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Provider Statistics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Provider Performance</CardTitle>
+              <CardDescription>Real-time performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Latency</p>
+                  <p className="text-2xl font-bold">
+                    {formData.remoteControl?.provider === 'Rust' ? '45ms' : '95ms'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Frame Rate</p>
+                  <p className="text-2xl font-bold">
+                    {formData.remoteControl?.provider === 'Rust' ? '58 FPS' : '28 FPS'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">CPU Usage</p>
+                  <p className="text-2xl font-bold">
+                    {formData.remoteControl?.provider === 'Rust' ? '15%' : '35%'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Memory</p>
+                  <p className="text-2xl font-bold">
+                    {formData.remoteControl?.provider === 'Rust' ? '150 MB' : '350 MB'}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

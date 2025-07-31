@@ -229,7 +229,7 @@ impl InputSimulator for WindowsInputSimulator {
                     MouseButton::Button5 => XBUTTON2,
                     _ => 0,
                 };
-                self.send_mouse_input(flags, 0, 0, data)
+                self.send_mouse_input(flags, 0, 0, data.into())
             }
             MouseEvent::ButtonUp { button } => {
                 let flags = Self::mouse_button_flags(button, false);
@@ -238,7 +238,7 @@ impl InputSimulator for WindowsInputSimulator {
                     MouseButton::Button5 => XBUTTON2,
                     _ => 0,
                 };
-                self.send_mouse_input(flags, 0, 0, data)
+                self.send_mouse_input(flags, 0, 0, data.into())
             }
             MouseEvent::Click { button } => {
                 self.mouse_event(MouseEvent::ButtonDown { button })?;
@@ -305,7 +305,8 @@ impl InputSimulator for WindowsInputSimulator {
             let vk = Self::keycode_to_vk(code) as i32;
             let state = GetAsyncKeyState(vk);
             // High bit set means key is pressed
-            Ok((state & 0x8000) != 0)
+            // 0x8000 as i16 is -32768 in two's complement
+            Ok((state & (0x8000u16 as i16)) != 0)
         }
     }
 }

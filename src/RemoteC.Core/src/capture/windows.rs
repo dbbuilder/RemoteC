@@ -1,7 +1,7 @@
 //! Windows-specific screen capture implementation
 
 use super::{CaptureConfig, ScreenCapture, ScreenFrame, CaptureMode};
-use super::monitor::{Monitor, MonitorBounds, MonitorOrientation, VirtualDesktop};
+use super::monitor::{Monitor, MonitorBounds, MonitorOrientation};
 use crate::{Result, RemoteCError};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -9,10 +9,11 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
+use std::ptr::null_mut;
 
 #[cfg(target_os = "windows")]
 use winapi::{
-    shared::windef::{HDC, HBITMAP, RECT, HMONITOR},
+    shared::windef::{HDC, HBITMAP, RECT, HMONITOR, POINT},
     shared::minwindef::{BOOL, LPARAM, DWORD},
     um::wingdi::*,
     um::winuser::*,
@@ -397,9 +398,10 @@ pub fn enumerate_monitors_windows() -> Result<Vec<Monitor>> {
     let mut monitors = Vec::new();
     for (index, info) in monitors_info.iter().enumerate() {
         // Get display settings for this monitor
-        let mut dm = DEVMODEW {
-            dmSize: std::mem::size_of::<DEVMODEW>() as u16,
-            ..std::mem::zeroed()
+        let mut dm = unsafe {
+            let mut dm: DEVMODEW = std::mem::zeroed();
+            dm.dmSize = std::mem::size_of::<DEVMODEW>() as u16;
+            dm
         };
         
         let mut device_name_wide = [0u16; 32];
@@ -416,12 +418,9 @@ pub fn enumerate_monitors_windows() -> Result<Vec<Monitor>> {
                 (
                     dm.dmDisplayFrequency,
                     dm.dmBitsPerPel,
-                    match dm.dmDisplayOrientation {
-                        DMDO_90 => MonitorOrientation::Portrait,
-                        DMDO_180 => MonitorOrientation::LandscapeFlipped,
-                        DMDO_270 => MonitorOrientation::PortraitFlipped,
-                        _ => MonitorOrientation::Landscape,
-                    },
+                    // TODO: dmDisplayOrientation is not available in current winapi version
+                    // For now, default to Landscape orientation
+                    MonitorOrientation::Landscape,
                 )
             } else {
                 (60, 32, MonitorOrientation::Landscape)

@@ -241,6 +241,11 @@ public class Program
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             builder.Services.AddHostedService<QueuedHostedService>();
             
+            // Add Remote Control Provider Factory
+            builder.Services.AddSingleton<IRemoteControlProviderFactory, RemoteControlProviderFactory>();
+            builder.Services.AddScoped<IRemoteControlProvider>(sp => 
+                sp.GetRequiredService<IRemoteControlProviderFactory>().CreateProvider());
+            
             // Add new services
             builder.Services.AddScoped<IComplianceService, ComplianceService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();

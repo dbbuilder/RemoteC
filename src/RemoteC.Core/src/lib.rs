@@ -25,6 +25,9 @@ pub type Result<T> = std::result::Result<T, RemoteCError>;
 /// Errors that can occur in RemoteC Core
 #[derive(Error, Debug)]
 pub enum RemoteCError {
+    /// IO error
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
     /// Screen capture error
     #[error("Screen capture error: {0}")]
     CaptureError(String),

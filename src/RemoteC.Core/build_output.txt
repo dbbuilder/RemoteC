@@ -1,0 +1,281 @@
+   Compiling remotec-core v0.1.0 (/mnt/d/dev2/remotec/src/RemoteC.Core)
+warning: unused import: `RemoteCError`
+ --> src/capture/mod.rs:5:21
+  |
+5 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::sync::Arc`
+ --> src/capture/mod.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `HBITMAP`
+  --> src/capture/windows.rs:16:27
+   |
+16 |     shared::windef::{HDC, HBITMAP, RECT, HMONITOR, POINT},
+   |                           ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+   --> src/capture/windows.rs:338:9
+    |
+338 |     use std::collections::HashMap;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `RemoteCError` and `Result`
+ --> src/ffi/mod.rs:3:13
+  |
+3 | use crate::{Result, RemoteCError};
+  |             ^^^^^^  ^^^^^^^^^^^^
+
+warning: unused import: `CStr`
+ --> src/ffi/mod.rs:4:24
+  |
+4 | use std::ffi::{c_char, CStr, CString};
+  |                        ^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> src/ffi/mod.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `RemoteCError`
+ --> src/input/mod.rs:5:21
+  |
+5 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+
+warning: unused imports: `KEYBDINPUT`, `MOUSEINPUT`, and `WORD`
+  --> src/input/windows.rs:7:28
+   |
+7  |         minwindef::{DWORD, WORD},
+   |                            ^^^^
+...
+13 |             INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, MOUSEEVENTF_ABSOLUTE,
+   |                          ^^^^^^^^^^
+...
+17 |             MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXSCREEN, SM_CYSCREEN, VK_CONTROL, VK_SHIFT,
+   |                              ^^^^^^^^^^
+
+warning: unused import: `tokio::sync::mpsc`
+ --> src/transport/mod.rs:9:5
+  |
+9 | use tokio::sync::mpsc;
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `RecvStream` and `SendStream`
+ --> src/transport/quic.rs:6:35
+  |
+6 | use quinn::{Endpoint, Connection, RecvStream, SendStream};
+  |                                   ^^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `VecDeque`
+ --> src/transport/reliability.rs:5:33
+  |
+5 | use std::collections::{HashMap, VecDeque};
+  |                                 ^^^^^^^^
+
+warning: unused import: `RemoteCError`
+ --> src/video/mod.rs:5:21
+  |
+5 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> src/video/mod.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:243:7
+    |
+243 | #[cfg(feature = "nvenc")]
+    |       ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:251:7
+    |
+251 | #[cfg(feature = "nvenc")]
+    |       ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:263:7
+    |
+263 | #[cfg(feature = "nvenc")]
+    |       ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused import: `RemoteCError`
+ --> src/video/hardware.rs:3:21
+  |
+3 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:305:11
+    |
+305 |     #[cfg(feature = "nvenc")]
+    |           ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+error[E0609]: no field `dmDisplayOrientation` on type `winapi::um::wingdi::DEVMODEW`
+   --> src/capture/windows.rs:420:30
+    |
+420 |                     match dm.dmDisplayOrientation {
+    |                              ^^^^^^^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `dmDeviceName`, `dmSpecVersion`, `dmDriverVersion`, `dmSize`, `dmDriverExtra` ... and 22 others
+
+error[E0308]: mismatched types
+   --> src/input/windows.rs:232:52
+    |
+232 |                 self.send_mouse_input(flags, 0, 0, data)
+    |                      ----------------              ^^^^ expected `u32`, found `u16`
+    |                      |
+    |                      arguments to this method are incorrect
+    |
+note: method defined here
+   --> src/input/windows.rs:160:8
+    |
+160 |     fn send_mouse_input(&self, flags: DWORD, dx: i32, dy: i32, data: DWORD) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^                                        -----------
+help: you can convert a `u16` to a `u32`
+    |
+232 |                 self.send_mouse_input(flags, 0, 0, data.into())
+    |                                                        +++++++
+
+error[E0308]: mismatched types
+   --> src/input/windows.rs:241:52
+    |
+241 |                 self.send_mouse_input(flags, 0, 0, data)
+    |                      ----------------              ^^^^ expected `u32`, found `u16`
+    |                      |
+    |                      arguments to this method are incorrect
+    |
+note: method defined here
+   --> src/input/windows.rs:160:8
+    |
+160 |     fn send_mouse_input(&self, flags: DWORD, dx: i32, dy: i32, data: DWORD) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^                                        -----------
+help: you can convert a `u16` to a `u32`
+    |
+241 |                 self.send_mouse_input(flags, 0, 0, data.into())
+    |                                                        +++++++
+
+error[E0599]: no method named `y_mut` found for struct `YUVBuffer` in the current scope
+  --> src/video/h264.rs:66:16
+   |
+66 |         source.y_mut().copy_from_slice(&yuv[0..config.width * config.height]);
+   |                ^^^^^ method not found in `YUVBuffer`
+
+error[E0277]: the type `[u8]` cannot be indexed by `std::ops::Range<u32>`
+  --> src/video/h264.rs:66:45
+   |
+66 |         source.y_mut().copy_from_slice(&yuv[0..config.width * config.height]);
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ slice indices are of type `usize` or ranges of `usize`
+   |
+   = help: the trait `SliceIndex<[u8]>` is not implemented for `std::ops::Range<u32>`
+   = help: the following other types implement trait `SliceIndex<T>`:
+             `std::ops::Range<usize>` implements `SliceIndex<ByteStr>`
+             `std::ops::Range<usize>` implements `SliceIndex<[T]>`
+             `std::ops::Range<usize>` implements `SliceIndex<str>`
+   = note: required for `Vec<u8>` to implement `std::ops::Index<std::ops::Range<u32>>`
+
+error[E0599]: no method named `u_mut` found for struct `YUVBuffer` in the current scope
+  --> src/video/h264.rs:69:16
+   |
+69 |         source.u_mut().copy_from_slice(&yuv[uv_offset..uv_offset + uv_size]);
+   |                ^^^^^ method not found in `YUVBuffer`
+
+error[E0277]: the type `[u8]` cannot be indexed by `std::ops::Range<u32>`
+  --> src/video/h264.rs:69:45
+   |
+69 |         source.u_mut().copy_from_slice(&yuv[uv_offset..uv_offset + uv_size]);
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ slice indices are of type `usize` or ranges of `usize`
+   |
+   = help: the trait `SliceIndex<[u8]>` is not implemented for `std::ops::Range<u32>`
+   = help: the following other types implement trait `SliceIndex<T>`:
+             `std::ops::Range<usize>` implements `SliceIndex<ByteStr>`
+             `std::ops::Range<usize>` implements `SliceIndex<[T]>`
+             `std::ops::Range<usize>` implements `SliceIndex<str>`
+   = note: required for `Vec<u8>` to implement `std::ops::Index<std::ops::Range<u32>>`
+
+error[E0599]: no method named `v_mut` found for struct `YUVBuffer` in the current scope
+  --> src/video/h264.rs:70:16
+   |
+70 |         source.v_mut().copy_from_slice(&yuv[uv_offset + uv_size..]);
+   |                ^^^^^ method not found in `YUVBuffer`
+
+error[E0277]: the type `[u8]` cannot be indexed by `std::ops::RangeFrom<u32>`
+  --> src/video/h264.rs:70:45
+   |
+70 |         source.v_mut().copy_from_slice(&yuv[uv_offset + uv_size..]);
+   |                                             ^^^^^^^^^^^^^^^^^^^^^ slice indices are of type `usize` or ranges of `usize`
+   |
+   = help: the trait `SliceIndex<[u8]>` is not implemented for `std::ops::RangeFrom<u32>`
+   = help: the following other types implement trait `SliceIndex<T>`:
+             `std::ops::RangeFrom<usize>` implements `SliceIndex<ByteStr>`
+             `std::ops::RangeFrom<usize>` implements `SliceIndex<[T]>`
+             `std::ops::RangeFrom<usize>` implements `SliceIndex<str>`
+   = note: required for `Vec<u8>` to implement `std::ops::Index<std::ops::RangeFrom<u32>>`
+
+warning: unused import: `formats::YUVSource`
+ --> src/video/h264.rs:9:34
+  |
+9 | use openh264::{encoder::Encoder, formats::YUVSource};
+  |                                  ^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> src/video/h264.rs:36:13
+   |
+36 |         let mut h264_config = OpenH264Config::new(config.width, config.height);
+   |             ----^^^^^^^^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: unused variable: `width`
+   --> src/video/h264.rs:100:14
+    |
+100 |         let (width, height, keyframe_interval) = {
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_width`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `height`
+   --> src/video/h264.rs:100:21
+    |
+100 |         let (width, height, keyframe_interval) = {
+    |                     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_height`
+
+warning: unused variable: `caps`
+   --> src/video/hardware.rs:303:9
+    |
+303 |     let caps = detect_hardware_acceleration();
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_caps`
+
+Some errors have detailed explanations: E0277, E0308, E0599, E0609.
+For more information about an error, try `rustc --explain E0277`.
+warning: `remotec-core` (lib) generated 24 warnings
+error: could not compile `remotec-core` (lib) due to 9 previous errors; 24 warnings emitted

@@ -1,0 +1,1360 @@
+   Compiling remotec-core v0.1.0 (/mnt/d/dev2/remotec/src/RemoteC.Core)
+warning: unused import: `RemoteCError`
+ --> src/capture/mod.rs:5:21
+  |
+5 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::sync::Arc`
+ --> src/capture/mod.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `HBITMAP`
+  --> src/capture/windows.rs:16:27
+   |
+16 |     shared::windef::{HDC, HBITMAP, RECT, HMONITOR, POINT},
+   |                           ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+   --> src/capture/windows.rs:338:9
+    |
+338 |     use std::collections::HashMap;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `RemoteCError` and `Result`
+ --> src/ffi/mod.rs:3:13
+  |
+3 | use crate::{Result, RemoteCError};
+  |             ^^^^^^  ^^^^^^^^^^^^
+
+warning: unused import: `CStr`
+ --> src/ffi/mod.rs:4:24
+  |
+4 | use std::ffi::{c_char, CStr, CString};
+  |                        ^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> src/ffi/mod.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `RemoteCError`
+ --> src/input/mod.rs:5:21
+  |
+5 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+
+warning: unused imports: `KEYBDINPUT`, `MOUSEINPUT`, and `WORD`
+  --> src/input/windows.rs:7:28
+   |
+7  |         minwindef::{DWORD, WORD},
+   |                            ^^^^
+...
+13 |             INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, MOUSEEVENTF_ABSOLUTE,
+   |                          ^^^^^^^^^^
+...
+17 |             MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXSCREEN, SM_CYSCREEN, VK_CONTROL, VK_SHIFT,
+   |                              ^^^^^^^^^^
+
+warning: unused import: `tokio::sync::mpsc`
+ --> src/transport/mod.rs:9:5
+  |
+9 | use tokio::sync::mpsc;
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `RecvStream` and `SendStream`
+ --> src/transport/quic.rs:6:35
+  |
+6 | use quinn::{Endpoint, Connection, RecvStream, SendStream};
+  |                                   ^^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `VecDeque`
+ --> src/transport/reliability.rs:5:33
+  |
+5 | use std::collections::{HashMap, VecDeque};
+  |                                 ^^^^^^^^
+
+warning: unused import: `RemoteCError`
+ --> src/video/mod.rs:5:21
+  |
+5 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> src/video/mod.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:243:7
+    |
+243 | #[cfg(feature = "nvenc")]
+    |       ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:251:7
+    |
+251 | #[cfg(feature = "nvenc")]
+    |       ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:263:7
+    |
+263 | #[cfg(feature = "nvenc")]
+    |       ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused import: `RemoteCError`
+ --> src/video/hardware.rs:3:21
+  |
+3 | use crate::{Result, RemoteCError};
+  |                     ^^^^^^^^^^^^
+
+warning: unexpected `cfg` condition value: `nvenc`
+   --> src/video/hardware.rs:305:11
+    |
+305 |     #[cfg(feature = "nvenc")]
+    |           ^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `core-foundation`, `core-graphics`, `default`, `linux`, `macos`, `openh264`, `production`, `winapi`, `windows`, `x11`, and `xcb`
+    = help: consider adding `nvenc` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused import: `formats::YUVSource`
+ --> src/video/h264.rs:9:34
+  |
+9 | use openh264::{encoder::Encoder, formats::YUVSource};
+  |                                  ^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> src/video/h264.rs:37:13
+   |
+37 |         let mut h264_config = OpenH264Config::new(config.width, config.height);
+   |             ----^^^^^^^^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: unused variable: `width`
+   --> src/video/h264.rs:103:14
+    |
+103 |         let (width, height, keyframe_interval) = {
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_width`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `height`
+   --> src/video/h264.rs:103:21
+    |
+103 |         let (width, height, keyframe_interval) = {
+    |                     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_height`
+
+warning: unused variable: `caps`
+   --> src/video/hardware.rs:303:9
+    |
+303 |     let caps = detect_hardware_acceleration();
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_caps`
+
+warning: field `handle` is never read
+   --> src/capture/windows.rs:342:9
+    |
+341 |     struct MonitorInfo {
+    |            ----------- field in this struct
+342 |         handle: HMONITOR,
+    |         ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: struct `ReliabilityLayer` is never constructed
+  --> src/transport/reliability.rs:10:12
+   |
+10 | pub struct ReliabilityLayer {
+   |            ^^^^^^^^^^^^^^^^
+   |
+   = note: `ReliabilityLayer` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: struct `SentPacket` is never constructed
+  --> src/transport/reliability.rs:26:8
+   |
+26 | struct SentPacket {
+   |        ^^^^^^^^^^
+
+warning: struct `ReceivedPacket` is never constructed
+  --> src/transport/reliability.rs:33:8
+   |
+33 | struct ReceivedPacket {
+   |        ^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> src/transport/reliability.rs:39:12
+    |
+38  | impl ReliabilityLayer {
+    | --------------------- associated items in this implementation
+39  |     pub fn new(max_retries: u32) -> Self {
+    |            ^^^
+...
+51  |     pub fn next_sequence(&mut self) -> u64 {
+    |            ^^^^^^^^^^^^^
+...
+58  |     pub fn track_sent(&mut self, sequence: u64, data: Vec<u8>) {
+    |            ^^^^^^^^^^
+...
+67  |     pub fn process_ack(&mut self, sequence: u64) -> Option<Duration> {
+    |            ^^^^^^^^^^^
+...
+76  |     pub fn get_retransmissions(&mut self) -> Vec<(u64, Vec<u8>)> {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+92  |     pub fn process_received(&mut self, sequence: u64, data: Vec<u8>) -> Vec<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^^
+...
+110 |     pub fn update_rto(&mut self, rtt: Duration) {
+    |            ^^^^^^^^^^
+
+warning: enum `CongestionAlgorithm` is never used
+ --> src/transport/congestion.rs:9:10
+  |
+9 | pub enum CongestionAlgorithm {
+  |          ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `CongestionAlgorithm` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: struct `CongestionController` is never constructed
+  --> src/transport/congestion.rs:20:12
+   |
+20 | pub struct CongestionController {
+   |            ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `CongestionController` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple associated items are never used
+   --> src/transport/congestion.rs:39:12
+    |
+38  | impl CongestionController {
+    | ------------------------- associated items in this implementation
+39  |     pub fn new(algorithm: CongestionAlgorithm) -> Self {
+    |            ^^^
+...
+53  |     pub fn update_rtt(&mut self, rtt: Duration) {
+    |            ^^^^^^^^^^
+...
+61  |     pub fn on_ack(&mut self, acked_bytes: usize) {
+    |            ^^^^^^
+...
+70  |     pub fn on_loss(&mut self) {
+    |            ^^^^^^^
+...
+82  |     pub fn cwnd(&self) -> usize {
+    |            ^^^^
+...
+87  |     pub fn can_send(&self, in_flight: usize) -> bool {
+    |            ^^^^^^^^
+...
+92  |     pub fn pacing_rate(&self) -> f64 {
+    |            ^^^^^^^^^^^
+...
+102 |     fn aimd_on_ack(&mut self, _acked_bytes: usize) {
+    |        ^^^^^^^^^^^
+...
+113 |     fn aimd_on_loss(&mut self) {
+    |        ^^^^^^^^^^^^
+...
+119 |     fn bbr_on_ack(&mut self, acked_bytes: usize) {
+    |        ^^^^^^^^^^
+...
+129 |     fn bbr_on_loss(&mut self) {
+    |        ^^^^^^^^^^^
+...
+135 |     fn cubic_on_ack(&mut self, _acked_bytes: usize) {
+    |        ^^^^^^^^^^^^
+...
+158 |     fn cubic_on_loss(&mut self) {
+    |        ^^^^^^^^^^^^^
+
+warning: function `rgba_to_yuv420` is never used
+   --> src/video/h264.rs:172:4
+    |
+172 | fn rgba_to_yuv420(rgba: &[u8], width: u32, height: u32) -> Result<Vec<u8>> {
+    |    ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/capture/monitor.rs:49:5
+   |
+49 |     Landscape,
+   |     ^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> src/lib.rs:7:9
+   |
+7  | #![warn(missing_docs)]
+   |         ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/capture/monitor.rs:50:5
+   |
+50 |     Portrait,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/capture/monitor.rs:51:5
+   |
+51 |     LandscapeFlipped,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/capture/monitor.rs:52:5
+   |
+52 |     PortraitFlipped,
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+ --> src/encoding/mod.rs:5:1
+  |
+5 | pub struct EncodingConfig {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src/encoding/mod.rs:6:5
+  |
+6 |     pub codec: VideoCodec,
+  |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src/encoding/mod.rs:7:5
+  |
+7 |     pub bitrate: u32,
+  |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src/encoding/mod.rs:8:5
+  |
+8 |     pub framerate: u32,
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src/encoding/mod.rs:9:5
+  |
+9 |     pub quality: EncodingQuality,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+  --> src/encoding/mod.rs:13:1
+   |
+13 | pub enum VideoCodec {
+   | ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:14:5
+   |
+14 |     H264,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:15:5
+   |
+15 |     H265,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:16:5
+   |
+16 |     VP8,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:17:5
+   |
+17 |     VP9,
+   |     ^^^
+
+warning: missing documentation for an enum
+  --> src/encoding/mod.rs:21:1
+   |
+21 | pub enum EncodingQuality {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:22:5
+   |
+22 |     Low,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:23:5
+   |
+23 |     Medium,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:24:5
+   |
+24 |     High,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/encoding/mod.rs:25:5
+   |
+25 |     Lossless,
+   |     ^^^^^^^^
+
+warning: missing documentation for a trait
+  --> src/encoding/mod.rs:28:1
+   |
+28 | pub trait VideoEncoder: Send + Sync {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src/encoding/mod.rs:29:5
+   |
+29 |     fn encode_frame(&mut self, frame: &[u8], width: u32, height: u32) -> Result<Vec<u8>>;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src/encoding/mod.rs:30:5
+   |
+30 |     fn flush(&mut self) -> Result<Vec<u8>>;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:48:5
+   |
+48 |     pub width: u32,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:49:5
+   |
+49 |     pub height: u32,
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:50:5
+   |
+50 |     pub data: *const u8,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:51:5
+   |
+51 |     pub data_len: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:52:5
+   |
+52 |     pub timestamp: u64,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:58:5
+   |
+58 |     pub event_type: u32,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:59:5
+   |
+59 |     pub x: i32,
+   |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:60:5
+   |
+60 |     pub y: i32,
+   |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:61:5
+   |
+61 |     pub button: u32,
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:62:5
+   |
+62 |     pub key_code: u32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/ffi/mod.rs:63:5
+   |
+63 |     pub modifiers: u32,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:292:5
+    |
+292 |     pub id: *const c_char,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:293:5
+    |
+293 |     pub index: u32,
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:294:5
+    |
+294 |     pub name: *const c_char,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:295:5
+    |
+295 |     pub is_primary: u8,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:296:5
+    |
+296 |     pub x: i32,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:297:5
+    |
+297 |     pub y: i32,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:298:5
+    |
+298 |     pub width: u32,
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:299:5
+    |
+299 |     pub height: u32,
+    |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:300:5
+    |
+300 |     pub work_x: i32,
+    |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:301:5
+    |
+301 |     pub work_y: i32,
+    |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:302:5
+    |
+302 |     pub work_width: u32,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:303:5
+    |
+303 |     pub work_height: u32,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:304:5
+    |
+304 |     pub scale_factor: f32,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:305:5
+    |
+305 |     pub refresh_rate: u32,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:306:5
+    |
+306 |     pub bit_depth: u32,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/ffi/mod.rs:307:5
+    |
+307 |     pub orientation: u32,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:26:12
+   |
+26 |     Move { x: i32, y: i32 },
+   |            ^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:26:20
+   |
+26 |     Move { x: i32, y: i32 },
+   |                    ^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:28:20
+   |
+28 |     MoveRelative { dx: i32, dy: i32 },
+   |                    ^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:28:29
+   |
+28 |     MoveRelative { dx: i32, dy: i32 },
+   |                             ^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:30:18
+   |
+30 |     ButtonDown { button: MouseButton },
+   |                  ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:32:16
+   |
+32 |     ButtonUp { button: MouseButton },
+   |                ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:34:13
+   |
+34 |     Click { button: MouseButton },
+   |             ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:36:19
+   |
+36 |     DoubleClick { button: MouseButton },
+   |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:38:14
+   |
+38 |     Scroll { delta: i32, horizontal: bool },
+   |              ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:38:26
+   |
+38 |     Scroll { delta: i32, horizontal: bool },
+   |                          ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:5
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |     ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:8
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |        ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:11
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |           ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:14
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |              ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:17
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                 ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:20
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                    ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:23
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                       ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:26
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                          ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:29
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                             ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:32
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                                ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:35
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                                   ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:38
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                                      ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:45:41
+   |
+45 |     A, B, C, D, E, F, G, H, I, J, K, L, M,
+   |                                         ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:5
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |     ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:8
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |        ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:11
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |           ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:14
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |              ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:17
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                 ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:20
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                    ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:23
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                       ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:26
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                          ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:29
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                             ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:32
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                                ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:35
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                                   ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:38
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                                      ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:46:41
+   |
+46 |     N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+   |                                         ^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:49:5
+   |
+49 |     Num0, Num1, Num2, Num3, Num4,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:49:11
+   |
+49 |     Num0, Num1, Num2, Num3, Num4,
+   |           ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:49:17
+   |
+49 |     Num0, Num1, Num2, Num3, Num4,
+   |                 ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:49:23
+   |
+49 |     Num0, Num1, Num2, Num3, Num4,
+   |                       ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:49:29
+   |
+49 |     Num0, Num1, Num2, Num3, Num4,
+   |                             ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:50:5
+   |
+50 |     Num5, Num6, Num7, Num8, Num9,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:50:11
+   |
+50 |     Num5, Num6, Num7, Num8, Num9,
+   |           ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:50:17
+   |
+50 |     Num5, Num6, Num7, Num8, Num9,
+   |                 ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:50:23
+   |
+50 |     Num5, Num6, Num7, Num8, Num9,
+   |                       ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:50:29
+   |
+50 |     Num5, Num6, Num7, Num8, Num9,
+   |                             ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:5
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:9
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |         ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:13
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |             ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:17
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |                 ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:21
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |                     ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:25
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |                         ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:29
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |                             ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:53:33
+   |
+53 |     F1, F2, F3, F4, F5, F6, F7, F8,
+   |                                 ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:54:5
+   |
+54 |     F9, F10, F11, F12,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:54:9
+   |
+54 |     F9, F10, F11, F12,
+   |         ^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:54:14
+   |
+54 |     F9, F10, F11, F12,
+   |              ^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:54:19
+   |
+54 |     F9, F10, F11, F12,
+   |                   ^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:57:5
+   |
+57 |     Shift, Control, Alt, Meta,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:57:12
+   |
+57 |     Shift, Control, Alt, Meta,
+   |            ^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:57:21
+   |
+57 |     Shift, Control, Alt, Meta,
+   |                     ^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:57:26
+   |
+57 |     Shift, Control, Alt, Meta,
+   |                          ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:60:5
+   |
+60 |     Left, Right, Up, Down,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:60:11
+   |
+60 |     Left, Right, Up, Down,
+   |           ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:60:18
+   |
+60 |     Left, Right, Up, Down,
+   |                  ^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:60:22
+   |
+60 |     Left, Right, Up, Down,
+   |                      ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:61:5
+   |
+61 |     Home, End, PageUp, PageDown,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:61:11
+   |
+61 |     Home, End, PageUp, PageDown,
+   |           ^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:61:16
+   |
+61 |     Home, End, PageUp, PageDown,
+   |                ^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:61:24
+   |
+61 |     Home, End, PageUp, PageDown,
+   |                        ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:64:5
+   |
+64 |     Enter, Space, Tab, Backspace, Delete,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:64:12
+   |
+64 |     Enter, Space, Tab, Backspace, Delete,
+   |            ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:64:19
+   |
+64 |     Enter, Space, Tab, Backspace, Delete,
+   |                   ^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:64:24
+   |
+64 |     Enter, Space, Tab, Backspace, Delete,
+   |                        ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:64:35
+   |
+64 |     Enter, Space, Tab, Backspace, Delete,
+   |                                   ^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:65:5
+   |
+65 |     Escape, CapsLock, NumLock, ScrollLock,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:65:13
+   |
+65 |     Escape, CapsLock, NumLock, ScrollLock,
+   |             ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:65:23
+   |
+65 |     Escape, CapsLock, NumLock, ScrollLock,
+   |                       ^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:65:32
+   |
+65 |     Escape, CapsLock, NumLock, ScrollLock,
+   |                                ^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:68:5
+   |
+68 |     Period, Comma, Semicolon, Quote,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:68:13
+   |
+68 |     Period, Comma, Semicolon, Quote,
+   |             ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:68:20
+   |
+68 |     Period, Comma, Semicolon, Quote,
+   |                    ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:68:31
+   |
+68 |     Period, Comma, Semicolon, Quote,
+   |                               ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:69:5
+   |
+69 |     Slash, Backslash, Minus, Equals,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:69:12
+   |
+69 |     Slash, Backslash, Minus, Equals,
+   |            ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:69:23
+   |
+69 |     Slash, Backslash, Minus, Equals,
+   |                       ^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:69:30
+   |
+69 |     Slash, Backslash, Minus, Equals,
+   |                              ^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:70:5
+   |
+70 |     LeftBracket, RightBracket,
+   |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/input/mod.rs:70:18
+   |
+70 |     LeftBracket, RightBracket,
+   |                  ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:77:15
+   |
+77 |     KeyDown { code: KeyCode },
+   |               ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:79:13
+   |
+79 |     KeyUp { code: KeyCode },
+   |             ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:81:16
+   |
+81 |     KeyPress { code: KeyCode },
+   |                ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/input/mod.rs:83:16
+   |
+83 |     TypeText { text: String },
+   |                ^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> src/input/windows.rs:24:1
+   |
+24 | pub struct WindowsInputSimulator {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/input/windows.rs:30:5
+   |
+30 |     pub fn new() -> Result<Self> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/logging.rs:14:5
+   |
+14 |     Error = 1,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> src/logging.rs:15:5
+   |
+15 |     Warn = 2,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/logging.rs:16:5
+   |
+16 |     Info = 3,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> src/logging.rs:17:5
+   |
+17 |     Debug = 4,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> src/logging.rs:18:5
+   |
+18 |     Trace = 5,
+   |     ^^^^^
+
+warning: missing documentation for a struct field
+  --> src/transport/mod.rs:99:9
+   |
+99 |         sequence: u64,
+   |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:100:9
+    |
+100 |         timestamp: u64,
+    |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:101:9
+    |
+101 |         is_keyframe: bool,
+    |         ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:102:9
+    |
+102 |         data: Bytes,
+    |         ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:106:9
+    |
+106 |         sequence: u64,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:107:9
+    |
+107 |         timestamp: u64,
+    |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:108:9
+    |
+108 |         data: Bytes,
+    |         ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:112:9
+    |
+112 |         sequence: u64,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:113:9
+    |
+113 |         event_data: Bytes,
+    |         ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:117:9
+    |
+117 |         message_type: String,
+    |         ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:118:9
+    |
+118 |         payload: Bytes,
+    |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/transport/mod.rs:122:9
+    |
+122 |         timestamp: u64,
+    |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/video/h264.rs:23:5
+   |
+23 |     pub fn new() -> Result<Self> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/video/h265.rs:15:5
+   |
+15 |     pub fn new() -> Result<Self> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/video/vp8.rs:15:5
+   |
+15 |     pub fn new() -> Result<Self> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/video/vp9.rs:15:5
+   |
+15 |     pub fn new() -> Result<Self> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:12:5
+   |
+12 |     pub nvidia_nvenc: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:13:5
+   |
+13 |     pub intel_qsv: bool,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:14:5
+   |
+14 |     pub amd_vce: bool,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:15:5
+   |
+15 |     pub apple_vt: bool,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:16:5
+   |
+16 |     pub cuda_available: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:17:5
+   |
+17 |     pub opencl_available: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:18:5
+   |
+18 |     pub gpu_name: String,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:19:5
+   |
+19 |     pub gpu_memory_mb: u32,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/video/hardware.rs:20:5
+   |
+20 |     pub encoder_count: u32,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: creating a shared reference to mutable static
+  --> src/video/hardware.rs:29:9
+   |
+29 |         HW_CAPABILITIES.as_ref().unwrap()
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+   = note: `#[warn(static_mut_refs)]` on by default
+
+warning: `remotec-core` (lib) generated 208 warnings (run `cargo fix --lib -p remotec-core` to apply 16 suggestions)
+    Finished `release` profile [optimized] target(s) in 28.13s
