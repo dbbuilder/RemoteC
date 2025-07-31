@@ -165,7 +165,9 @@ public class HostHub : Hub
             cpuUsage = health.CpuUsage,
             memoryUsage = health.MemoryUsage,
             diskUsage = health.DiskUsage,
-            temperature = health.Temperature,
+            networkLatencyMs = health.NetworkLatencyMs,
+            activeSessions = health.ActiveSessions,
+            isHealthy = health.IsHealthy,
             lastReported = DateTime.UtcNow
         });
         
