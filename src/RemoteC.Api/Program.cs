@@ -212,7 +212,7 @@ public class Program
             }
 
             // Add AutoMapper (using built-in DI support in AutoMapper 15)
-            builder.Services.AddAutoMapper(typeof(Program).Assembly);
+            builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program).Assembly));
 
             // Add Repositories
             builder.Services.AddScoped<Data.Repositories.IUserRepository, Data.Repositories.UserRepository>();
