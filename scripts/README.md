@@ -96,7 +96,7 @@ npm run preview
 ### Port Already in Use
 ```batch
 check-and-kill-port.bat 17001  # Kill API server
-check-and-kill-port.bat 3000   # Kill UI server
+check-and-kill-port.bat 17002  # Kill UI server
 ```
 
 ### NPM Dependencies Issues

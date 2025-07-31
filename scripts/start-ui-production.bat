@@ -37,8 +37,8 @@ echo.
 echo Starting RemoteC Web UI in PRODUCTION mode...
 echo.
 echo The UI will be accessible at:
-echo   - http://localhost:4173 (this machine)
-echo   - http://10.0.0.91:4173 (from network)
+echo   - http://localhost:17002 (this machine)
+echo   - http://10.0.0.91:17002 (from network)
 echo.
 echo The UI connects to the API at http://localhost:17001
 echo Make sure the API server is running first!

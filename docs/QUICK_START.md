@@ -45,11 +45,11 @@ The API will start on http://localhost:17001
 scripts\start-dev-ui.bat
 ```
 
-The UI will start on http://localhost:3000
+The UI will start on http://localhost:17002
 
 ## Step 4: Login
 
-1. Navigate to http://localhost:3000
+1. Navigate to http://localhost:17002
 2. You'll see a development login page
 3. Enter any username/password (e.g., `admin`/`admin`)
 4. Click "Sign in"
@@ -83,7 +83,7 @@ npm install
 
 ### Port already in use
 - API uses port 17001
-- UI uses port 3000
+- UI uses port 17002
 - Stop any processes using these ports
 
 ### Database connection issues

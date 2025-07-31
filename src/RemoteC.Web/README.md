@@ -83,16 +83,16 @@ del package-lock.json
 npm install
 ```
 
-### Port 3000 already in use
+### Port 17002 already in use
 
 Either:
-1. Stop the process using port 3000
+1. Stop the process using port 17002
 2. Change the port in vite.config.ts
 
 ## Access URLs
 
-- Local: http://localhost:3000
-- Network: http://YOUR_IP:3000 (e.g., http://10.0.0.91:3000)
+- Local: http://localhost:17002
+- Network: http://YOUR_IP:17002 (e.g., http://10.0.0.91:17002)
 
 ## Development
 

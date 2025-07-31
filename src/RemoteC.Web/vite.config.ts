@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 17002,
     host: '0.0.0.0', // Allow access from network
     proxy: {
       '/api': {
@@ -26,5 +26,9 @@ export default defineConfig({
         ws: true,
       },
     },
+  },
+  preview: {
+    port: 17002,
+    host: '0.0.0.0',
   },
 })

@@ -16,7 +16,7 @@ cd /d D:\dev2\remotec\src\RemoteC.Web
 echo Starting development server...
 echo.
 echo Once started, access the UI at:
-echo - http://localhost:3000
+echo - http://localhost:17002
 echo.
 
 call npm run dev
