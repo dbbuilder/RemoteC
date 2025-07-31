@@ -382,4 +382,52 @@ public class SessionService : ISessionService
             throw;
         }
     }
+
+    public async Task UpdateSessionStatusAsync(Guid sessionId, RemoteC.Shared.Models.SessionStatus status)
+    {
+        try
+        {
+            _logger.LogInformation("Updating session {SessionId} status to {Status}", sessionId, status);
+
+            var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+            if (session == null)
+            {
+                throw new ArgumentException($"Session {sessionId} not found");
+            }
+
+            // Map from shared model SessionStatus to entity SessionStatus
+            session.Status = status switch
+            {
+                RemoteC.Shared.Models.SessionStatus.Created => Data.Entities.SessionStatus.Created,
+                RemoteC.Shared.Models.SessionStatus.WaitingForPin => Data.Entities.SessionStatus.WaitingForPin,
+                RemoteC.Shared.Models.SessionStatus.Connecting => Data.Entities.SessionStatus.Connecting,
+                RemoteC.Shared.Models.SessionStatus.Connected => Data.Entities.SessionStatus.Connected,
+                RemoteC.Shared.Models.SessionStatus.Active => Data.Entities.SessionStatus.Active,
+                RemoteC.Shared.Models.SessionStatus.Paused => Data.Entities.SessionStatus.Paused,
+                RemoteC.Shared.Models.SessionStatus.Disconnected => Data.Entities.SessionStatus.Disconnected,
+                RemoteC.Shared.Models.SessionStatus.Ended => Data.Entities.SessionStatus.Ended,
+                RemoteC.Shared.Models.SessionStatus.Error => Data.Entities.SessionStatus.Error,
+                _ => Data.Entities.SessionStatus.Created // Default to Created instead of Unknown
+            };
+
+            // Update timestamps based on status
+            if (status == RemoteC.Shared.Models.SessionStatus.Active && session.StartedAt == null)
+            {
+                session.StartedAt = DateTime.UtcNow;
+            }
+            else if (status == RemoteC.Shared.Models.SessionStatus.Ended && session.EndedAt == null)
+            {
+                session.EndedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Session {SessionId} status updated to {Status}", sessionId, status);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating session {SessionId} status", sessionId);
+            throw;
+        }
+    }
 }

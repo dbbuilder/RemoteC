@@ -192,6 +192,192 @@ public class PinService : IPinService
     {
         return $"pin:session:{sessionId}";
     }
+
+    public async Task<ExtendedPinGenerationResult> GeneratePinWithDetailsAsync(Guid sessionId, int expirationMinutes)
+    {
+        try
+        {
+            // Generate random PIN
+            var pinLength = _configuration.GetValue<int>("Security:PinLength", 6);
+            var pin = GenerateRandomPin(pinLength);
+
+            // Hash the PIN for storage
+            var hashedPin = HashPin(pin);
+
+            // Store in cache with expiration
+            var expiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes);
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(expirationMinutes)
+            };
+
+            var pinData = new PinStorageData
+            {
+                HashedPin = hashedPin,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = expiresAt,
+                IsUsed = false,
+                SessionId = sessionId,
+                UserId = null // Will be set by controller
+            };
+
+            // Store by session ID
+            var sessionKey = GetPinCacheKey(sessionId);
+            await _cache.SetStringAsync(sessionKey, JsonSerializer.Serialize(pinData), options);
+
+            // Also store by PIN for lookup
+            var pinKey = GetPinLookupKey(pin);
+            await _cache.SetStringAsync(pinKey, sessionId.ToString(), options);
+
+            _logger.LogInformation("Generated PIN for session {SessionId} with {Minutes} minute expiration", 
+                sessionId, expirationMinutes);
+
+            return new ExtendedPinGenerationResult
+            {
+                PinCode = pin,
+                SessionId = sessionId,
+                ExpiresAt = expiresAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating PIN for session {SessionId}", sessionId);
+            throw;
+        }
+    }
+
+    public async Task<PinDetails?> GetPinDetailsAsync(string pin)
+    {
+        try
+        {
+            // Look up session ID by PIN
+            var pinKey = GetPinLookupKey(pin);
+            var sessionIdString = await _cache.GetStringAsync(pinKey);
+            
+            if (string.IsNullOrEmpty(sessionIdString) || !Guid.TryParse(sessionIdString, out var sessionId))
+            {
+                return null;
+            }
+
+            // Get PIN data by session ID
+            var sessionKey = GetPinCacheKey(sessionId);
+            var cachedData = await _cache.GetStringAsync(sessionKey);
+            
+            if (string.IsNullOrEmpty(cachedData))
+            {
+                return null;
+            }
+
+            var pinData = JsonSerializer.Deserialize<PinStorageData>(cachedData);
+            if (pinData == null)
+            {
+                return null;
+            }
+
+            return new PinDetails
+            {
+                SessionId = sessionId,
+                UserId = pinData.UserId,
+                DeviceId = pinData.DeviceId,
+                CreatedAt = pinData.CreatedAt,
+                ExpiresAt = pinData.ExpiresAt,
+                IsUsed = pinData.IsUsed,
+                UsedAt = pinData.UsedAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting PIN details");
+            return null;
+        }
+    }
+
+    public async Task<bool> RevokePinAsync(string pinCode, string userId)
+    {
+        try
+        {
+            // Look up session ID by PIN
+            var pinKey = GetPinLookupKey(pinCode);
+            var sessionIdString = await _cache.GetStringAsync(pinKey);
+            
+            if (string.IsNullOrEmpty(sessionIdString) || !Guid.TryParse(sessionIdString, out var sessionId))
+            {
+                return false;
+            }
+
+            // Get PIN data to verify ownership
+            var sessionKey = GetPinCacheKey(sessionId);
+            var cachedData = await _cache.GetStringAsync(sessionKey);
+            
+            if (string.IsNullOrEmpty(cachedData))
+            {
+                return false;
+            }
+
+            var pinData = JsonSerializer.Deserialize<PinStorageData>(cachedData);
+            if (pinData?.UserId != userId && !IsAdmin(userId))
+            {
+                throw new UnauthorizedAccessException("User is not authorized to revoke this PIN");
+            }
+
+            // Remove both cache entries
+            await _cache.RemoveAsync(sessionKey);
+            await _cache.RemoveAsync(pinKey);
+
+            _logger.LogInformation("PIN revoked for session {SessionId} by user {UserId}", sessionId, userId);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error revoking PIN");
+            return false;
+        }
+    }
+
+    public async Task<IEnumerable<ActivePinDto>> GetActivePinsAsync(string userId)
+    {
+        try
+        {
+            // In a production system, this would query a database
+            // For now, return empty list as we're using distributed cache
+            _logger.LogInformation("Getting active PINs for user {UserId}", userId);
+            
+            // TODO: Implement proper storage mechanism for tracking user PINs
+            return new List<ActivePinDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting active PINs for user {UserId}", userId);
+            return new List<ActivePinDto>();
+        }
+    }
+
+    private static string GetPinLookupKey(string pin)
+    {
+        return $"pin:lookup:{pin}";
+    }
+
+    private bool IsAdmin(string userId)
+    {
+        // TODO: Implement proper admin check
+        return false;
+    }
+
+    private class PinStorageData
+    {
+        public string HashedPin { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime ExpiresAt { get; set; }
+        public bool IsUsed { get; set; }
+        public DateTime? UsedAt { get; set; }
+        public Guid SessionId { get; set; }
+        public string? UserId { get; set; }
+        public string? DeviceId { get; set; }
+    }
 }
 
 /// <summary>

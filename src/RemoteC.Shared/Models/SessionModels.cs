@@ -87,6 +87,27 @@ public class PinGenerationResult
 }
 
 /// <summary>
+/// Request to generate a PIN
+/// </summary>
+public class PinGenerationRequest
+{
+    public Guid SessionId { get; set; }
+    public int ExpirationMinutes { get; set; } = 10;
+}
+
+/// <summary>
+/// Response from PIN generation
+/// </summary>
+public class PinGenerationResponse
+{
+    public bool Success { get; set; }
+    public string PinCode { get; set; } = string.Empty;
+    public Guid SessionId { get; set; }
+    public DateTime ExpiresAt { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
 /// Mouse input data
 /// </summary>
 public class MouseInputDto

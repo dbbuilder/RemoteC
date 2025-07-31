@@ -66,6 +66,14 @@ public interface ISessionService
     /// <param name="pin">The PIN code to validate</param>
     /// <returns>True if PIN is valid, false otherwise</returns>
     Task<bool> ValidatePinAsync(Guid sessionId, string pin);
+    
+    /// <summary>
+    /// Updates the status of a session
+    /// </summary>
+    /// <param name="sessionId">The session to update</param>
+    /// <param name="status">The new session status</param>
+    /// <returns>Task completion</returns>
+    Task UpdateSessionStatusAsync(Guid sessionId, RemoteC.Shared.Models.SessionStatus status);
 }
 
 /// <summary>
@@ -162,6 +170,36 @@ public interface IPinService
     /// <param name="pin">The PIN code to check</param>
     /// <returns>True if PIN is valid, false otherwise</returns>
     Task<bool> IsPinValidAsync(Guid sessionId, string pin);
+    
+    /// <summary>
+    /// Generates a PIN with custom expiration
+    /// </summary>
+    /// <param name="sessionId">The session ID</param>
+    /// <param name="expirationMinutes">PIN expiration in minutes</param>
+    /// <returns>PIN generation result</returns>
+    Task<ExtendedPinGenerationResult> GeneratePinWithDetailsAsync(Guid sessionId, int expirationMinutes);
+    
+    /// <summary>
+    /// Gets details about a PIN
+    /// </summary>
+    /// <param name="pin">The PIN code</param>
+    /// <returns>PIN details or null if not found</returns>
+    Task<PinDetails?> GetPinDetailsAsync(string pin);
+    
+    /// <summary>
+    /// Revokes a PIN
+    /// </summary>
+    /// <param name="pinCode">The PIN to revoke</param>
+    /// <param name="userId">The user requesting revocation</param>
+    /// <returns>True if revoked, false if not found</returns>
+    Task<bool> RevokePinAsync(string pinCode, string userId);
+    
+    /// <summary>
+    /// Gets active PINs for a user
+    /// </summary>
+    /// <param name="userId">The user ID</param>
+    /// <returns>List of active PINs</returns>
+    Task<IEnumerable<ActivePinDto>> GetActivePinsAsync(string userId);
 }
 
 /// <summary>

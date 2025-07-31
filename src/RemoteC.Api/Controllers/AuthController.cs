@@ -251,4 +251,131 @@ public class AuthController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Authenticates a host machine and returns an access token
+    /// </summary>
+    /// <param name="request">Host authentication credentials</param>
+    /// <returns>Authentication token for the host</returns>
+    /// <remarks>
+    /// This endpoint is used by RemoteC.Host services to authenticate with the server.
+    /// The host must provide a valid host ID and secret configured in the system.
+    /// The returned token should be used in the Authorization header for subsequent requests.
+    /// </remarks>
+    /// <response code="200">Successfully authenticated, returns token</response>
+    /// <response code="401">Invalid host credentials</response>
+    [HttpPost("host/token")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(HostTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<HostTokenResponse>> GetHostToken([FromBody] HostTokenRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("Host authentication attempt for {HostId}", request.HostId);
+
+            // In development, accept any host with the configured dev credentials
+            var validHostId = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Host:ValidId"] ?? "dev-host-001";
+            var validSecret = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Host:ValidSecret"] ?? "dev-secret-001";
+
+            if (request.HostId != validHostId || request.Secret != validSecret)
+            {
+                _logger.LogWarning("Invalid host credentials for {HostId}", request.HostId);
+                return Unauthorized("Invalid host credentials");
+            }
+
+            // Generate a simple JWT token for the host
+            var token = GenerateHostToken(request.HostId);
+            
+            _logger.LogInformation("Host {HostId} authenticated successfully", request.HostId);
+
+            return Ok(new HostTokenResponse
+            {
+                Token = token,
+                TokenType = "Bearer",
+                ExpiresIn = 3600 // 1 hour
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during host authentication");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    /// <summary>
+    /// Alternative token endpoint for compatibility
+    /// </summary>
+    /// <param name="request">Authentication credentials</param>
+    /// <returns>Authentication token</returns>
+    /// <remarks>
+    /// This endpoint provides compatibility with different authentication flows.
+    /// It supports both user and host authentication based on the provided credentials.
+    /// </remarks>
+    /// <response code="200">Successfully authenticated, returns token</response>
+    /// <response code="401">Invalid credentials</response>
+    [HttpPost("token")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(TokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<TokenResponse>> GetToken([FromBody] TokenRequest request)
+    {
+        try
+        {
+            // Check if this is a host authentication request
+            if (!string.IsNullOrEmpty(request.GrantType) && request.GrantType == "client_credentials")
+            {
+                var hostRequest = new HostTokenRequest
+                {
+                    HostId = request.ClientId ?? string.Empty,
+                    Secret = request.ClientSecret ?? string.Empty
+                };
+                
+                var hostResult = await GetHostToken(hostRequest);
+                if (hostResult.Result is OkObjectResult okResult && okResult.Value is HostTokenResponse hostResponse)
+                {
+                    return Ok(new TokenResponse
+                    {
+                        AccessToken = hostResponse.Token,
+                        TokenType = hostResponse.TokenType,
+                        ExpiresIn = hostResponse.ExpiresIn
+                    });
+                }
+                
+                return Unauthorized("Invalid credentials");
+            }
+
+            // Default to user authentication
+            return Unauthorized("Unsupported grant type");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during token generation");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    private string GenerateHostToken(string hostId)
+    {
+        // In development, return a simple token
+        // In production, this should generate a proper JWT token
+        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var key = System.Text.Encoding.ASCII.GetBytes("development-secret-key-for-remotec-host-authentication");
+        var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("sub", hostId),
+                new Claim("type", "host"),
+                new Claim(ClaimTypes.NameIdentifier, hostId)
+            }),
+            Expires = DateTime.UtcNow.AddHours(1),
+            SigningCredentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(
+                new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
+                Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256Signature)
+        };
+        
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
 }
