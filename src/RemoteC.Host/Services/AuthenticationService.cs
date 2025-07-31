@@ -51,33 +51,51 @@ public class AuthenticationService : IAuthenticationService
 
             if (string.IsNullOrEmpty(hostId) || string.IsNullOrEmpty(hostSecret))
             {
-                _logger.LogError("Host credentials not configured");
+                _logger.LogError("Host credentials not configured. HostId: {HostId}, Secret: {SecretConfigured}", 
+                    hostId ?? "null", !string.IsNullOrEmpty(hostSecret));
                 return null;
             }
 
+            _logger.LogInformation("Requesting host token from {TokenEndpoint} with HostId: {HostId}", 
+                tokenEndpoint, hostId);
+
             // Request new token
             var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
-            request.Content = new StringContent(
-                JsonSerializer.Serialize(new { hostId, secret = hostSecret }), 
-                System.Text.Encoding.UTF8, 
-                "application/json");
+            var requestBody = JsonSerializer.Serialize(new { hostId, secret = hostSecret });
+            request.Content = new StringContent(requestBody, System.Text.Encoding.UTF8, "application/json");
+            
+            _logger.LogDebug("Token request body: {RequestBody}", requestBody);
 
             var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            _logger.LogDebug("Token response status: {StatusCode}, Content: {Content}", 
+                response.StatusCode, responseContent);
+            
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(content, options);
+                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent, options);
                 
-                if (tokenResponse != null)
+                if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.Token))
                 {
                     _cachedToken = tokenResponse.Token;
                     _tokenExpiry = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn - 60); // Refresh 1 minute early
+                    _logger.LogInformation("Successfully obtained host token, expires in {ExpiresIn} seconds", 
+                        tokenResponse.ExpiresIn);
                     return _cachedToken;
                 }
+                else
+                {
+                    _logger.LogError("Token response was successful but contained no token");
+                }
+            }
+            else
+            {
+                _logger.LogError("Failed to obtain host token: {StatusCode} - {Content}", 
+                    response.StatusCode, responseContent);
             }
 
-            _logger.LogError("Failed to obtain host token: {StatusCode}", response.StatusCode);
             return null;
         }
         catch (Exception ex)
