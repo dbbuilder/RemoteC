@@ -63,7 +63,7 @@ public class HostHub : Hub
         _logger.LogInformation("Session started notification from host: {SessionId}", sessionId);
         
         // Update session status
-        await _sessionService.UpdateSessionStatusAsync(sessionId, SessionStatus.Active);
+        await _sessionService.UpdateSessionStatusAsync(sessionId, RemoteC.Shared.Models.SessionStatus.Active);
         
         // Notify viewers in the session
         await Clients.Group($"session-{sessionId}").SendAsync("SessionStarted", sessionId);
@@ -77,7 +77,7 @@ public class HostHub : Hub
         _logger.LogInformation("Session ended notification from host: {SessionId}", sessionId);
         
         // Update session status
-        await _sessionService.UpdateSessionStatusAsync(sessionId, SessionStatus.Ended);
+        await _sessionService.UpdateSessionStatusAsync(sessionId, RemoteC.Shared.Models.SessionStatus.Ended);
         
         // Notify viewers in the session
         await Clients.Group($"session-{sessionId}").SendAsync("SessionEnded", sessionId);
@@ -91,7 +91,7 @@ public class HostHub : Hub
         _logger.LogError("Session error from host: {SessionId} - {Error}", sessionId, error);
         
         // Update session status
-        await _sessionService.UpdateSessionStatusAsync(sessionId, SessionStatus.Error);
+        await _sessionService.UpdateSessionStatusAsync(sessionId, RemoteC.Shared.Models.SessionStatus.Error);
         
         // Notify viewers in the session
         await Clients.Group($"session-{sessionId}").SendAsync("SessionError", sessionId, error);
