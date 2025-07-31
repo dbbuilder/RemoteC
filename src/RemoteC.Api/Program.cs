@@ -211,12 +211,8 @@ public class Program
                 Log.Information("Hangfire is disabled (SQLite database, LocalDB, or Hangfire:Enabled=false)");
             }
 
-            // Add AutoMapper
-            var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
-            {
-                cfg.AddMaps(typeof(Program).Assembly);
-            });
-            builder.Services.AddSingleton(mapperConfig.CreateMapper());
+            // Add AutoMapper (using built-in DI support in AutoMapper 15)
+            builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
             // Add Repositories
             builder.Services.AddScoped<Data.Repositories.IUserRepository, Data.Repositories.UserRepository>();
