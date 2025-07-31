@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Net.Http.Headers;
 
 namespace RemoteC.Host.Services;
@@ -56,18 +57,21 @@ public class AuthenticationService : IAuthenticationService
 
             // Request new token
             var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", 
-                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{hostId}:{hostSecret}")));
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(new { hostId, secret = hostSecret }), 
+                System.Text.Encoding.UTF8, 
+                "application/json");
 
             var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(content);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(content, options);
                 
                 if (tokenResponse != null)
                 {
-                    _cachedToken = tokenResponse.AccessToken;
+                    _cachedToken = tokenResponse.Token;
                     _tokenExpiry = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn - 60); // Refresh 1 minute early
                     return _cachedToken;
                 }
@@ -151,9 +155,14 @@ public class AuthenticationService : IAuthenticationService
 
     private class TokenResponse
     {
-        public string AccessToken { get; set; } = string.Empty;
-        public int ExpiresIn { get; set; }
+        [JsonPropertyName("token")]
+        public string Token { get; set; } = string.Empty;
+        
+        [JsonPropertyName("tokenType")]
         public string TokenType { get; set; } = string.Empty;
+        
+        [JsonPropertyName("expiresIn")]
+        public int ExpiresIn { get; set; } = 3600; // Default to 1 hour
     }
 
     private class PinValidationResult
