@@ -1,119 +1,127 @@
-# RemoteC Scripts
+# RemoteC Scripts Guide
 
-This directory contains various scripts to help with development, deployment, and testing of RemoteC.
+This directory contains essential scripts for building and running RemoteC.
 
-## Quick Start Scripts
+## Quick Start
 
-### For Development
+### Development Mode (No Azure AD Required)
+```batch
+# 1. Install dependencies (first time only)
+install-web-dependencies.bat
 
-- **`start-dev-server.bat`** / **`start-dev-server.ps1`**
-  - Starts the server in development mode with SQLite
-  - No external dependencies required (no SQL Server, Redis, or Hangfire)
-  - Creates development configuration if missing
-  - Server runs on http://localhost:17001
+# 2. Start API server
+start-server-windows.bat
 
-- **`test-server-startup.bat`**
-  - Tests if the server can start successfully
-  - Checks the health endpoint
-  - Shows server logs for debugging
+# 3. Start UI in development mode
+start-dev-ui.bat
+# Login with any username/password (e.g., admin/admin)
 
-### For Deployment
+# 4. (Optional) Start host for testing
+start-host-windows.bat
+```
 
-- **`deploy-host.ps1`**
-  - Deploys the RemoteC host application
-  - Configures Windows service
-  - Sets up auto-start on boot
+### Production Mode (Azure AD Required)
+```batch
+# 1. Configure Azure AD in appsettings.json
 
-- **`deploy-client.ps1`**
-  - Deploys the RemoteC client application
-  - Creates desktop shortcuts
-  - Configures server connection
+# 2. Start API server
+start-server-windows.bat
 
-- **`quick-deploy.ps1`**
-  - One-click deployment script
-  - Deploys both server and host components
-  - Configures all necessary settings
+# 3. Start UI in production mode
+start-ui-production.bat
+# Login with Azure AD credentials
+```
+
+## Essential Scripts
+
+### Build Scripts
+- `build.bat` - Build entire solution (Windows)
+- `build.sh` - Build entire solution (Linux/WSL)
+
+### Server Scripts
+- `start-server-windows.bat` - Start API server on port 17001
+
+### UI Scripts
+- `start-dev-ui.bat` - Start UI in development mode (no Azure AD)
+- `start-ui-production.bat` - Start UI in production mode (Azure AD required)
+- `install-web-dependencies.bat` - Install npm dependencies
+
+### Host Scripts
+- `start-host-windows.bat` - Start host application for remote control
 
 ### Utility Scripts
+- `check-and-kill-port.bat` - Kill process using a specific port
+- `fix-web-dependencies.bat` - Fix npm dependency issues
 
-- **`check-dependencies.ps1`**
-  - Verifies all prerequisites are installed
-  - Checks .NET SDK, SQL Server, Redis
-  - Reports missing components
+### Test Scripts
+- `run-tests-windows.ps1` - Run all tests
+- `run-specific-test-windows.ps1` - Run specific test
 
-- **`create-dev-certs.ps1`**
-  - Creates self-signed certificates for HTTPS
-  - Trusts certificates in local store
-  - Required for HTTPS in development
+### Deployment Scripts
+- `deploy-docker.sh` - Deploy with Docker
+- `deploy-k8s.sh` - Deploy to Kubernetes
 
-- **`test-deployment.ps1`**
-  - Runs comprehensive deployment tests
-  - Verifies all endpoints are accessible
-  - Checks database connectivity
+## Switching Between Development and Production
 
-## Usage Examples
+### Environment Detection
+The UI automatically detects the environment:
+- `npm run dev` → Development mode (no Azure AD)
+- `npm run build && npm run preview` → Production mode (Azure AD required)
 
-### Start Development Server
-```bash
-# Using Command Prompt
-scripts\start-dev-server.bat
+### Manual Override
+Set environment variable to force mode:
+```batch
+# Force development mode
+set NODE_ENV=development
+npm run dev
 
-# Using PowerShell
-.\scripts\start-dev-server.ps1
+# Force production mode
+set NODE_ENV=production
+npm run build
+npm run preview
 ```
 
-### Deploy to Production
-```bash
-# Full deployment
-.\scripts\quick-deploy.ps1 -Environment Production -ServerUrl https://remotec.company.com
+### Key Differences
 
-# Deploy only host
-.\scripts\deploy-host.ps1 -ServerUrl https://remotec.company.com
-```
-
-### Test Deployment
-```bash
-# Run all tests
-.\scripts\test-deployment.ps1 -ServerUrl http://localhost:17001
-
-# Quick health check
-.\scripts\test-server-startup.bat
-```
-
-## Script Parameters
-
-Most PowerShell scripts support common parameters:
-
-- `-Environment` - Target environment (Development, Staging, Production)
-- `-ServerUrl` - RemoteC server URL
-- `-InstallPath` - Installation directory
-- `-ServiceName` - Windows service name (for host deployment)
-- `-Verbose` - Enable detailed logging
+| Feature | Development Mode | Production Mode |
+|---------|-----------------|-----------------|
+| Authentication | Any username/password | Azure AD B2C |
+| UI Badge | Shows "DEV" | No badge |
+| Security | Relaxed for testing | Full RBAC |
+| API Access | Dev token | Azure AD token |
+| Hot Reload | Yes | No |
 
 ## Troubleshooting
 
-If scripts fail to run:
+### Port Already in Use
+```batch
+check-and-kill-port.bat 17001  # Kill API server
+check-and-kill-port.bat 3000   # Kill UI server
+```
 
-1. **Execution Policy** - Run PowerShell as Administrator and execute:
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
+### NPM Dependencies Issues
+```batch
+fix-web-dependencies.bat
+```
 
-2. **Missing Dependencies** - Run the dependency check:
-   ```powershell
-   .\scripts\check-dependencies.ps1
-   ```
+### Can't Connect to SQL Server
+Check connection string in `appsettings.Development.json`:
+- Server: `sqltest.schoolvision.net,14333`
+- Database: `RemoteCDb`
+- Credentials provided in config
 
-3. **Port Conflicts** - The default port 17001 may be in use. Check with:
-   ```bash
-   netstat -an | findstr 17001
-   ```
+## Best Practices
 
-4. **Permission Issues** - Some scripts require administrator privileges. Right-click and "Run as Administrator".
+1. **Always use the appropriate mode**:
+   - Development for local testing
+   - Production for deployments
 
-## Development Tips
+2. **Don't commit Azure AD credentials**:
+   - Use environment variables or Azure Key Vault
 
-- Use `start-dev-server.*` scripts for local development
-- The development server uses SQLite, so no database setup is required
-- All external dependencies (Redis, Hangfire, Azure Key Vault) are disabled in development mode
-- Check the server logs in `src\RemoteC.Api\logs` for debugging
+3. **Test both modes**:
+   - Ensure features work in both authentication modes
+
+4. **Use provided scripts**:
+   - Don't create custom variations
+   - Report issues if scripts need updates

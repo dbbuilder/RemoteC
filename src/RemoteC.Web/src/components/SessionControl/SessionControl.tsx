@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/tooltip'
 import {
   Fullscreen,
-  FullscreenExit,
+  Minimize2,
   RefreshCw,
   Camera,
   Keyboard,
@@ -255,7 +255,7 @@ export function SessionControl({
                       aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                     >
                       {isFullscreen ? (
-                        <FullscreenExit className="h-4 w-4" />
+                        <Minimize2 className="h-4 w-4" />
                       ) : (
                         <Fullscreen className="h-4 w-4" />
                       )}

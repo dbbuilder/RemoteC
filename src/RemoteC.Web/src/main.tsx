@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import App from './App'
+import DevApp from './DevApp'
 import { msalConfig } from './config/authConfig'
+import { config } from './config/config'
 import './index.css'
 
 // Create MSAL instance
@@ -22,14 +24,25 @@ const queryClient = new QueryClient({
   },
 })
 
+// Choose the appropriate app based on environment
+const AppComponent = config.features.useDevAuth ? DevApp : App
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <MsalProvider instance={msalInstance}>
+    {config.features.useDevAuth ? (
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <DevApp />
         </BrowserRouter>
       </QueryClientProvider>
-    </MsalProvider>
+    ) : (
+      <MsalProvider instance={msalInstance}>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </MsalProvider>
+    )}
   </React.StrictMode>,
 )

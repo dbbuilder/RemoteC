@@ -98,7 +98,16 @@ Configure your SQL Server connection in `appsettings.json`:
 }
 ```
 
-### Authentication (Azure AD B2C)
+### Authentication
+
+#### Development Mode (No Azure AD Required)
+The application includes a development authentication mode that bypasses Azure AD:
+- Automatically enabled when running in development (`npm run dev`)
+- Login with any username/password (e.g., admin/admin)
+- Full admin access granted
+- Perfect for local development and testing
+
+#### Production Mode (Azure AD B2C)
 ```json
 {
   "AzureAdB2C": {

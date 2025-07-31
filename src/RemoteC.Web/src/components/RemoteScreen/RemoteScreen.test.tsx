@@ -104,7 +104,7 @@ describe('RemoteScreen', () => {
     screenUpdateHandler?.('base64ImageData')
 
     // Trigger image load
-    mockImage.onload?.()
+    mockImage.onload?.(new Event('load'))
 
     await waitFor(() => {
       expect(mockDrawImage).toHaveBeenCalledWith(mockImage, 0, 0, 1920, 1080)
@@ -131,7 +131,7 @@ describe('RemoteScreen', () => {
     screenUpdateHandler?.('base64ImageData')
 
     // Trigger image error
-    mockImage.onerror?.()
+    mockImage.onerror?.(new Event('error'))
 
     await waitFor(() => {
       expect(screen.getByText('Failed to load screen data')).toBeInTheDocument()

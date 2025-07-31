@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
-import { useMsal } from '@azure/msal-react'
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
-import { apiConfig, silentRequest } from '@/config/authConfig'
+import { config } from '@/config/config'
 
 interface ApiError {
   message: string
@@ -9,31 +8,18 @@ interface ApiError {
   details?: any
 }
 
-export const useApi = () => {
-  const { instance, accounts } = useMsal()
+export const useDevApi = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<ApiError | null>(null)
 
   const getAccessToken = async (): Promise<string> => {
-    if (accounts.length === 0) {
-      throw new Error('No authenticated user')
+    // In dev mode, return the stored token or a dummy token
+    const storedAuth = localStorage.getItem('dev-auth')
+    if (storedAuth) {
+      const { token } = JSON.parse(storedAuth)
+      return token
     }
-
-    try {
-      const response = await instance.acquireTokenSilent({
-        ...silentRequest,
-        account: accounts[0],
-      })
-      return response.accessToken
-    } catch (error) {
-      console.error('Token acquisition failed:', error)
-      // Try interactive token acquisition
-      const response = await instance.acquireTokenPopup({
-        ...silentRequest,
-        account: accounts[0],
-      })
-      return response.accessToken
-    }
+    return 'dev-token-123'
   }
 
   const request = useCallback(
@@ -41,7 +27,7 @@ export const useApi = () => {
       method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
       url: string,
       data?: any,
-      config?: AxiosRequestConfig
+      requestConfig?: AxiosRequestConfig
     ): Promise<T> => {
       setLoading(true)
       setError(null)
@@ -50,14 +36,14 @@ export const useApi = () => {
         const token = await getAccessToken()
         const response = await axios({
           method,
-          url: `${apiConfig.uri}${url}`,
+          url: `${config.apiUrl}${url}`,
           data,
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
-            ...config?.headers,
+            ...requestConfig?.headers,
           },
-          ...config,
+          ...requestConfig,
         })
 
         return response.data
@@ -75,40 +61,40 @@ export const useApi = () => {
         setLoading(false)
       }
     },
-    [instance, accounts]
+    []
   )
 
   const get = useCallback(
-    <T = any>(url: string, config?: AxiosRequestConfig) => {
-      return request<T>('GET', url, undefined, config)
+    <T = any>(url: string, requestConfig?: AxiosRequestConfig) => {
+      return request<T>('GET', url, undefined, requestConfig)
     },
     [request]
   )
 
   const post = useCallback(
-    <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
-      return request<T>('POST', url, data, config)
+    <T = any>(url: string, data?: any, requestConfig?: AxiosRequestConfig) => {
+      return request<T>('POST', url, data, requestConfig)
     },
     [request]
   )
 
   const put = useCallback(
-    <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
-      return request<T>('PUT', url, data, config)
+    <T = any>(url: string, data?: any, requestConfig?: AxiosRequestConfig) => {
+      return request<T>('PUT', url, data, requestConfig)
     },
     [request]
   )
 
   const del = useCallback(
-    <T = any>(url: string, config?: AxiosRequestConfig) => {
-      return request<T>('DELETE', url, undefined, config)
+    <T = any>(url: string, requestConfig?: AxiosRequestConfig) => {
+      return request<T>('DELETE', url, undefined, requestConfig)
     },
     [request]
   )
 
   const patch = useCallback(
-    <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
-      return request<T>('PATCH', url, data, config)
+    <T = any>(url: string, data?: any, requestConfig?: AxiosRequestConfig) => {
+      return request<T>('PATCH', url, data, requestConfig)
     },
     [request]
   )
