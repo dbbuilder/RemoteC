@@ -19,14 +19,26 @@ export function SessionsPage() {
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'All'>('All')
 
   // Fetch sessions with auto-refresh every 3 seconds for active sessions
-  const { data: sessionsData, isLoading: isLoadingSessions, refetch } = useQuery<PagedResult<Session>>({
+  const { data: sessionsData, isLoading: isLoadingSessions, error, refetch } = useQuery<PagedResult<Session>>({
     queryKey: ['sessions', statusFilter],
-    queryFn: () => {
-      const params = new URLSearchParams({ pageSize: '100' })
-      if (statusFilter !== 'All') {
-        params.append('status', statusFilter)
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams({ pageSize: '100' })
+        if (statusFilter !== 'All') {
+          params.append('status', statusFilter)
+        }
+        return await api.get(`/api/sessions?${params}`)
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error)
+        // Return mock data for demo purposes when API is not available (dev mode only)
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          console.log('Using mock data for sessions (development mode)')
+          const { mockSessions } = await import('@/mocks/mockApi')
+          return mockSessions
+        }
+        throw error
       }
-      return api.get(`/api/sessions?${params}`)
     },
     refetchInterval: statusFilter === 'Active' ? 3000 : 10000, // Faster refresh for active sessions
     refetchIntervalInBackground: true,
@@ -35,7 +47,24 @@ export function SessionsPage() {
   // Fetch session statistics with auto-refresh
   const { data: stats } = useQuery({
     queryKey: ['session-stats'],
-    queryFn: () => api.get('/api/sessions/stats'),
+    queryFn: async () => {
+      try {
+        return await api.get('/api/sessions/stats')
+      } catch (error) {
+        console.error('Failed to fetch session stats:', error)
+        // Return mock stats in dev mode
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          return {
+            activeSessions: 3,
+            todaysSessions: 15,
+            avgDuration: '45m',
+            dataTransferred: '256 MB'
+          }
+        }
+        throw error
+      }
+    },
     refetchInterval: 5000,
     refetchIntervalInBackground: true,
   })
@@ -182,6 +211,10 @@ export function SessionsPage() {
               {isLoadingSessions ? (
                 <div className="text-center py-8 text-muted-foreground">
                   Loading sessions...
+                </div>
+              ) : error && !(error instanceof Error && error.message.includes('Network Error')) ? (
+                <div className="text-center py-8 text-destructive">
+                  Error loading sessions: {error instanceof Error ? error.message : 'Unknown error'}
                 </div>
               ) : filteredSessions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">

@@ -16,9 +16,23 @@ export function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
   // Fetch users with auto-refresh every 10 seconds
-  const { data: usersData, isLoading, refetch } = useQuery<PagedResult<User>>({
+  const { data: usersData, isLoading, error, refetch } = useQuery<PagedResult<User>>({
     queryKey: ['users'],
-    queryFn: () => api.get('/api/users?pageSize=100'),
+    queryFn: async () => {
+      try {
+        return await api.get('/api/users?pageSize=100')
+      } catch (error) {
+        console.error('Failed to fetch users:', error)
+        // Return mock data for demo purposes when API is not available (dev mode only)
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          console.log('Using mock data for users (development mode)')
+          const { mockUsers } = await import('@/mocks/mockApi')
+          return mockUsers
+        }
+        throw error
+      }
+    },
     refetchInterval: 10000, // Refresh every 10 seconds
     refetchIntervalInBackground: true,
   })
@@ -26,7 +40,24 @@ export function UsersPage() {
   // Fetch user statistics with auto-refresh
   const { data: stats } = useQuery({
     queryKey: ['user-stats'],
-    queryFn: () => api.get('/api/users/stats'),
+    queryFn: async () => {
+      try {
+        return await api.get('/api/users/stats')
+      } catch (error) {
+        console.error('Failed to fetch user stats:', error)
+        // Return mock stats in dev mode
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          return {
+            totalUsers: 25,
+            activeUsers: 20,
+            adminCount: 3,
+            activeToday: 12
+          }
+        }
+        throw error
+      }
+    },
     refetchInterval: 10000,
     refetchIntervalInBackground: true,
   })
@@ -150,6 +181,10 @@ export function UsersPage() {
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
               Loading users...
+            </div>
+          ) : error && !(error instanceof Error && error.message.includes('Network Error')) ? (
+            <div className="text-center py-8 text-destructive">
+              Error loading users: {error instanceof Error ? error.message : 'Unknown error'}
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

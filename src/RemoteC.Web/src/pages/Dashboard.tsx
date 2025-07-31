@@ -2,18 +2,37 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useUnifiedApi } from '@/hooks/useUnifiedApi'
-import { Activity, Monitor, Server, Users } from 'lucide-react'
+import { Activity, Monitor, Server, Users, AlertCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export function Dashboard() {
   const api = useUnifiedApi()
 
   // Fetch dashboard statistics with auto-refresh every 5 seconds
-  const { data: stats } = useQuery({
+  const { data: stats, error, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: () => api.get('/api/dashboard/stats'),
+    queryFn: async () => {
+      try {
+        console.log('Fetching dashboard stats...')
+        const result = await api.get('/api/dashboard/stats')
+        console.log('Dashboard stats received:', result)
+        return result
+      } catch (error) {
+        console.error('Dashboard fetch error:', error)
+        // Return mock data for demo purposes when API is not available (dev mode only)
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          console.log('Using mock data for dashboard (development mode)')
+          const { mockDashboardStats } = await import('@/mocks/mockApi')
+          return mockDashboardStats
+        }
+        throw error
+      }
+    },
     refetchInterval: 5000, // Refresh every 5 seconds
     refetchIntervalInBackground: true,
+    retry: 1,
   })
 
   // Mock data for the chart
@@ -50,149 +69,122 @@ export function Dashboard() {
       trend: '+3%',
     },
     {
-      title: 'Session Duration',
-      value: stats?.avgSessionDuration || '0m',
-      description: 'Average session duration today',
+      title: 'System Health',
+      value: stats?.systemHealth || 'Good',
+      description: 'Overall system status',
       icon: Activity,
-      trend: '-2%',
+      trend: 'Stable',
     },
   ]
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            System overview and statistics
+          </p>
+        </div>
+        
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading dashboard data</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Failed to load dashboard statistics. Please check if the backend API is running on port 17001.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your remote control system.
+          System overview and statistics
         </p>
       </div>
 
+      {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.description}
-              </p>
-              <div className="mt-2">
-                <Badge
-                  variant={stat.trend.startsWith('+') ? 'default' : 'secondary'}
-                  className="text-xs"
-                >
-                  {stat.trend} from last week
+        {statCards.map((stat) => {
+          const Icon = stat.icon
+          return (
+            <Card key={stat.title}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {isLoading ? '...' : stat.value}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {stat.description}
+                </p>
+                <Badge variant="secondary" className="mt-2">
+                  {stat.trend}
                 </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Session Activity</CardTitle>
-            <CardDescription>
-              Number of remote sessions initiated this week
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
+      {/* Session Activity Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Weekly Session Activity</CardTitle>
+          <CardDescription>
+            Number of remote sessions per day
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={sessionData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
-                <Bar
-                  dataKey="sessions"
-                  fill="hsl(var(--primary))"
-                  radius={[4, 4, 0, 0]}
-                />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="sessions" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>
-              Latest actions performed in the system
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  user: 'John Doe',
-                  action: 'Started remote session',
-                  device: 'DESKTOP-ABC123',
-                  time: '2 minutes ago',
-                },
-                {
-                  user: 'Jane Smith',
-                  action: 'Ended remote session',
-                  device: 'LAPTOP-XYZ789',
-                  time: '5 minutes ago',
-                },
-                {
-                  user: 'Mike Johnson',
-                  action: 'Transferred file',
-                  device: 'SERVER-001',
-                  time: '10 minutes ago',
-                },
-                {
-                  user: 'Sarah Wilson',
-                  action: 'Generated session PIN',
-                  device: 'WORKSTATION-02',
-                  time: '15 minutes ago',
-                },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <span className="text-sm font-medium">
-                      {activity.user.charAt(0)}
-                    </span>
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.user}</span>{' '}
-                      {activity.action}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.device} • {activity.time}
-                    </p>
-                  </div>
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Latest system events and user actions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[
+              { user: 'John Doe', action: 'Started remote session', device: 'DESKTOP-ABC123', time: '2 minutes ago' },
+              { user: 'Jane Smith', action: 'Ended remote session', device: 'LAPTOP-XYZ789', time: '5 minutes ago' },
+              { user: 'Admin', action: 'Updated system settings', device: 'SERVER-001', time: '10 minutes ago' },
+              { user: 'Mike Johnson', action: 'Connected to device', device: 'WORKSTATION-456', time: '15 minutes ago' },
+            ].map((activity, index) => (
+              <div key={index} className="flex items-center justify-between border-b pb-3 last:border-0">
+                <div>
+                  <p className="font-medium">{activity.user}</p>
+                  <p className="text-sm text-muted-foreground">{activity.action} on {activity.device}</p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <p className="text-sm text-muted-foreground">{activity.time}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

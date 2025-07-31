@@ -22,18 +22,18 @@ export function useUnifiedApi(): UnifiedApi {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const axiosInstance = useSimpleApi()
     
-    // Wrap axios instance to match unified API interface
+    // Wrap axios instance to match unified API interface and extract data
     return {
       get: <T = any>(url: string, config?: AxiosRequestConfig) => 
-        axiosInstance.get<T, T>(url, config),
+        axiosInstance.get<T>(url, config).then(res => res.data),
       post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
-        axiosInstance.post<T, T>(url, data, config),
+        axiosInstance.post<T>(url, data, config).then(res => res.data),
       put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
-        axiosInstance.put<T, T>(url, data, config),
+        axiosInstance.put<T>(url, data, config).then(res => res.data),
       delete: <T = any>(url: string, config?: AxiosRequestConfig) => 
-        axiosInstance.delete<T, T>(url, config),
+        axiosInstance.delete<T>(url, config).then(res => res.data),
       patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
-        axiosInstance.patch<T, T>(url, data, config),
+        axiosInstance.patch<T>(url, data, config).then(res => res.data),
     }
   }
   

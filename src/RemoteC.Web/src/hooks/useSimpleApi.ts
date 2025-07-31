@@ -12,9 +12,28 @@ const simpleApi = axios.create({
   },
 })
 
+// Add request interceptor to always include the latest token
+simpleApi.interceptors.request.use(
+  (config) => {
+    const stored = localStorage.getItem('remotec-simple-auth')
+    if (stored) {
+      try {
+        const authData = JSON.parse(stored)
+        config.headers['Authorization'] = `Bearer ${authData.token}`
+      } catch (e) {
+        console.error('Failed to parse auth token', e)
+      }
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 // Add response interceptor for auth errors
 simpleApi.interceptors.response.use(
-  (response) => response.data,
+  (response) => response, // Return full response, not just data
   (error) => {
     if (error.response?.status === 401) {
       // Clear auth and redirect to login
@@ -29,15 +48,9 @@ export function useSimpleApi() {
   const { isAuthenticated } = useSimpleAuth()
   
   useEffect(() => {
-    // Set auth header from stored auth
-    const stored = localStorage.getItem('remotec-simple-auth')
-    if (stored && isAuthenticated) {
-      try {
-        const authData = JSON.parse(stored)
-        simpleApi.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`
-      } catch (e) {
-        console.error('Failed to set auth header', e)
-      }
+    // Force re-check of auth header when auth state changes
+    if (!isAuthenticated) {
+      delete simpleApi.defaults.headers.common['Authorization']
     }
   }, [isAuthenticated])
   

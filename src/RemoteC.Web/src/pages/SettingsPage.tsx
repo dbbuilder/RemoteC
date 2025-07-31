@@ -70,9 +70,23 @@ export function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false)
   
   // Fetch current settings
-  const { data: settings, isLoading, refetch } = useQuery<SystemSettings>({
+  const { data: settings, isLoading, error, refetch } = useQuery<SystemSettings>({
     queryKey: ['system-settings'],
-    queryFn: () => api.get('/api/settings'),
+    queryFn: async () => {
+      try {
+        return await api.get('/api/settings')
+      } catch (error) {
+        console.error('Failed to fetch settings:', error)
+        // Return mock data for demo purposes when API is not available (dev mode only)
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          console.log('Using mock data for settings (development mode)')
+          const { mockSettings } = await import('@/mocks/mockApi')
+          return mockSettings
+        }
+        throw error
+      }
+    },
   })
 
   // Local state for form

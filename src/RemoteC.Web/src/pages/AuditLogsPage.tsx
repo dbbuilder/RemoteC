@@ -18,9 +18,10 @@ export function AuditLogsPage() {
   const [dateRange, setDateRange] = useState<string>('7days')
 
   // Fetch audit logs with filters
-  const { data: logsData, isLoading, refetch, isFetching } = useQuery<PagedResult<AuditLog>>({
+  const { data: logsData, isLoading, error, refetch, isFetching } = useQuery<PagedResult<AuditLog>>({
     queryKey: ['audit-logs', severityFilter, actionFilter, dateRange, searchTerm],
-    queryFn: () => {
+    queryFn: async () => {
+      try {
       const params = new URLSearchParams({ 
         pageSize: '100',
         orderBy: 'timestamp',
@@ -58,7 +59,18 @@ export function AuditLogsPage() {
       }
       params.append('startDate', startDate.toISOString())
       
-      return api.get(`/api/audit?${params}`)
+      return await api.get(`/api/audit?${params}`)
+      } catch (error) {
+        console.error('Failed to fetch audit logs:', error)
+        // Return mock data for demo purposes when API is not available (dev mode only)
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          console.log('Using mock data for audit logs (development mode)')
+          const { mockAuditLogs } = await import('@/mocks/mockApi')
+          return mockAuditLogs
+        }
+        throw error
+      }
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   })
@@ -227,6 +239,10 @@ export function AuditLogsPage() {
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
               Loading audit logs...
+            </div>
+          ) : error && !(error instanceof Error && error.message.includes('Network Error')) ? (
+            <div className="text-center py-8 text-destructive">
+              Error loading audit logs: {error instanceof Error ? error.message : 'Unknown error'}
             </div>
           ) : logs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

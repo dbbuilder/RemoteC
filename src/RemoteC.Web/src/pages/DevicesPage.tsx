@@ -1,266 +1,250 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useUnifiedSignalR } from '@/contexts/UnifiedSignalRContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useUnifiedApi } from '@/hooks/useUnifiedApi'
-import { Device, PagedResult } from '@/types'
-import { Monitor, Cpu, Thermometer, Activity, RefreshCw } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { useSignalR } from '@/contexts/UnifiedSignalRContext'
+import { 
+  Monitor, 
+  Server, 
+  Activity, 
+  Cpu, 
+  MemoryStick,
+  Search,
+  RefreshCw,
+  AlertCircle
+} from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+
+interface Device {
+  id: string
+  name: string
+  status: 'Online' | 'Offline' | 'Unknown'
+  ipAddress: string
+  lastSeen: string
+  osVersion: string
+  cpuUsage?: number
+  memoryUsage?: number
+  diskUsage?: number
+  networkLatencyMs?: number
+  activeSessions?: number
+  isHealthy?: boolean
+}
 
 export function DevicesPage() {
   const api = useUnifiedApi()
-  const { connection } = useSignalR()
-  const [devices, setDevices] = useState<Device[]>([])
+  const { onHostHealthUpdate } = useUnifiedSignalR()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [deviceHealth, setDeviceHealth] = useState<Record<string, any>>({})
 
-  // Fetch devices with auto-refresh every 5 seconds
-  const { data, isLoading, refetch, isFetching } = useQuery<PagedResult<Device>>({
-    queryKey: ['devices'],
-    queryFn: () => api.get('/api/devices?pageSize=100'),
-    refetchInterval: 5000, // Refresh every 5 seconds
-    refetchIntervalInBackground: true, // Continue refreshing when tab is not active
+  // Fetch devices with auto-refresh
+  const { data: devicesData, isLoading, error, refetch } = useQuery({
+    queryKey: ['devices', searchTerm],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams()
+        if (searchTerm) params.append('search', searchTerm)
+        const result = await api.get(`/api/devices?${params}`)
+        return result
+      } catch (error) {
+        console.error('Failed to fetch devices:', error)
+        // Return mock data for demo purposes when API is not available (dev mode only)
+        const isDev = import.meta.env.DEV
+        if (isDev && error instanceof Error && error.message.includes('Network Error')) {
+          console.log('Using mock data for devices (development mode)')
+          const { mockDevices } = await import('@/mocks/mockApi')
+          return mockDevices
+        }
+        throw error
+      }
+    },
+    refetchInterval: 10000, // Refresh every 10 seconds
   })
 
-  // Listen for real-time health updates
+  // Subscribe to SignalR health updates
   useEffect(() => {
-    if (!connection) return
+    const cleanup = onHostHealthUpdate((hostId, health) => {
+      console.log('Received health update for host:', hostId, health)
+      setDeviceHealth(prev => ({
+        ...prev,
+        [hostId]: health
+      }))
+    })
+    
+    return cleanup
+  }, [onHostHealthUpdate])
 
-    const handleHealthUpdate = (hostId: string, health: any) => {
-      setDevices(prev => prev.map(device => 
-        device.id === hostId 
-          ? { ...device, health: { ...health, lastReported: new Date().toISOString() } }
-          : device
-      ))
-    }
+  const devices: Device[] = devicesData?.items || []
 
-    connection.on('HostHealthUpdate', handleHealthUpdate)
-
-    return () => {
-      connection.off('HostHealthUpdate', handleHealthUpdate)
-    }
-  }, [connection])
-
-  // Update devices when data changes
-  useEffect(() => {
-    if (data?.items) {
-      setDevices(data.items)
-    }
-  }, [data])
-
-  const getHealthBadgeVariant = (value: number, type: 'cpu' | 'memory' | 'disk') => {
-    if (type === 'cpu' || type === 'memory') {
-      if (value < 50) return 'default'
-      if (value < 80) return 'secondary'
-      return 'destructive'
-    } else { // disk
-      if (value < 70) return 'default'
-      if (value < 90) return 'secondary'
-      return 'destructive'
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Online':
+        return <Badge variant="success">Online</Badge>
+      case 'Offline':
+        return <Badge variant="secondary">Offline</Badge>
+      default:
+        return <Badge variant="outline">Unknown</Badge>
     }
   }
 
-  const formatHealthValue = (value: number | undefined) => {
-    if (value === undefined || value < 0) return 'N/A'
-    return `${Math.round(value)}%`
+  const getHealthIcon = (device: Device) => {
+    const health = deviceHealth[device.id] || device
+    if (!health.isHealthy) {
+      return <AlertCircle className="h-4 w-4 text-destructive" />
+    }
+    return <Activity className="h-4 w-4 text-green-500" />
+  }
+
+  if (error && !(error instanceof Error && error.message.includes('Network Error'))) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
+          <p className="text-muted-foreground">
+            Manage and monitor connected devices
+          </p>
+        </div>
+        
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading devices</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Failed to load devices. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
-          <p className="text-muted-foreground">
-            Monitor and manage connected hosts and their health status
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isFetching && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <RefreshCw className="h-3 w-3 animate-spin" />
-              Updating...
-            </div>
-          )}
-          <Button onClick={() => refetch()} size="sm" variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Now
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
+        <p className="text-muted-foreground">
+          Manage and monitor connected devices
+        </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
-            <Monitor className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{devices.length}</div>
-            <p className="text-xs text-muted-foreground">Registered in system</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Online</CardTitle>
-            <Activity className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {devices.filter(d => d.isOnline).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Currently connected</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg CPU Usage</CardTitle>
-            <Cpu className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {devices.length > 0
-                ? formatHealthValue(
-                    devices.reduce((sum, d) => sum + (d.health?.cpuUsage || 0), 0) / devices.length
-                  )
-                : 'N/A'}
-            </div>
-            <p className="text-xs text-muted-foreground">Across all devices</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Warnings</CardTitle>
-            <Thermometer className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {devices.filter(d => 
-                (d.health?.cpuUsage || 0) > 80 ||
-                (d.health?.memoryUsage || 0) > 80 ||
-                (d.health?.diskUsage || 0) > 90
-              ).length}
-            </div>
-            <p className="text-xs text-muted-foreground">High resource usage</p>
-          </CardContent>
-        </Card>
+      {/* Search and Actions */}
+      <div className="flex items-center justify-between">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search devices..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button onClick={() => refetch()} variant="outline" size="icon">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Devices Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Devices</CardTitle>
-          <CardDescription>
-            Real-time monitoring of connected hosts and their resource usage
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading devices...
-            </div>
-          ) : devices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No devices registered yet
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Device Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Operating System</TableHead>
-                  <TableHead>CPU</TableHead>
-                  <TableHead>Memory</TableHead>
-                  <TableHead>Disk</TableHead>
-                  <TableHead>Last Seen</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {devices.map((device) => (
-                  <TableRow key={device.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                        <div className="font-medium">{device.name}</div>
-                        <div className="text-xs text-muted-foreground">{device.id}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={device.isOnline ? 'default' : 'secondary'}>
-                        {device.isOnline ? 'Online' : 'Offline'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{device.operatingSystem}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress 
-                          value={device.health?.cpuUsage || 0} 
-                          className="w-16 h-2"
-                        />
-                        <Badge 
-                          variant={getHealthBadgeVariant(device.health?.cpuUsage || 0, 'cpu')}
-                          className="text-xs"
-                        >
-                          {formatHealthValue(device.health?.cpuUsage)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress 
-                          value={Math.max(0, device.health?.memoryUsage || 0)} 
-                          className="w-16 h-2"
-                        />
-                        <Badge 
-                          variant={getHealthBadgeVariant(device.health?.memoryUsage || 0, 'memory')}
-                          className="text-xs"
-                        >
-                          {formatHealthValue(device.health?.memoryUsage)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress 
-                          value={device.health?.diskUsage || 0} 
-                          className="w-16 h-2"
-                        />
-                        <Badge 
-                          variant={getHealthBadgeVariant(device.health?.diskUsage || 0, 'disk')}
-                          className="text-xs"
-                        >
-                          {formatHealthValue(device.health?.diskUsage)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {formatDistanceToNow(new Date(device.lastSeenAt), { addSuffix: true })}
-                      </div>
-                      {device.health?.lastReported && (
-                        <div className="text-xs text-muted-foreground">
-                          Health: {formatDistanceToNow(new Date(device.health.lastReported), { addSuffix: true })}
+      {/* Devices Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+          <>
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mt-2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-muted rounded"></div>
+                    <div className="h-3 bg-muted rounded"></div>
+                    <div className="h-3 bg-muted rounded"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : devices.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No devices found</p>
+          </div>
+        ) : (
+          devices.map((device) => {
+            const health = deviceHealth[device.id] || device
+            return (
+              <Card key={device.id} className="relative">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Monitor className="h-5 w-5" />
+                        {device.name}
+                      </CardTitle>
+                      <CardDescription>{device.osVersion}</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getHealthIcon(device)}
+                      {getStatusBadge(device.status)}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">IP Address:</span>
+                      <span className="font-medium">{device.ipAddress}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last Seen:</span>
+                      <span className="font-medium">
+                        {new Date(device.lastSeen).toLocaleString()}
+                      </span>
+                    </div>
+                    {device.status === 'Online' && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Active Sessions:</span>
+                          <span className="font-medium">{health.activeSessions || 0}</span>
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost">
+                        <div className="pt-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Cpu className="h-3 w-3" /> CPU
+                            </span>
+                            <span className="font-medium">{health.cpuUsage || 0}%</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <MemoryStick className="h-3 w-3" /> Memory
+                            </span>
+                            <span className="font-medium">{health.memoryUsage || 0}%</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Server className="h-3 w-3" /> Disk
+                            </span>
+                            <span className="font-medium">{health.diskUsage || 0}%</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {device.status === 'Online' && (
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" className="flex-1">
                         Connect
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        Details
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

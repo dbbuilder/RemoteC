@@ -53,6 +53,32 @@ const SIMPLE_USERS = [
   }
 ]
 
+// Simple JWT token generator for development
+function generateDevToken(user: SimpleUser): string {
+  const header = {
+    alg: 'HS256',
+    typ: 'JWT'
+  }
+  
+  const payload = {
+    sub: user.id,
+    email: user.email,
+    name: user.displayName,
+    roles: user.roles,
+    exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
+    iat: Math.floor(Date.now() / 1000),
+    iss: 'remotec-dev',
+    aud: 'remotec-api'
+  }
+  
+  // Simple base64 encoding (not secure, for development only)
+  const base64Header = btoa(JSON.stringify(header))
+  const base64Payload = btoa(JSON.stringify(payload))
+  const signature = btoa('development-signature') // Fake signature for dev
+  
+  return `${base64Header}.${base64Payload}.${signature}`
+}
+
 export function SimpleAuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const [user, setUser] = useState<SimpleUser | null>(null)
@@ -82,65 +108,67 @@ export function SimpleAuthProvider({ children }: { children: React.ReactNode }) 
         setIsLoading(false)
       }
     }
-    
+
     checkAuth()
   }, [])
 
   const login = async (username: string, password: string) => {
-    const validUser = SIMPLE_USERS.find(
-      u => u.username === username && u.password === password
+    // Find user in hardcoded list
+    const foundUser = SIMPLE_USERS.find(u => 
+      u.username.toLowerCase() === username.toLowerCase() && 
+      u.password === password
     )
-    
-    if (!validUser) {
+
+    if (!foundUser) {
       throw new Error('Invalid username or password')
     }
+
+    // Generate development JWT token
+    const token = generateDevToken(foundUser.user)
     
-    // Create auth data
+    // Store auth data
     const authData = {
-      user: validUser.user,
-      token: btoa(`${username}:${Date.now()}`), // Simple token
+      user: foundUser.user,
+      token: token,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
     }
     
-    // Store auth
     localStorage.setItem('remotec-simple-auth', JSON.stringify(authData))
     
     // Set auth header
     if (axios.defaults) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     }
     
-    setUser(validUser.user)
+    setUser(foundUser.user)
     navigate('/dashboard')
   }
 
   const logout = () => {
     localStorage.removeItem('remotec-simple-auth')
-    if (axios.defaults) {
-      delete axios.defaults.headers.common['Authorization']
-    }
+    delete axios.defaults.headers.common['Authorization']
     setUser(null)
     navigate('/login')
   }
 
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    logout
+  }
+
   return (
-    <SimpleAuthContext.Provider 
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        logout
-      }}
-    >
+    <SimpleAuthContext.Provider value={value}>
       {children}
     </SimpleAuthContext.Provider>
   )
 }
 
-export function useSimpleAuth() {
+export const useSimpleAuth = () => {
   const context = useContext(SimpleAuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSimpleAuth must be used within a SimpleAuthProvider')
   }
   return context
