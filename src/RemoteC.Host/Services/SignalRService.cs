@@ -106,10 +106,28 @@ public class SignalRService : ISignalRService, IAsyncDisposable
             _hubConnection.Closed += OnConnectionClosed;
 
             // Connect
-            await _hubConnection.StartAsync(cancellationToken);
+            try
+            {
+                await _hubConnection.StartAsync(cancellationToken);
+                _logger.LogInformation("SignalR connection established successfully");
+            }
+            catch (Exception connectEx)
+            {
+                _logger.LogError(connectEx, "Failed to establish SignalR connection");
+                throw;
+            }
             
             // Register host with server
-            await RegisterHostAsync();
+            try
+            {
+                await RegisterHostAsync();
+                _logger.LogInformation("Successfully registered host with server");
+            }
+            catch (Exception registerEx)
+            {
+                _logger.LogError(registerEx, "Failed to register host with server");
+                throw;
+            }
 
             _logger.LogInformation("Successfully connected to SignalR hub");
         }
