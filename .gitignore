@@ -384,10 +384,17 @@ Cargo.lock
 # Application specific
 appsettings.Development.json
 appsettings.Local.json
+appsettings.*.json
 *.user
 *.suo
 *.cache
 *.log
+
+# Connection strings and sensitive configuration
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.json.example
+!**/appsettings.Development.json.example
 
 # Certificate files
 *.pfx

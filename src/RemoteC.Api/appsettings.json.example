@@ -1,0 +1,64 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DATABASE;User Id=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=true;MultipleActiveResultSets=true",
+    "RedisConnection": "localhost:6379"
+  },
+  "AzureAdB2C": {
+    "Instance": "https://YOUR_TENANT.b2clogin.com/",
+    "ClientId": "YOUR_CLIENT_ID",
+    "Domain": "YOUR_TENANT.onmicrosoft.com",
+    "SignUpSignInPolicyId": "B2C_1_SignUpSignIn"
+  },
+  "Jwt": {
+    "Key": "YOUR_JWT_SECRET_KEY_MINIMUM_32_CHARACTERS",
+    "Issuer": "RemoteCApi",
+    "Audience": "RemoteCClients",
+    "ExpiryMinutes": 60
+  },
+  "RemoteControl": {
+    "DefaultProvider": "Rust",
+    "Providers": {
+      "ControlR": {
+        "ServerUrl": "https://your-controlr-server.com",
+        "ApiKey": "YOUR_CONTROLR_API_KEY"
+      },
+      "Rust": {
+        "LibraryPath": "remotec_core"
+      }
+    }
+  },
+  "Redis": {
+    "InstanceName": "RemoteC",
+    "Configuration": "localhost:6379"
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://localhost:3001"
+    ]
+  },
+  "Security": {
+    "MaxSessionDuration": "04:00:00",
+    "PinLength": 6,
+    "PinExpiryMinutes": 15,
+    "MaxLoginAttempts": 5,
+    "LockoutDurationMinutes": 30
+  },
+  "RateLimiting": {
+    "PermitLimit": 100,
+    "Window": "00:01:00",
+    "QueueProcessingOrder": "OldestFirst",
+    "QueueLimit": 50
+  },
+  "ApplicationInsights": {
+    "ConnectionString": "YOUR_APP_INSIGHTS_CONNECTION_STRING"
+  }
+}

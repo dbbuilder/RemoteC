@@ -60,6 +60,10 @@ pub enum RemoteCError {
     #[error("Initialization failed: {0}")]
     InitializationFailed(String),
     
+    /// Not implemented
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
+    
     /// Generic error
     #[error("Error: {0}")]
     Other(String),
