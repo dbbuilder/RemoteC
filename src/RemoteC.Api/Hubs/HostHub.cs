@@ -159,7 +159,17 @@ public class HostHub : Hub
         _logger.LogDebug("Health report from host {HostId}: CPU={Cpu}%, Memory={Memory}%, Disk={Disk}%", 
             hostId, health.CpuUsage, health.MemoryUsage, health.DiskUsage);
         
-        // Could store this in a cache or database for monitoring
-        // For now, just log it
+        // Broadcast health update to all connected clients (for UI display)
+        await Clients.All.SendAsync("HostHealthUpdate", hostId, new 
+        {
+            cpuUsage = health.CpuUsage,
+            memoryUsage = health.MemoryUsage,
+            diskUsage = health.DiskUsage,
+            temperature = health.Temperature,
+            lastReported = DateTime.UtcNow
+        });
+        
+        // Also notify administrators specifically
+        await Clients.Group("administrators").SendAsync("HostHealthReport", hostId, health);
     }
 }

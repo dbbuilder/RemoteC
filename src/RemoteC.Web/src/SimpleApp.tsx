@@ -4,7 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { SimpleAuthProvider, useSimpleAuth } from '@/contexts/SimpleAuthContext'
-import { SignalRProvider } from '@/contexts/SignalRContext'
+import { UnifiedSignalRProvider } from '@/contexts/UnifiedSignalRContext'
 import { Layout } from '@/components/Layout'
 import { SimpleLoginPage } from '@/pages/SimpleLoginPage'
 import { Dashboard } from '@/pages/Dashboard'
@@ -77,11 +77,11 @@ export function SimpleApp() {
       <BrowserRouter>
         <ThemeProvider>
           <SimpleAuthProvider>
-            <SignalRProvider>
+            <UnifiedSignalRProvider>
               <AppRoutes />
               <Toaster position="top-right" />
               <ReactQueryDevtools initialIsOpen={false} />
-            </SignalRProvider>
+            </UnifiedSignalRProvider>
           </SimpleAuthProvider>
         </ThemeProvider>
       </BrowserRouter>

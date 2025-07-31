@@ -9,7 +9,7 @@ import { useUnifiedApi } from '@/hooks/useUnifiedApi'
 import { Device, PagedResult } from '@/types'
 import { Monitor, Cpu, HardDrive, Thermometer, Activity, RefreshCw } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { useSignalR } from '@/contexts/SignalRContext'
+import { useSignalR } from '@/contexts/UnifiedSignalRContext'
 
 export function DevicesPage() {
   const api = useUnifiedApi()
