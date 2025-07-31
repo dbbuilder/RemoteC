@@ -119,9 +119,20 @@ public class SessionService : ISessionService
             }
 
             // Create session entity
-            var createdByGuid = string.IsNullOrEmpty(userId) 
-                ? Guid.Parse("11111111-1111-1111-1111-111111111111") // Development user
-                : Guid.Parse(userId);
+            Guid createdByGuid;
+            if (string.IsNullOrEmpty(userId) || userId == "Development User")
+            {
+                createdByGuid = Guid.Parse("11111111-1111-1111-1111-111111111111"); // Development user
+            }
+            else if (Guid.TryParse(userId, out var parsedGuid))
+            {
+                createdByGuid = parsedGuid;
+            }
+            else
+            {
+                _logger.LogWarning("Invalid user ID format: {UserId}, using development user", userId);
+                createdByGuid = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            }
                 
             var session = new Session
             {

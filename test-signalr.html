@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RemoteC SignalR Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .log {
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin: 20px 0;
+            background: #f5f5f5;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 300px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>RemoteC SignalR Test</h1>
+    
+    <div class="controls">
+        <h3>Connection</h3>
+        <input type="text" id="token" placeholder="Bearer token" value="">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+        <div id="connectionStatus">Not connected</div>
+    </div>
+
+    <div class="controls">
+        <h3>Session Operations</h3>
+        <input type="text" id="sessionId" placeholder="Session ID">
+        <button onclick="joinSession()">Join Session</button>
+        <button onclick="leaveSession()">Leave Session</button>
+    </div>
+
+    <div class="controls">
+        <h3>Test Events</h3>
+        <button onclick="sendMouseMove()">Send Mouse Move</button>
+        <button onclick="sendKeyPress()">Send Key Press</button>
+        <button onclick="sendChatMessage()">Send Chat Message</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        let connection = null;
+        const apiUrl = 'http://localhost:17001';
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function connect() {
+            try {
+                const token = document.getElementById('token').value;
+                
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl(`${apiUrl}/sessionHub`, {
+                        accessTokenFactory: () => token
+                    })
+                    .withAutomaticReconnect()
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
+
+                // Set up event handlers
+                connection.on("UserJoinedSession", (userId) => {
+                    log(`User joined session: ${userId}`, 'success');
+                });
+
+                connection.on("UserLeftSession", (userId) => {
+                    log(`User left session: ${userId}`, 'info');
+                });
+
+                connection.on("ReceiveMouseInput", (input) => {
+                    log(`Mouse input received: ${JSON.stringify(input)}`, 'info');
+                });
+
+                connection.on("ReceiveKeyboardInput", (input) => {
+                    log(`Keyboard input received: ${JSON.stringify(input)}`, 'info');
+                });
+
+                connection.on("ReceiveChatMessage", (message) => {
+                    log(`Chat message: ${message.userId}: ${message.message}`, 'info');
+                });
+
+                connection.on("SessionStatusChanged", (status) => {
+                    log(`Session status changed: ${status}`, 'info');
+                });
+
+                connection.on("ReceiveScreenUpdate", (screenData) => {
+                    log(`Screen update received: ${screenData.width}x${screenData.height}`, 'info');
+                });
+
+                connection.onreconnecting(() => {
+                    log('Reconnecting...', 'info');
+                    document.getElementById('connectionStatus').textContent = 'Reconnecting...';
+                });
+
+                connection.onreconnected(() => {
+                    log('Reconnected!', 'success');
+                    document.getElementById('connectionStatus').textContent = 'Connected';
+                });
+
+                connection.onclose(() => {
+                    log('Connection closed', 'error');
+                    document.getElementById('connectionStatus').textContent = 'Disconnected';
+                });
+
+                await connection.start();
+                log('Connected to SignalR hub', 'success');
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                
+            } catch (err) {
+                log(`Connection error: ${err}`, 'error');
+                document.getElementById('connectionStatus').textContent = 'Connection failed';
+            }
+        }
+
+        async function disconnect() {
+            if (connection) {
+                try {
+                    await connection.stop();
+                    log('Disconnected', 'info');
+                } catch (err) {
+                    log(`Disconnect error: ${err}`, 'error');
+                }
+            }
+        }
+
+        async function joinSession() {
+            if (!connection) {
+                log('Not connected', 'error');
+                return;
+            }
+            
+            const sessionId = document.getElementById('sessionId').value;
+            if (!sessionId) {
+                log('Please enter a session ID', 'error');
+                return;
+            }
+
+            try {
+                await connection.invoke("JoinSession", sessionId);
+                log(`Joined session: ${sessionId}`, 'success');
+            } catch (err) {
+                log(`Join session error: ${err}`, 'error');
+            }
+        }
+
+        async function leaveSession() {
+            if (!connection) {
+                log('Not connected', 'error');
+                return;
+            }
+            
+            const sessionId = document.getElementById('sessionId').value;
+            if (!sessionId) {
+                log('Please enter a session ID', 'error');
+                return;
+            }
+
+            try {
+                await connection.invoke("LeaveSession", sessionId);
+                log(`Left session: ${sessionId}`, 'success');
+            } catch (err) {
+                log(`Leave session error: ${err}`, 'error');
+            }
+        }
+
+        async function sendMouseMove() {
+            if (!connection) {
+                log('Not connected', 'error');
+                return;
+            }
+            
+            const sessionId = document.getElementById('sessionId').value;
+            if (!sessionId) {
+                log('Please enter a session ID', 'error');
+                return;
+            }
+
+            try {
+                const mouseInput = {
+                    x: Math.floor(Math.random() * 1920),
+                    y: Math.floor(Math.random() * 1080),
+                    action: 0 // MouseAction.Move
+                };
+                await connection.invoke("SendMouseInput", sessionId, mouseInput);
+                log(`Sent mouse move: ${JSON.stringify(mouseInput)}`, 'success');
+            } catch (err) {
+                log(`Send mouse input error: ${err}`, 'error');
+            }
+        }
+
+        async function sendKeyPress() {
+            if (!connection) {
+                log('Not connected', 'error');
+                return;
+            }
+            
+            const sessionId = document.getElementById('sessionId').value;
+            if (!sessionId) {
+                log('Please enter a session ID', 'error');
+                return;
+            }
+
+            try {
+                const keyInput = {
+                    keyCode: 65, // 'A' key
+                    action: 0, // KeyAction.Press
+                    modifiers: 0
+                };
+                await connection.invoke("SendKeyboardInput", sessionId, keyInput);
+                log(`Sent key press: ${JSON.stringify(keyInput)}`, 'success');
+            } catch (err) {
+                log(`Send keyboard input error: ${err}`, 'error');
+            }
+        }
+
+        async function sendChatMessage() {
+            if (!connection) {
+                log('Not connected', 'error');
+                return;
+            }
+            
+            const sessionId = document.getElementById('sessionId').value;
+            if (!sessionId) {
+                log('Please enter a session ID', 'error');
+                return;
+            }
+
+            try {
+                const message = `Test message at ${new Date().toLocaleTimeString()}`;
+                await connection.invoke("SendChatMessage", sessionId, message);
+                log(`Sent chat message: ${message}`, 'success');
+            } catch (err) {
+                log(`Send chat message error: ${err}`, 'error');
+            }
+        }
+
+        // Set default token for testing
+        document.getElementById('token').value = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXYtaG9zdC0wMDEiLCJ0eXBlIjoiaG9zdCIsIm5hbWVpZCI6ImRldi1ob3N0LTAwMSIsIm5iZiI6MTc1NDAwMzg5MCwiZXhwIjoxNzU0MDA3NDkwLCJpYXQiOjE3NTQwMDM4OTB9._oOb0aJu2_LoITlI2xYo3n5Mu-XvzP6Xr-6LpZcZ3Kk';
+    </script>
+</body>
+</html>
