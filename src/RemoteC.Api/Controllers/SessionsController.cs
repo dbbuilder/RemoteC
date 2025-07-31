@@ -29,7 +29,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? string.Empty;
+            var userId = GetUserId();
             _logger.LogInformation("Getting sessions for user {UserId}", userId);
             
             var sessions = await _sessionService.GetUserSessionsAsync(userId);
@@ -52,7 +52,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? string.Empty;
+            var userId = GetUserId();
             _logger.LogInformation("Getting session {SessionId} for user {UserId}", id, userId);
 
             var session = await _sessionService.GetSessionAsync(id, userId);
@@ -80,7 +80,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? string.Empty;
+            var userId = GetUserId();
             _logger.LogInformation("Creating session for device {DeviceId} by user {UserId}", request.DeviceId, userId);
 
             var session = await _sessionService.CreateSessionAsync(request, userId);
@@ -108,7 +108,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? string.Empty;
+            var userId = GetUserId();
             _logger.LogInformation("Starting session {SessionId} for user {UserId}", id, userId);
 
             var result = await _sessionService.StartSessionAsync(id, userId);
@@ -141,7 +141,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? string.Empty;
+            var userId = GetUserId();
             _logger.LogInformation("Stopping session {SessionId} for user {UserId}", id, userId);
 
             await _sessionService.StopSessionAsync(id, userId);
@@ -174,7 +174,7 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? string.Empty;
+            var userId = GetUserId();
             _logger.LogInformation("Generating PIN for session {SessionId} by user {UserId}", id, userId);
 
             var result = await _sessionService.GeneratePinAsync(id, userId);
@@ -195,5 +195,23 @@ public class SessionsController : ControllerBase
             _logger.LogError(ex, "Error generating PIN for session {SessionId}", id);
             return StatusCode(500, "Internal server error");
         }
+    }
+
+    /// <summary>
+    /// Gets the user ID from the current authentication context
+    /// </summary>
+    /// <returns>The user ID, handling both regular users and host tokens</returns>
+    private string GetUserId()
+    {
+        // Check if this is a host token
+        var tokenType = User.FindFirst("type")?.Value;
+        
+        if (tokenType == "host")
+        {
+            // For host tokens in development, use the development user ID
+            return "11111111-1111-1111-1111-111111111111";
+        }
+        
+        return User.Identity?.Name ?? string.Empty;
     }
 }

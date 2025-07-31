@@ -107,7 +107,7 @@ fix-web-dependencies.bat
 ### Can't Connect to SQL Server
 Check connection string in `appsettings.Development.json`:
 - Server: `sqltest.schoolvision.net,14333`
-- Database: `RemoteCDb`
+- Database: `RemoteC2Db`
 - Credentials provided in config
 
 ## Best Practices

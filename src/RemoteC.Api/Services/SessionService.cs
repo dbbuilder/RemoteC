@@ -119,11 +119,15 @@ public class SessionService : ISessionService
             }
 
             // Create session entity
+            var createdByGuid = string.IsNullOrEmpty(userId) 
+                ? Guid.Parse("11111111-1111-1111-1111-111111111111") // Development user
+                : Guid.Parse(userId);
+                
             var session = new Session
             {
                 Name = request.Name,
                 DeviceId = device.Id,
-                CreatedBy = Guid.Parse(userId),
+                CreatedBy = createdByGuid,
                 Type = (Data.Entities.SessionType)request.Type,
                 Status = Data.Entities.SessionStatus.Created,
                 RequirePin = request.RequirePin
@@ -135,7 +139,7 @@ public class SessionService : ISessionService
             var ownerParticipant = new SessionParticipant
             {
                 SessionId = session.Id,
-                UserId = Guid.Parse(userId),
+                UserId = createdByGuid,
                 Role = Data.Entities.ParticipantRole.Owner
             };
 
@@ -158,7 +162,9 @@ public class SessionService : ISessionService
                 }
             }
 
-            await _context.SaveChangesAsync();
+            _logger.LogInformation("About to save session {SessionId} to database", session.Id);
+            var changesSaved = await _context.SaveChangesAsync();
+            _logger.LogInformation("SaveChangesAsync returned {ChangeCount} changes for session {SessionId}", changesSaved, session.Id);
 
             var sessionDto = _mapper.Map<SessionDto>(session);
 

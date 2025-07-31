@@ -1,721 +1,207 @@
-using RemoteC.Shared.Models;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using RemoteC.Shared.Models;
 
-namespace RemoteC.Api.Services;
-
-/// <summary>
-/// PIN code service implementation
-/// </summary>
-public class PinService : IPinService
+namespace RemoteC.Api.Services
 {
-    private readonly IDistributedCache _cache;
-    private readonly ILogger<PinService> _logger;
-    private readonly IConfiguration _configuration;
-
-    public PinService(
-        IDistributedCache cache,
-        ILogger<PinService> logger,
-        IConfiguration configuration)
+    /// <summary>
+    /// Service implementation for PIN-based authentication
+    /// </summary>
+    public class PinService : IPinService
     {
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-    }
+        private readonly IDistributedCache _cache;
+        private readonly ILogger<PinService> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly int _pinLength;
+        private readonly int _defaultExpirationMinutes;
+        
+        // In-memory storage for development
+        private static readonly ConcurrentDictionary<string, PinData> _pins = new();
 
-    public async Task<string> GeneratePinAsync(Guid sessionId)
-    {
-        try
+        public PinService(
+            IDistributedCache cache,
+            ILogger<PinService> logger,
+            IConfiguration configuration)
         {
-            // Generate random PIN
-            var pinLength = _configuration.GetValue<int>("Security:PinLength", 6);
-            var pin = GenerateRandomPin(pinLength);
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            
+            _pinLength = _configuration.GetValue<int>("Security:PinLength", 6);
+            _defaultExpirationMinutes = _configuration.GetValue<int>("Security:PinExpirationMinutes", 10);
+        }
 
-            // Hash the PIN for storage
-            var hashedPin = HashPin(pin);
-
-            // Store in cache with expiration
-            var expirationMinutes = _configuration.GetValue<int>("Security:PinExpirationMinutes", 10);
-            var options = new DistributedCacheEntryOptions
+        public async Task<string> GeneratePinAsync(Guid sessionId)
+        {
+            var pin = GenerateRandomPin();
+            var pinData = new PinData
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(expirationMinutes)
-            };
-
-            var pinData = new
-            {
-                HashedPin = hashedPin,
+                SessionId = sessionId,
+                Pin = pin,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_defaultExpirationMinutes),
                 IsUsed = false
             };
-
-            var cacheKey = GetPinCacheKey(sessionId);
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(pinData), options);
-
+            
+            _pins[pin] = pinData;
             _logger.LogInformation("Generated PIN for session {SessionId}", sessionId);
-
-            return pin;
+            
+            return await Task.FromResult(pin);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating PIN for session {SessionId}", sessionId);
-            throw;
-        }
-    }
 
-    public async Task<bool> ValidatePinAsync(Guid sessionId, string pin)
-    {
-        try
+        public async Task<bool> ValidatePinAsync(Guid sessionId, string pin)
         {
-            var cacheKey = GetPinCacheKey(sessionId);
-            var cachedData = await _cache.GetStringAsync(cacheKey);
-
-            if (string.IsNullOrEmpty(cachedData))
+            if (!_pins.TryGetValue(pin, out var pinData))
             {
-                _logger.LogWarning("PIN validation failed: No PIN found for session {SessionId}", sessionId);
-                return false;
+                _logger.LogWarning("Invalid PIN attempt for session {SessionId}", sessionId);
+                return await Task.FromResult(false);
             }
-
-            var pinData = JsonSerializer.Deserialize<dynamic>(cachedData);
-            var hashedPin = pinData?.GetProperty("HashedPin").GetString();
-            var isUsed = pinData?.GetProperty("IsUsed").GetBoolean() ?? false;
-
-            if (isUsed)
+            
+            if (pinData.SessionId != sessionId)
             {
-                _logger.LogWarning("PIN validation failed: PIN already used for session {SessionId}", sessionId);
-                return false;
+                _logger.LogWarning("PIN session mismatch for session {SessionId}", sessionId);
+                return await Task.FromResult(false);
             }
-
-            // Verify PIN
-            var isValid = VerifyPin(pin, hashedPin);
-
-            if (isValid)
+            
+            if (pinData.IsUsed)
             {
-                // Mark PIN as used
-                await InvalidatePinAsync(sessionId);
-                _logger.LogInformation("PIN validation successful for session {SessionId}", sessionId);
+                _logger.LogWarning("Reused PIN attempt for session {SessionId}", sessionId);
+                return await Task.FromResult(false);
             }
-            else
+            
+            if (DateTime.UtcNow > pinData.ExpiresAt)
             {
-                _logger.LogWarning("PIN validation failed: Invalid PIN for session {SessionId}", sessionId);
+                _logger.LogWarning("Expired PIN attempt for session {SessionId}", sessionId);
+                _pins.TryRemove(pin, out _);
+                return await Task.FromResult(false);
             }
-
-            return isValid;
+            
+            pinData.IsUsed = true;
+            pinData.UsedAt = DateTime.UtcNow;
+            
+            _logger.LogInformation("PIN validated successfully for session {SessionId}", sessionId);
+            return await Task.FromResult(true);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error validating PIN for session {SessionId}", sessionId);
-            return false;
-        }
-    }
 
-    public async Task InvalidatePinAsync(Guid sessionId)
-    {
-        try
+        public async Task InvalidatePinAsync(Guid sessionId)
         {
-            var cacheKey = GetPinCacheKey(sessionId);
-            await _cache.RemoveAsync(cacheKey);
-
-            _logger.LogInformation("Invalidated PIN for session {SessionId}", sessionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error invalidating PIN for session {SessionId}", sessionId);
-            throw;
-        }
-    }
-
-    public async Task<bool> IsPinValidAsync(Guid sessionId, string pin)
-    {
-        try
-        {
-            var cacheKey = GetPinCacheKey(sessionId);
-            var cachedData = await _cache.GetStringAsync(cacheKey);
-
-            if (string.IsNullOrEmpty(cachedData))
+            var pinsToRemove = _pins.Where(p => p.Value.SessionId == sessionId).Select(p => p.Key).ToList();
+            foreach (var pin in pinsToRemove)
             {
-                return false;
+                _pins.TryRemove(pin, out _);
             }
-
-            var pinData = JsonSerializer.Deserialize<dynamic>(cachedData);
-            var hashedPin = pinData?.GetProperty("HashedPin").GetString();
-            var isUsed = pinData?.GetProperty("IsUsed").GetBoolean() ?? false;
-
-            if (isUsed)
-            {
-                return false;
-            }
-
-            return VerifyPin(pin, hashedPin);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking PIN validity for session {SessionId}", sessionId);
-            return false;
-        }
-    }
-
-    private static string GenerateRandomPin(int length)
-    {
-        using var rng = RandomNumberGenerator.Create();
-        var bytes = new byte[length];
-        rng.GetBytes(bytes);
-
-        var pin = new StringBuilder(length);
-        for (int i = 0; i < length; i++)
-        {
-            pin.Append((bytes[i] % 10).ToString());
+            
+            _logger.LogInformation("Invalidated {Count} PINs for session {SessionId}", pinsToRemove.Count, sessionId);
+            await Task.CompletedTask;
         }
 
-        return pin.ToString();
-    }
-
-    private static string HashPin(string pin)
-    {
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(pin));
-        return Convert.ToBase64String(hashedBytes);
-    }
-
-    private static bool VerifyPin(string pin, string? hashedPin)
-    {
-        if (string.IsNullOrEmpty(hashedPin))
-            return false;
-
-        var computedHash = HashPin(pin);
-        return computedHash == hashedPin;
-    }
-
-    private static string GetPinCacheKey(Guid sessionId)
-    {
-        return $"pin:session:{sessionId}";
-    }
-
-    public async Task<ExtendedPinGenerationResult> GeneratePinWithDetailsAsync(Guid sessionId, int expirationMinutes)
-    {
-        try
+        public async Task<bool> IsPinValidAsync(Guid sessionId, string pin)
         {
-            // Generate random PIN
-            var pinLength = _configuration.GetValue<int>("Security:PinLength", 6);
-            var pin = GenerateRandomPin(pinLength);
+            if (!_pins.TryGetValue(pin, out var pinData))
+                return await Task.FromResult(false);
+            
+            return await Task.FromResult(
+                pinData.SessionId == sessionId &&
+                !pinData.IsUsed &&
+                DateTime.UtcNow <= pinData.ExpiresAt
+            );
+        }
 
-            // Hash the PIN for storage
-            var hashedPin = HashPin(pin);
-
-            // Store in cache with expiration
+        public async Task<ExtendedPinGenerationResult> GeneratePinWithDetailsAsync(Guid sessionId, int expirationMinutes)
+        {
+            var pin = GenerateRandomPin();
             var expiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes);
-            var options = new DistributedCacheEntryOptions
+            
+            var pinData = new PinData
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(expirationMinutes)
-            };
-
-            var pinData = new PinStorageData
-            {
-                HashedPin = hashedPin,
+                SessionId = sessionId,
+                Pin = pin,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = expiresAt,
-                IsUsed = false,
-                SessionId = sessionId,
-                UserId = null // Will be set by controller
+                IsUsed = false
             };
-
-            // Store by session ID
-            var sessionKey = GetPinCacheKey(sessionId);
-            await _cache.SetStringAsync(sessionKey, JsonSerializer.Serialize(pinData), options);
-
-            // Also store by PIN for lookup
-            var pinKey = GetPinLookupKey(pin);
-            await _cache.SetStringAsync(pinKey, sessionId.ToString(), options);
-
-            _logger.LogInformation("Generated PIN for session {SessionId} with {Minutes} minute expiration", 
-                sessionId, expirationMinutes);
-
-            return new ExtendedPinGenerationResult
+            
+            _pins[pin] = pinData;
+            
+            return await Task.FromResult(new ExtendedPinGenerationResult
             {
                 PinCode = pin,
-                SessionId = sessionId,
-                ExpiresAt = expiresAt
-            };
+                ExpiresAt = expiresAt,
+                SessionId = sessionId
+            });
         }
-        catch (Exception ex)
+
+        public async Task<PinDetails?> GetPinDetailsAsync(string pin)
         {
-            _logger.LogError(ex, "Error generating PIN for session {SessionId}", sessionId);
-            throw;
-        }
-    }
-
-    public async Task<PinDetails?> GetPinDetailsAsync(string pin)
-    {
-        try
-        {
-            // Look up session ID by PIN
-            var pinKey = GetPinLookupKey(pin);
-            var sessionIdString = await _cache.GetStringAsync(pinKey);
+            if (!_pins.TryGetValue(pin, out var pinData))
+                return await Task.FromResult<PinDetails?>(null);
             
-            if (string.IsNullOrEmpty(sessionIdString) || !Guid.TryParse(sessionIdString, out var sessionId))
+            return await Task.FromResult(new PinDetails
             {
-                return null;
-            }
-
-            // Get PIN data by session ID
-            var sessionKey = GetPinCacheKey(sessionId);
-            var cachedData = await _cache.GetStringAsync(sessionKey);
-            
-            if (string.IsNullOrEmpty(cachedData))
-            {
-                return null;
-            }
-
-            var pinData = JsonSerializer.Deserialize<PinStorageData>(cachedData);
-            if (pinData == null)
-            {
-                return null;
-            }
-
-            return new PinDetails
-            {
-                SessionId = sessionId,
-                UserId = pinData.UserId,
-                DeviceId = pinData.DeviceId,
+                SessionId = pinData.SessionId,
                 CreatedAt = pinData.CreatedAt,
                 ExpiresAt = pinData.ExpiresAt,
                 IsUsed = pinData.IsUsed,
                 UsedAt = pinData.UsedAt
-            };
+            });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting PIN details");
-            return null;
-        }
-    }
 
-    public async Task<bool> RevokePinAsync(string pinCode, string userId)
-    {
-        try
+        public async Task<bool> RevokePinAsync(string pinCode, string userId)
         {
-            // Look up session ID by PIN
-            var pinKey = GetPinLookupKey(pinCode);
-            var sessionIdString = await _cache.GetStringAsync(pinKey);
-            
-            if (string.IsNullOrEmpty(sessionIdString) || !Guid.TryParse(sessionIdString, out var sessionId))
+            if (_pins.TryRemove(pinCode, out var pinData))
             {
-                return false;
+                _logger.LogInformation("PIN revoked by user {UserId} for session {SessionId}", userId, pinData.SessionId);
+                return await Task.FromResult(true);
             }
-
-            // Get PIN data to verify ownership
-            var sessionKey = GetPinCacheKey(sessionId);
-            var cachedData = await _cache.GetStringAsync(sessionKey);
             
-            if (string.IsNullOrEmpty(cachedData))
+            return await Task.FromResult(false);
+        }
+
+        public async Task<IEnumerable<ActivePinDto>> GetActivePinsAsync(string userId)
+        {
+            var activePins = _pins.Values
+                .Where(p => !p.IsUsed && DateTime.UtcNow <= p.ExpiresAt)
+                .Select(p => new ActivePinDto
+                {
+                    SessionId = p.SessionId,
+                    CreatedAt = p.CreatedAt,
+                    ExpiresAt = p.ExpiresAt
+                })
+                .ToList();
+            
+            return await Task.FromResult(activePins);
+        }
+
+        private string GenerateRandomPin()
+        {
+            using var rng = RandomNumberGenerator.Create();
+            var bytes = new byte[_pinLength];
+            rng.GetBytes(bytes);
+            
+            var pin = "";
+            foreach (var b in bytes)
             {
-                return false;
+                pin += (b % 10).ToString();
             }
-
-            var pinData = JsonSerializer.Deserialize<PinStorageData>(cachedData);
-            if (pinData?.UserId != userId && !IsAdmin(userId))
-            {
-                throw new UnauthorizedAccessException("User is not authorized to revoke this PIN");
-            }
-
-            // Remove both cache entries
-            await _cache.RemoveAsync(sessionKey);
-            await _cache.RemoveAsync(pinKey);
-
-            _logger.LogInformation("PIN revoked for session {SessionId} by user {UserId}", sessionId, userId);
-            return true;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revoking PIN");
-            return false;
-        }
-    }
-
-    public async Task<IEnumerable<ActivePinDto>> GetActivePinsAsync(string userId)
-    {
-        try
-        {
-            // In a production system, this would query a database
-            // For now, return empty list as we're using distributed cache
-            _logger.LogInformation("Getting active PINs for user {UserId}", userId);
             
-            // TODO: Implement proper storage mechanism for tracking user PINs
-            return new List<ActivePinDto>();
+            return pin.Substring(0, _pinLength);
         }
-        catch (Exception ex)
+        
+        private class PinData
         {
-            _logger.LogError(ex, "Error getting active PINs for user {UserId}", userId);
-            return new List<ActivePinDto>();
-        }
-    }
-
-    private static string GetPinLookupKey(string pin)
-    {
-        return $"pin:lookup:{pin}";
-    }
-
-    private bool IsAdmin(string userId)
-    {
-        // TODO: Implement proper admin check
-        return false;
-    }
-
-    private class PinStorageData
-    {
-        public string HashedPin { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public DateTime ExpiresAt { get; set; }
-        public bool IsUsed { get; set; }
-        public DateTime? UsedAt { get; set; }
-        public Guid SessionId { get; set; }
-        public string? UserId { get; set; }
-        public string? DeviceId { get; set; }
-    }
-}
-
-/// <summary>
-/// Remote control service implementation using ControlR
-/// </summary>
-public class RemoteControlService : IRemoteControlService
-{
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<RemoteControlService> _logger;
-    private readonly IConfiguration _configuration;
-
-    public RemoteControlService(
-        IHttpClientFactory httpClientFactory,
-        ILogger<RemoteControlService> logger,
-        IConfiguration configuration)
-    {
-        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-    }
-
-    public async Task<string> StartRemoteSessionAsync(Guid sessionId, string deviceId)
-    {
-        try
-        {
-            _logger.LogInformation("Starting remote session {SessionId} for device {DeviceId}", sessionId, deviceId);
-
-            var httpClient = _httpClientFactory.CreateClient("ControlR");
-            var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
-            var apiKey = _configuration["RemoteControl:ControlR:ApiKey"];
-
-            var request = new
-            {
-                SessionId = sessionId,
-                DeviceId = deviceId,
-                Timestamp = DateTime.UtcNow
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-            
-            httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-
-            var response = await httpClient.PostAsync($"{apiUrl}/api/sessions/start", content);
-            response.EnsureSuccessStatusCode();
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<dynamic>(responseContent);
-            
-            var connectionUrl = result?.GetProperty("connectionUrl").GetString() ?? string.Empty;
-
-            _logger.LogInformation("Remote session {SessionId} started successfully", sessionId);
-
-            return connectionUrl;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error starting remote session {SessionId}", sessionId);
-            throw;
-        }
-    }
-
-    public async Task StopRemoteSessionAsync(Guid sessionId)
-    {
-        try
-        {
-            _logger.LogInformation("Stopping remote session {SessionId}", sessionId);
-
-            var httpClient = _httpClientFactory.CreateClient("ControlR");
-            var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
-            var apiKey = _configuration["RemoteControl:ControlR:ApiKey"];
-
-            httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-
-            var response = await httpClient.DeleteAsync($"{apiUrl}/api/sessions/{sessionId}");
-            response.EnsureSuccessStatusCode();
-
-            _logger.LogInformation("Remote session {SessionId} stopped successfully", sessionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error stopping remote session {SessionId}", sessionId);
-            throw;
-        }
-    }
-
-    public async Task<bool> SendInputAsync(Guid sessionId, object inputData)
-    {
-        try
-        {
-            var httpClient = _httpClientFactory.CreateClient("ControlR");
-            var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
-            var apiKey = _configuration["RemoteControl:ControlR:ApiKey"];
-
-            var content = new StringContent(JsonSerializer.Serialize(inputData), Encoding.UTF8, "application/json");
-            
-            httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-
-            var response = await httpClient.PostAsync($"{apiUrl}/api/sessions/{sessionId}/input", content);
-            
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error sending input to session {SessionId}", sessionId);
-            return false;
-        }
-    }
-
-    public async Task<byte[]> GetScreenshotAsync(Guid sessionId)
-    {
-        try
-        {
-            var httpClient = _httpClientFactory.CreateClient("ControlR");
-            var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
-            var apiKey = _configuration["RemoteControl:ControlR:ApiKey"];
-
-            httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-
-            var response = await httpClient.GetAsync($"{apiUrl}/api/sessions/{sessionId}/screenshot");
-            response.EnsureSuccessStatusCode();
-
-            return await response.Content.ReadAsByteArrayAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting screenshot for session {SessionId}", sessionId);
-            return Array.Empty<byte>();
-        }
-    }
-
-    public async Task<bool> IsSessionActiveAsync(Guid sessionId)
-    {
-        try
-        {
-            var httpClient = _httpClientFactory.CreateClient("ControlR");
-            var apiUrl = _configuration["RemoteControl:ControlR:ApiUrl"];
-            var apiKey = _configuration["RemoteControl:ControlR:ApiKey"];
-
-            httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-
-            var response = await httpClient.GetAsync($"{apiUrl}/api/sessions/{sessionId}/status");
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<dynamic>(content);
-                return result?.GetProperty("isActive").GetBoolean() ?? false;
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking session status for {SessionId}", sessionId);
-            return false;
+            public Guid SessionId { get; set; }
+            public string Pin { get; set; } = string.Empty;
+            public DateTime CreatedAt { get; set; }
+            public DateTime ExpiresAt { get; set; }
+            public bool IsUsed { get; set; }
+            public DateTime? UsedAt { get; set; }
         }
     }
 }
-
-/// <summary>
-/// Command execution service implementation
-/// </summary>
-public class CommandExecutionService : ICommandExecutionService
-{
-    private readonly ILogger<CommandExecutionService> _logger;
-    private readonly IConfiguration _configuration;
-
-    public CommandExecutionService(
-        ILogger<CommandExecutionService> logger,
-        IConfiguration configuration)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-    }
-
-    public async Task<CommandExecutionResult> ExecuteCommandAsync(Guid sessionId, string command, string shell = "powershell")
-    {
-        try
-        {
-            _logger.LogInformation("Executing command for session {SessionId}: {Command}", sessionId, command);
-
-            // Validate command is allowed
-            if (!await IsCommandAllowedAsync(command))
-            {
-                throw new UnauthorizedAccessException($"Command '{command}' is not allowed");
-            }
-
-            var startTime = DateTime.UtcNow;
-            var processStartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = GetShellExecutable(shell),
-                Arguments = GetShellArguments(shell, command),
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new System.Diagnostics.Process { StartInfo = processStartInfo };
-            
-            var outputBuilder = new StringBuilder();
-            var errorBuilder = new StringBuilder();
-
-            process.OutputDataReceived += (sender, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    outputBuilder.AppendLine(e.Data);
-            };
-
-            process.ErrorDataReceived += (sender, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    errorBuilder.AppendLine(e.Data);
-            };
-
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            // Wait for completion with timeout
-            var timeoutMs = _configuration.GetValue<int>("CommandExecution:TimeoutMs", 30000);
-            var completed = process.WaitForExit(timeoutMs);
-
-            if (!completed)
-            {
-                process.Kill();
-                throw new TimeoutException($"Command execution timed out after {timeoutMs}ms");
-            }
-
-            var endTime = DateTime.UtcNow;
-            var executionTime = endTime - startTime;
-
-            var result = new CommandExecutionResult
-            {
-                Success = process.ExitCode == 0,
-                Output = outputBuilder.ToString(),
-                ErrorOutput = errorBuilder.ToString(),
-                ExitCode = process.ExitCode,
-                ExecutionTime = executionTime,
-                ExecutedAt = startTime
-            };
-
-            _logger.LogInformation("Command executed for session {SessionId}. Success: {Success}, ExitCode: {ExitCode}", 
-                sessionId, result.Success, result.ExitCode);
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error executing command for session {SessionId}", sessionId);
-            
-            return new CommandExecutionResult
-            {
-                Success = false,
-                ErrorOutput = ex.Message,
-                ExitCode = -1,
-                ExecutionTime = TimeSpan.Zero,
-                ExecutedAt = DateTime.UtcNow
-            };
-        }
-    }
-
-    public async Task<IEnumerable<CommandHistoryDto>> GetCommandHistoryAsync(Guid sessionId)
-    {
-        // TODO: Implement command history storage and retrieval
-        await Task.CompletedTask;
-        return new List<CommandHistoryDto>();
-    }
-
-    public async Task<bool> IsCommandAllowedAsync(string command)
-    {
-        try
-        {
-            // Get allowed and blocked commands from configuration
-            var allowedCommands = _configuration.GetSection("CommandExecution:AllowedCommands").Get<string[]>() ?? Array.Empty<string>();
-            var blockedCommands = _configuration.GetSection("CommandExecution:BlockedCommands").Get<string[]>() ?? Array.Empty<string>();
-
-            var commandLower = command.ToLowerInvariant().Trim();
-
-            // Check if command is explicitly blocked
-            if (blockedCommands.Any(blocked => commandLower.Contains(blocked.ToLowerInvariant())))
-            {
-                return false;
-            }
-
-            // If allow list is configured, check if command is allowed
-            if (allowedCommands.Length > 0)
-            {
-                return allowedCommands.Any(allowed => commandLower.StartsWith(allowed.ToLowerInvariant()));
-            }
-
-            // Default security policy - block dangerous commands
-            var dangerousCommands = new[]
-            {
-                "format", "del", "rm", "rmdir", "rd", "erase",
-                "shutdown", "restart", "reboot", "halt",
-                "diskpart", "fdisk", "mkfs",
-                "net user", "useradd", "userdel",
-                "reg delete", "regedit",
-                "sc delete", "sc stop",
-                "taskkill", "kill"
-            };
-
-            return !dangerousCommands.Any(dangerous => commandLower.Contains(dangerous));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking if command is allowed: {Command}", command);
-            return false;
-        }
-    }
-
-    private static string GetShellExecutable(string shell)
-    {
-        return shell.ToLowerInvariant() switch
-        {
-            "powershell" => "powershell.exe",
-            "cmd" => "cmd.exe",
-            "bash" => "bash",
-            "sh" => "sh",
-            _ => "powershell.exe"
-        };
-    }
-
-    private static string GetShellArguments(string shell, string command)
-    {
-        return shell.ToLowerInvariant() switch
-        {
-            "powershell" => $"-Command \"{command}\"",
-            "cmd" => $"/C \"{command}\"",
-            "bash" or "sh" => $"-c \"{command}\"",
-            _ => $"-Command \"{command}\""
-        };
-    }
-}
-

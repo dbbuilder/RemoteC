@@ -1,6 +1,6 @@
 -- Device Management Stored Procedures for RemoteC
 
-USE RemoteCDb
+--USE RemoteC2Db
 GO
 
 -- =============================================

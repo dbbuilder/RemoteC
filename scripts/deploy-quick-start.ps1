@@ -76,7 +76,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:7001;http://+:7002
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RemoteCDb;User Id=sa;Password=RemoteC@2024!Strong;TrustServerCertificate=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RemoteC2Db;User Id=sa;Password=RemoteC@2024!Strong;TrustServerCertificate=true
       - ConnectionStrings__Redis=redis:6379
       - Logging__LogLevel__Default=Information
     ports:

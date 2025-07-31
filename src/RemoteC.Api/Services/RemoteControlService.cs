@@ -113,16 +113,18 @@ namespace RemoteC.Api.Services
                         X = mouseData.X,
                         Y = mouseData.Y,
                         Button = mouseData.Button,
-                        Delta = mouseData.Delta
+                        WheelDelta = mouseData.Delta
                     };
                 }
                 else if (inputData is KeyboardInputData keyData)
                 {
                     inputEvent = new KeyboardInputEvent
                     {
-                        Action = keyData.Action,
+                        Action = (KeyAction)keyData.Action,
                         KeyCode = keyData.KeyCode,
-                        Modifiers = keyData.Modifiers
+                        CtrlPressed = (keyData.Modifiers & KeyModifiers.Control) != 0,
+                        AltPressed = (keyData.Modifiers & KeyModifiers.Alt) != 0,
+                        ShiftPressed = (keyData.Modifiers & KeyModifiers.Shift) != 0
                     };
                 }
                 else
@@ -216,5 +218,28 @@ namespace RemoteC.Api.Services
         public KeyboardAction Action { get; set; }
         public int KeyCode { get; set; }
         public KeyModifiers Modifiers { get; set; }
+    }
+
+    /// <summary>
+    /// Keyboard action types
+    /// </summary>
+    public enum KeyboardAction
+    {
+        KeyDown,
+        KeyUp,
+        KeyPress
+    }
+
+    /// <summary>
+    /// Keyboard modifier keys
+    /// </summary>
+    [Flags]
+    public enum KeyModifiers
+    {
+        None = 0,
+        Shift = 1,
+        Control = 2,
+        Alt = 4,
+        Windows = 8
     }
 }

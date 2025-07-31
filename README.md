@@ -84,7 +84,7 @@ Configure your SQL Server connection in `appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=RemoteCDb;User Id=sa;Password=YourPassword;TrustServerCertificate=true"
+    "DefaultConnection": "Server=localhost;Database=RemoteC2Db;User Id=sa;Password=YourPassword;TrustServerCertificate=true"
   }
 }
 ```

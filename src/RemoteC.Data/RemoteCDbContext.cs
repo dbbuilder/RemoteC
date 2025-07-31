@@ -143,6 +143,12 @@ public class RemoteCDbContext : DbContext
             .WithMany(u => u.SessionParticipants)
             .HasForeignKey(sp => sp.UserId);
 
+        // Configure Device entity
+        modelBuilder.Entity<Device>()
+            .HasOne(d => d.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(d => d.CreatedBy);
+
         // Policy Engine configurations
         modelBuilder.Entity<RolePolicyEntity>()
             .HasKey(rp => new { rp.RoleId, rp.PolicyId });

@@ -69,3 +69,11 @@ else
 fi
 
 echo "Build completed successfully!"
+
+# Run post-build script if we're cross-compiling for Windows
+if [[ "$TARGET" == *"windows"* ]]; then
+    if [ -f "./post-build.sh" ]; then
+        echo "Running post-build script..."
+        ./post-build.sh
+    fi
+fi

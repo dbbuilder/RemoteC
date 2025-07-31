@@ -65,7 +65,7 @@ sleep 30
 # Initialize the database
 docker exec -i remotec-sqlserver /opt/mssql-tools/bin/sqlcmd \
   -S localhost -U sa -P "YourStrong@Password123" \
-  -Q "CREATE DATABASE RemoteCDb"
+  -Q "CREATE DATABASE RemoteC2Db"
 ```
 
 ### 2. Configure and Start the API Server
@@ -84,7 +84,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:7001
-      - ConnectionStrings__DefaultConnection=Server=remotec-sqlserver;Database=RemoteCDb;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=true
+      - ConnectionStrings__DefaultConnection=Server=remotec-sqlserver;Database=RemoteC2Db;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=true
       - ConnectionStrings__Redis=remotec-redis:6379
       - AzureAdB2C__Instance=https://yourtenant.b2clogin.com
       - AzureAdB2C__ClientId=your-client-id
@@ -152,15 +152,15 @@ docker run -d \
 
 #### Install SQL Server
 1. Download and install SQL Server 2019 Developer Edition
-2. Create a database named `RemoteCDb`
+2. Create a database named `RemoteC2Db`
 3. Run the initialization script:
 
 ```sql
 -- Create database
-CREATE DATABASE RemoteCDb;
+CREATE DATABASE RemoteC2Db;
 GO
 
-USE RemoteCDb;
+USE RemoteC2Db;
 GO
 
 -- Run all scripts in database/scripts folder
@@ -185,7 +185,7 @@ dotnet publish src\RemoteC.Api\RemoteC.Api.csproj -c Release -o D:\RemoteC-Deplo
 # Configure appsettings.json
 $config = @{
     ConnectionStrings = @{
-        DefaultConnection = "Server=localhost;Database=RemoteCDb;Integrated Security=true;TrustServerCertificate=true"
+        DefaultConnection = "Server=localhost;Database=RemoteC2Db;Integrated Security=true;TrustServerCertificate=true"
         Redis = "localhost:6379"
     }
     AzureAdB2C = @{

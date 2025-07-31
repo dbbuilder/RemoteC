@@ -2,7 +2,6 @@ using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RemoteC.Core.Interop;
-using RemoteC.Host.Services;
 using RemoteC.Shared.Models;
 
 namespace RemoteC.Api.Services

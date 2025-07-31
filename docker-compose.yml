@@ -48,7 +48,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
       - ASPNETCORE_HTTPS_PORT=7001
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RemoteCDb;User Id=sa;Password=RemoteC@2024Strong!;TrustServerCertificate=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=RemoteC2Db;User Id=sa;Password=RemoteC@2024Strong!;TrustServerCertificate=true
       - ConnectionStrings__RedisConnection=redis:6379
       - AzureAd__Instance=https://login.microsoftonline.com/
       - AzureAd__TenantId=${AZURE_TENANT_ID}

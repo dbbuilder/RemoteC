@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RemoteC.Shared.Models;
+using RemoteC.Api.Services;
 
 namespace RemoteC.Api.Services
 {
@@ -84,20 +85,22 @@ namespace RemoteC.Api.Services
                 await AddToHistoryAsync(sessionId, result);
                 
                 // Audit the command execution
-                await _auditService.LogAsync(new AuditEvent
+                await _auditService.LogAsync(new AuditLogEntry
                 {
                     Action = "CommandExecuted",
                     ResourceType = "Session",
                     ResourceId = sessionId.ToString(),
-                    Details = new Dictionary<string, object>
+                    Details = $"Command: {command} (Shell: {shell})",
+                    Metadata = new Dictionary<string, object>
                     {
                         { "Command", command },
                         { "Shell", shell },
                         { "ExitCode", result.ExitCode },
                         { "Duration", result.Duration.TotalMilliseconds }
                     },
-                    Severity = AuditSeverity.Medium,
-                    Result = result.Success ? "Success" : "Failed"
+                    Severity = AuditSeverity.Warning,
+                    Success = result.Success,
+                    ErrorMessage = result.Success ? null : result.ErrorOutput
                 });
                 
                 _logger.LogInformation("Command executed successfully for session {SessionId}", sessionId);
@@ -183,14 +186,12 @@ namespace RemoteC.Api.Services
             var historyEntry = new CommandHistoryDto
             {
                 Id = Guid.NewGuid(),
-                SessionId = sessionId,
                 Command = result.Command,
                 Shell = result.Shell,
                 ExecutedAt = result.ExecutedAt,
-                Duration = result.Duration,
                 Success = result.Success,
                 ExitCode = result.ExitCode,
-                OutputPreview = GetOutputPreview(result.Output, 100)
+                ExecutedBy = "System" // TODO: Get actual user
             };
             
             _commandHistory[sessionId].Add(historyEntry);

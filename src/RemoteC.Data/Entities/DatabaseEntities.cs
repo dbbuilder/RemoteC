@@ -224,7 +224,7 @@ public class Session
     
     public Guid DeviceId { get; set; }
     public Guid CreatedBy { get; set; }
-    public Guid OrganizationId { get; set; }
+    public Guid? OrganizationId { get; set; }
     public Guid? UserId { get; set; }  // Added for test compatibility
     
     public SessionStatus Status { get; set; } = SessionStatus.Created;
@@ -246,7 +246,7 @@ public class Session
     // Navigation properties
     public virtual Device Device { get; set; } = null!;
     public virtual User CreatedByUser { get; set; } = null!;
-    public virtual Organization Organization { get; set; } = null!;
+    public virtual Organization? Organization { get; set; }
     public virtual ICollection<SessionParticipant> Participants { get; set; } = new List<SessionParticipant>();
     public virtual ICollection<SessionLog> Logs { get; set; } = new List<SessionLog>();
 }
@@ -277,7 +277,7 @@ public class SessionLog
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid SessionId { get; set; }
-    public Guid OrganizationId { get; set; }
+    public Guid? OrganizationId { get; set; }
     public Guid? UserId { get; set; }
     public Guid? DeviceId { get; set; }
     

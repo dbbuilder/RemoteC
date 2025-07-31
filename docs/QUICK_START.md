@@ -14,7 +14,7 @@ This guide will help you get RemoteC up and running quickly in development mode.
    - Server: `sqltest.schoolvision.net,14333`
    - Username: `sv`
    - Password: `Gv51076!`
-   - Database: `RemoteCDb`
+   - Database: `RemoteC2Db`
 
 ## Step 1: Clone and Setup
 

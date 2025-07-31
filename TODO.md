@@ -1,168 +1,141 @@
 # RemoteC TODO List
 
-## Current Status
-- **Date**: 2025-07-29
-- **Main Projects**: ✅ All core projects build successfully
-- **Test Projects**: ❌ 153 errors (reduced from 187)
-- **Progress**: Fixed 34 errors through:
-  - Duplicate type removal (8 errors)
-  - Namespace disambiguation (8 errors)
-  - Entity reference fixes (UserActivity→UserActivityLog)
-  - Missing enum additions (AuditSeverity, CompressionType, RecordingQuality)
-  - Ambiguous type reference fixes (6 errors)
+## Current Priority Tasks
 
-## Error Analysis Summary
+### High Priority
+- [ ] Get remote control working with Rust provider
+- [ ] Test remote session creation and connection
+- [ ] Verify screen sharing and input control
+- [ ] Fix any SignalR connection issues
 
-### Error Distribution (159 total)
-- **CS1503** (80 errors) - Argument type conversion issues
-- **CS0117** (58 errors) - Missing property/field definitions
-- **CS0103** (56 errors) - Names/types don't exist in context
-- **CS1061** (52 errors) - Missing method definitions
-- **CS0266** (18 errors) - Implicit conversion issues
-- **CS0104** (16 errors) - Ambiguous type references
-- Other errors (15 total) - Various issues
+### Medium Priority
+- [ ] Test provider switching functionality
 
-### Error Categories by Fix Type
+## Completed Tasks ✅
 
-#### 1. EASIEST - Add Missing Enums/Types (CS0103 - 56 errors)
-**Implementation changes needed first:**
-- Add `AuditSeverity` enum to Shared.Models
-- Add `AuditCategory` enum to Shared.Models  
-- Add `CompressionType` enum to Shared.Models
-- Add `RecordingQuality` enum to Shared.Models
-- Add `PerformanceLevel` enum to Shared.Models
-- Add `ErrorSeverity` enum to Shared.Models
-- Add various other missing enums
+### Phase 1 - UI/Authentication
+- [x] Fix login re-prompting when switching tabs
+- [x] Fix data not showing in UI pages
+- [x] Debug API connection and auth token issues
 
-#### 2. EASY - Fix Ambiguous References (CS0104 - 16 errors)
-**Test changes only:**
-- `TransferDirection` - specify namespace (4 occurrences)
-- `DataExportRequest` - specify namespace (1 occurrence)
-- `SessionStatus` - specify namespace (4 occurrences)
-- `Role` - specify namespace (7 occurrences)
+### Phase 2 - Rust Performance Engine
+- [x] Implement Rust performance engine (Phase 2)
+- [x] Create FFI interface for .NET/Rust communication
+- [x] Build and test Rust core library
+- [x] Replace ControlR with custom Rust implementation
+- [x] Add provider configuration UI
+- [x] Build and test API with Rust provider
 
-#### 3. MODERATE - Add Missing Properties (CS0117 - 58 errors)
-**Implementation changes needed:**
-- `SessionRecordingOptions` - add missing properties:
-  - MaxRecordingDuration
-  - ChunkSize
-  - DefaultCompressionType
-  - DefaultQuality
-  - DefaultFrameRate
-- `Session` entity - add missing properties:
-  - UserId
-  - Location
-  - DeviceType
-- `OrganizationSettings` - add SessionRecordingRetentionDays
-- `Role` - add Policies navigation property
-- `PolicyDefinition` - add Id property
+### Rust Build Fixes
+- [x] Fix YUVBuffer API usage (no y_mut, u_mut, v_mut methods)
+- [x] Fix slice indexing u32 vs usize type errors
+- [x] Fix type mismatch u16 vs u32 in mouse input
+- [x] Fix dmDisplayOrientation field not found on DEVMODEW
+- [x] Fix unsafe function call requires unsafe block
+- [x] Fix InputEngine trait implementation for all platforms
+- [x] Fix literal out of range for i16 (0x8000)
 
-#### 4. MODERATE - Fix Constructor Signatures (CS1729, CS7036 - 6 errors)
-**Implementation changes needed:**
-- `EncryptionService` - update constructor to accept 2 arguments
-- `CacheService` - fix constructor to accept IDistributedCache instead of IMemoryCache
+## Code TODOs from Source Files
 
-#### 5. HARD - Fix Type Conversions (CS1503 - 80 errors)
-**Mixed implementation and test changes:**
-- `IDistributedCache` vs `IMemoryCache` mismatch
-- Test models vs Shared models (AnalyticsOptions, SessionKeys, etc.)
-- Entity vs DTO conversions
-- Method argument type mismatches
+### Rust Core (RemoteC.Core)
 
-#### 6. HARD - Add Missing Methods (CS1061 - 52 errors)
-**Implementation changes needed:**
-- `EncryptionService` - add missing methods:
-  - RevokeKeyAsync
-  - RotateKeysAsync
-- `SessionRecordingService` - add ExportRecordingAsync
-- `SessionRecording` - add FileSizeBytes property
-- Various repository methods missing
+#### Linux Platform Support
+- [ ] Implement X11/Wayland capture (`src/capture/linux.rs:29`)
+- [ ] Implement frame capture for Linux (`src/capture/linux.rs:48`)
+- [ ] Implement monitor enumeration using X11 RandR or Wayland protocols (`src/capture/linux.rs:63`)
+- [ ] Implement display info using XRandR (`src/capture/linux.rs:92`)
+- [ ] Implement display info using Wayland protocols (`src/capture/linux.rs:107`)
+- [ ] Implement input using X11/XTest (`src/input/linux.rs:16,21,26,31`)
 
-## Detailed TODO List
+#### macOS Platform Support
+- [ ] Implement Core Graphics capture (`src/capture/macos.rs:29`)
+- [ ] Implement frame capture for macOS (`src/capture/macos.rs:48`)
+- [ ] Implement monitor enumeration using Core Graphics Display APIs (`src/capture/macos.rs:63`)
+- [ ] Implement display info using Core Graphics (`src/capture/macos.rs:94`)
+- [ ] Implement input using Core Graphics (`src/input/macos.rs:16,21,26,31`)
 
-### STAGE 1: Fix Test Project Compilation Errors (159 errors)
-- [x] 1.1 Remove duplicate type definitions in test files
-- [x] 1.2 Fix namespace ambiguities (use fully qualified names)
-- [x] 1.3 Fix Moq setup for async methods (ReturnsAsync)
-- [ ] 1.4 Add missing enums and types (56 errors)
-  - [ ] 1.4.1 Create AuditSeverity enum in Shared.Models
-  - [ ] 1.4.2 Create AuditCategory enum in Shared.Models
-  - [ ] 1.4.3 Create CompressionType enum in Shared.Models
-  - [ ] 1.4.4 Create RecordingQuality enum in Shared.Models
-  - [ ] 1.4.5 Create other missing enums
-- [ ] 1.5 Fix remaining ambiguous references (16 errors)
-  - [ ] 1.5.1 Fix TransferDirection ambiguities
-  - [ ] 1.5.2 Fix DataExportRequest ambiguities
-  - [ ] 1.5.3 Fix SessionStatus ambiguities
-  - [ ] 1.5.4 Fix Role ambiguities
-- [ ] 1.6 Add missing properties to models (58 errors)
-  - [ ] 1.6.1 Update SessionRecordingOptions
-  - [ ] 1.6.2 Update Session entity
-  - [ ] 1.6.3 Update OrganizationSettings
-  - [ ] 1.6.4 Update Role and PolicyDefinition
-- [ ] 1.7 Fix constructor signatures (6 errors)
-  - [ ] 1.7.1 Fix EncryptionService constructor
-  - [ ] 1.7.2 Fix CacheService constructor
-- [ ] 1.8 Fix type conversions (80 errors)
-  - [ ] 1.8.1 Align test models with implementation models
-  - [ ] 1.8.2 Fix cache interface mismatches
-  - [ ] 1.8.3 Fix entity/DTO conversions
-- [ ] 1.9 Add missing methods (52 errors)
-  - [ ] 1.9.1 Add EncryptionService methods
-  - [ ] 1.9.2 Add SessionRecordingService methods
-  - [ ] 1.9.3 Add missing repository methods
+#### Video Encoding
+- [ ] Implement actual H.265 encoding (`src/video/h265.rs:47`)
+- [ ] Implement actual H.265 decoding (`src/video/h265.rs:105`)
+- [ ] Implement actual VP9 encoding using libvpx (`src/video/vp9.rs:47`)
+- [ ] Implement actual VP9 decoding (`src/video/vp9.rs:104`)
+- [ ] Implement actual VP8 encoding using libvpx (`src/video/vp8.rs:47`)
+- [ ] Implement actual VP8 decoding (`src/video/vp8.rs:104`)
+- [ ] Implement actual NVENC encoding (`src/video/hardware.rs:288`)
+- [ ] Add Intel QSV, AMD VCE, Apple VideoToolbox (`src/video/hardware.rs:312`)
+- [ ] Check openh264 API for quality settings (`src/video/h264.rs:44`)
+- [ ] Implement flush for H.264 encoder (`src/video/h264.rs:149`)
+- [ ] Implement actual H.264 decoding (`src/video/h264.rs:234`)
 
-### STAGE 2: Update Vulnerable Packages
-- [ ] 2.1 Update Microsoft.Identity.Client to latest version
-- [ ] 2.2 Replace InputSimulator with .NET 8 compatible alternative
-- [ ] 2.3 Run dotnet list package --vulnerable and fix all issues
+#### Windows Platform
+- [ ] dmDisplayOrientation is not available in current winapi version (`src/capture/windows.rs:421`)
 
-### STAGE 3: Address Code Quality Warnings
-- [ ] 3.1 Implement or remove unused events (CS0067)
-- [ ] 3.2 Fix SignalRService ValueTask usage (CA2012)
-- [ ] 3.3 Address remaining CA warnings (CA1861, CA1725, etc)
+#### Dependencies
+- [ ] Add ffmpeg-next, vpx, opus dependencies (`Cargo.toml:25`)
+- [ ] Add WebRTC when implementing transport (`Cargo.toml:31`)
 
-### STAGE 4: Create Integration Test Suite
-- [ ] 4.1 Set up TestContainers for SQL Server and Redis
-- [ ] 4.2 Create WebApplicationFactory integration tests
-- [ ] 4.3 Add SignalR hub integration tests
-- [ ] 4.4 Create end-to-end test scenarios
+### API (RemoteC.Api)
 
-### STAGE 5: Complete Documentation
-- [ ] 5.1 Add XML documentation to all public APIs
-- [ ] 5.2 Configure Swagger/OpenAPI documentation
-- [ ] 5.3 Create comprehensive README.md
-- [ ] 5.4 Create architecture diagrams and docs
+#### Command Execution Service
+- [ ] Get actual user for command execution (`Services/CommandExecutionService.cs:192`)
 
-### STAGE 6: Set Up CI/CD Pipeline
-- [ ] 6.1 Create GitHub Actions workflow for builds
-- [ ] 6.2 Add test execution to CI pipeline
-- [ ] 6.3 Add Docker image build/push to registry
-- [ ] 6.4 Create release pipeline with versioning
+#### Remote Control Provider Factory
+- [ ] Pass configuration to Rust provider (`Services/RemoteControlProviderFactory.cs:67`)
 
-### STAGE 7: Production Readiness
-- [ ] 7.1 Implement proper secret management (Azure Key Vault)
-- [ ] 7.2 Add Application Insights/OpenTelemetry
-- [ ] 7.3 Implement comprehensive health checks
-- [ ] 7.4 Run performance tests and optimize
+#### Rust Provider
+- [ ] Get actual statistics from Rust transport (`Core.Interop/RustRemoteControlProvider.cs:212`)
 
-### STAGE 8: Implement Rust Performance Engine (Phase 2)
-- [ ] 8.1 Implement Rust screen capture engine
-- [ ] 8.2 Add H.264/H.265 video compression
-- [ ] 8.3 Complete FFI bindings for .NET interop
-- [ ] 8.4 Create performance benchmarks vs ControlR
+## Future Enhancements
 
-## Priority Order for Fixes
+### Performance
+- [ ] Achieve <50ms latency performance target
+- [ ] Add performance benchmarks and optimize
+- [ ] Complete H.264 encoding implementation with OpenH264
+- [ ] Implement QUIC transport layer
 
-1. **Add missing enums** (Easiest, implementation first)
-2. **Fix ambiguous references** (Easy, test-only changes)
-3. **Add missing properties** (Moderate, implementation first)
-4. **Fix constructors** (Moderate, implementation first)
-5. **Fix type conversions** (Hard, mixed changes)
-6. **Add missing methods** (Hard, implementation first)
+### Code Quality
+- [ ] Remove unused imports and variables
+- [ ] Automate Rust DLL copy to API output directory
+- [ ] Consider switching from winapi to windows crate
+- [ ] Readdress enigo integration for input control
 
-## Next Steps
-1. Start with adding the missing enums to Shared.Models
-2. Fix the ambiguous type references in tests
-3. Add missing properties to the model classes
-4. Continue with constructor and method fixes
+### Additional Features
+- [ ] Add WebRTC transport option
+- [ ] Implement actual hardware-accelerated encoding
+- [ ] Add comprehensive integration tests
+- [ ] Implement session recording with encryption
+- [ ] Add multi-monitor support improvements
+
+## Platform Support Matrix
+
+| Feature | Windows | Linux | macOS |
+|---------|---------|-------|-------|
+| Screen Capture | ✅ | ❌ | ❌ |
+| Input Control | ✅ | ❌ | ❌ |
+| H.264 Encoding | 🟡 | ❌ | ❌ |
+| Hardware Accel | ❌ | ❌ | ❌ |
+
+Legend: ✅ Complete | 🟡 Partial | ❌ Not Implemented
+
+## Notes
+
+- The Rust provider is now the default remote control engine
+- ControlR remains available as a fallback option
+- Provider can be switched via appsettings.json or the Settings UI
+- Cross-compilation from WSL to Windows is working using MinGW toolchain
+- The Rust DLL needs to be manually copied to the API bin directory (automation needed)
+
+## Testing Checklist
+
+Before marking the remote control as fully functional:
+
+1. [ ] Test session creation via API
+2. [ ] Verify SignalR connection for real-time updates
+3. [ ] Test screen capture functionality
+4. [ ] Verify mouse/keyboard input control
+5. [ ] Test provider switching between Rust and ControlR
+6. [ ] Verify performance metrics collection
+7. [ ] Test error handling and graceful degradation
+8. [ ] Validate security (authentication, authorization)
+9. [ ] Test concurrent session handling
+10. [ ] Verify resource cleanup on session end

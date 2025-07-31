@@ -10,9 +10,10 @@ fn main() {
             println!("cargo:rustc-link-lib=dwmapi");
         }
         "linux" => {
-            println!("cargo:rustc-link-lib=X11");
-            println!("cargo:rustc-link-lib=Xext");
-            println!("cargo:rustc-link-lib=Xtst");
+            // X11 libraries commented out for now
+            // println!("cargo:rustc-link-lib=X11");
+            // println!("cargo:rustc-link-lib=Xext");
+            // println!("cargo:rustc-link-lib=Xtst");
         }
         "macos" => {
             println!("cargo:rustc-link-lib=framework=CoreGraphics");

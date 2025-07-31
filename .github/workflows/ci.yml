@@ -121,7 +121,7 @@ jobs:
     - name: Run integration tests
       run: dotnet test --no-build --configuration Release --filter "Category=Integration"
       env:
-        ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RemoteCDb;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=true"
+        ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RemoteC2Db;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=true"
         Redis__ConnectionString: "localhost:6379"
 
   code-quality:

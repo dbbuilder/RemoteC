@@ -1,6 +1,6 @@
 -- Stored Procedures for RemoteC Application
 
-USE RemoteCDb
+--USE RemoteC2Db
 GO
 
 -- =============================================

@@ -62,7 +62,7 @@ scripts\build.bat         # Windows
 ### Database
 ```bash
 # Connect to SQL Server from WSL
-sqlcmd -S 172.31.208.1,14333 -U sv -P YourPassword -C -d RemoteCDb
+sqlcmd -S 172.31.208.1,14333 -U sv -P YourPassword -C -d RemoteC2Db
 
 # Run database setup
 sqlcmd -S localhost -i database/setup-database.sql

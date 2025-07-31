@@ -71,13 +71,13 @@ namespace RemoteC.Api.Controllers
                 }
             };
 
-            await _auditService.LogAsync(new RemoteC.Shared.Models.AuditEvent
+            await _auditService.LogAsync(new AuditLogEntry
             {
                 Action = "SettingsViewed",
                 ResourceType = "System",
                 ResourceId = "Settings",
-                Severity = RemoteC.Shared.Models.AuditSeverity.Low,
-                Result = "Success"
+                Severity = RemoteC.Shared.Models.AuditSeverity.Info,
+                Success = true
             });
 
             return Ok(settings);
@@ -103,18 +103,19 @@ namespace RemoteC.Api.Controllers
 
                 // Note: In a real implementation, you would update the configuration file
                 // For now, this is a placeholder that shows the concept
-                await _auditService.LogAsync(new RemoteC.Shared.Models.AuditEvent
+                await _auditService.LogAsync(new AuditLogEntry
                 {
                     Action = "ProviderChanged",
                     ResourceType = "System",
                     ResourceId = "RemoteControlProvider",
-                    Details = new Dictionary<string, object>
+                    Details = $"Changed from {_providerFactory.GetCurrentProviderName()} to {request.Provider}",
+                    Metadata = new Dictionary<string, object>
                     {
                         { "From", _providerFactory.GetCurrentProviderName() },
                         { "To", request.Provider }
                     },
-                    Severity = RemoteC.Shared.Models.AuditSeverity.High,
-                    Result = "Success"
+                    Severity = RemoteC.Shared.Models.AuditSeverity.Critical,
+                    Success = true
                 });
 
                 return Ok(new 

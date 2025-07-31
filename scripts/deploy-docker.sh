@@ -127,7 +127,7 @@ run_migrations() {
     # For now, we'll just create the database
     docker exec remotec-sqlserver /opt/mssql-tools/bin/sqlcmd \
         -S localhost -U sa -P "$DB_SA_PASSWORD" \
-        -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RemoteCDb') CREATE DATABASE RemoteCDb"
+        -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RemoteC2Db') CREATE DATABASE RemoteC2Db"
     
     print_message $GREEN "Database migrations completed."
 }

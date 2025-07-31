@@ -1,7 +1,7 @@
 -- Initial database schema creation
 -- This will be replaced by Entity Framework migrations
 
-USE RemoteCDb
+--USE RemoteC2Db
 GO
 
 -- Create Users table

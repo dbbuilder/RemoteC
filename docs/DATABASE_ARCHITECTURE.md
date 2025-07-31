@@ -539,11 +539,11 @@ AND [EndedAt] < DATEADD(DAY, -90, SYSUTCDATETIME());
 ### Recovery Procedures
 ```sql
 -- Point-in-time recovery
-RESTORE DATABASE [RemoteCDb]
+RESTORE DATABASE [RemoteC2Db]
 FROM DISK = 'backup.bak'
 WITH NORECOVERY;
 
-RESTORE LOG [RemoteCDb]
+RESTORE LOG [RemoteC2Db]
 FROM DISK = 'log.trn'
 WITH RECOVERY, STOPAT = '2024-01-15 10:30:00';
 ```

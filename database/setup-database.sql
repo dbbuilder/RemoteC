@@ -6,24 +6,24 @@ USE master
 GO
 
 -- Create database if it doesn't exist
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'RemoteCDb')
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'RemoteC2Db')
 BEGIN
-    CREATE DATABASE RemoteCDb
-    PRINT 'Database RemoteCDb created successfully'
+    CREATE DATABASE RemoteC2Db
+    PRINT 'Database RemoteC2Db created successfully'
 END
 ELSE
 BEGIN
-    PRINT 'Database RemoteCDb already exists'
+    PRINT 'Database RemoteC2Db already exists'
 END
 GO
 
-USE RemoteCDb
+--USE RemoteC2Db
 GO
 
 -- Enable snapshot isolation for better concurrency
-ALTER DATABASE RemoteCDb SET ALLOW_SNAPSHOT_ISOLATION ON
+ALTER DATABASE RemoteC2Db SET ALLOW_SNAPSHOT_ISOLATION ON
 GO
-ALTER DATABASE RemoteCDb SET READ_COMMITTED_SNAPSHOT ON
+ALTER DATABASE RemoteC2Db SET READ_COMMITTED_SNAPSHOT ON
 GO
 
 PRINT 'Database configuration completed'

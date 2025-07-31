@@ -126,7 +126,7 @@ run_migrations() {
     # Create database if not exists
     kubectl exec -n $NAMESPACE $SQL_POD -- /opt/mssql-tools/bin/sqlcmd \
         -S localhost -U sa -P '$MSSQL_SA_PASSWORD' \
-        -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RemoteCDb') CREATE DATABASE RemoteCDb"
+        -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RemoteC2Db') CREATE DATABASE RemoteC2Db"
     
     # In a real scenario, you would run EF Core migrations here
     print_message $GREEN "Database migrations completed."

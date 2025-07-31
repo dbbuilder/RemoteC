@@ -42,6 +42,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RemoteC.Data\RemoteC.Data.csproj" />
     <ProjectReference Include="..\RemoteC.Shared\RemoteC.Shared.csproj" />
+    <ProjectReference Include="..\RemoteC.Core.Interop\RemoteC.Core.Interop.csproj" />
   </ItemGroup>
 
 </Project>

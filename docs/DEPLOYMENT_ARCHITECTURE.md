@@ -62,7 +62,7 @@ services:
       dockerfile: src/RemoteC.Api/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RemoteCDb;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RemoteC2Db;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=true
       - Redis__ConnectionString=redis:6379
     ports:
       - "7001:80"
@@ -635,10 +635,10 @@ services.AddSingleton<ITelemetryInitializer>(provider =>
 ```bash
 # Database recovery
 az sql db restore \
-  --dest-name RemoteCDb-Restored \
+  --dest-name RemoteC2Db-Restored \
   --edition Premium \
   --service-objective P2 \
-  --source-database-id "/subscriptions/.../databases/RemoteCDb" \
+  --source-database-id "/subscriptions/.../databases/RemoteC2Db" \
   --restore-point-in-time "2024-01-15T10:30:00Z"
 
 # Kubernetes rollback
