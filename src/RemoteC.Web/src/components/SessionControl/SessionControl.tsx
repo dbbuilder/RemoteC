@@ -48,7 +48,7 @@ export function SessionControl({
   const [isConnecting, setIsConnecting] = useState(true)
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const [audioEnabled, setAudioEnabled] = useState(true)
-  const [quality, setQuality] = useState<StreamQuality>('auto')
+  const [, setQuality] = useState<StreamQuality>('auto')
 
   useEffect(() => {
     const handleConnectionStatus = (status: string) => {

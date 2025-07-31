@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -14,7 +13,7 @@ import { formatDistanceToNow, format } from 'date-fns'
 export function AuditLogsPage() {
   const api = useUnifiedApi()
   const [searchTerm, setSearchTerm] = useState('')
-  const [severityFilter, setSeverityFilter] = useState<string>('All')
+  const [severityFilter] = useState<string>('All')
   const [actionFilter, setActionFilter] = useState<string>('All')
   const [dateRange, setDateRange] = useState<string>('7days')
 
@@ -66,14 +65,6 @@ export function AuditLogsPage() {
 
   const logs = logsData?.items || []
 
-  const getSeverityBadgeVariant = (severity: string) => {
-    switch (severity?.toLowerCase()) {
-      case 'critical': return 'destructive'
-      case 'warning': return 'secondary'
-      case 'info': return 'default'
-      default: return 'outline'
-    }
-  }
 
   const getActionIcon = (action: string) => {
     if (action.includes('Login')) return User

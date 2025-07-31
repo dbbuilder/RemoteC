@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useUnifiedApi } from '@/hooks/useUnifiedApi'
 import { User, PagedResult } from '@/types'
-import { MoreHorizontal, UserPlus, Shield, UserCheck, UserX, Search, Mail, Calendar, Users } from 'lucide-react'
+import { MoreHorizontal, UserPlus, Shield, UserCheck, Search, Mail, Calendar, Users } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 
 export function UsersPage() {

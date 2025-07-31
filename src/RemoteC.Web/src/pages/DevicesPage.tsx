@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { useUnifiedApi } from '@/hooks/useUnifiedApi'
 import { Device, PagedResult } from '@/types'
-import { Monitor, Cpu, HardDrive, Thermometer, Activity, RefreshCw } from 'lucide-react'
+import { Monitor, Cpu, Thermometer, Activity, RefreshCw } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useSignalR } from '@/contexts/UnifiedSignalRContext'
 

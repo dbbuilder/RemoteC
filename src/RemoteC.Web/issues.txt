@@ -1,0 +1,45 @@
+
+> remotec-web@0.0.0 check-all
+> npm run type-check && npm run lint && npm run format:check
+
+
+> remotec-web@0.0.0 type-check
+> tsc --noEmit
+
+src/App.tsx(22,9): error TS6133: 'isAuthenticated' is declared but its value is never read.
+src/components/Layout.tsx(58,5): error TS2322: Type '() => void' is not assignable to type '() => Promise<void>'.
+  Type 'void' is not assignable to type 'Promise<void>'.
+src/components/SessionControl/SessionControl.tsx(51,10): error TS6133: 'quality' is declared but its value is never read.
+src/contexts/DevAuthContext.tsx(28,42): error TS6133: 'password' is declared but its value is never read.
+src/pages/AuditLogsPage.tsx(5,1): error TS6133: 'Badge' is declared but its value is never read.
+src/pages/AuditLogsPage.tsx(17,26): error TS6133: 'setSeverityFilter' is declared but its value is never read.
+src/pages/AuditLogsPage.tsx(62,18): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/AuditLogsPage.tsx(69,9): error TS6133: 'getSeverityBadgeVariant' is declared but its value is never read.
+src/pages/AuditLogsPage.tsx(87,34): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/Dashboard.tsx(14,24): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/DevicesPage.tsx(10,24): error TS6133: 'HardDrive' is declared but its value is never read.
+src/pages/DevicesPage.tsx(22,24): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/SessionsPage.tsx(29,18): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/SessionsPage.tsx(38,24): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/SessionsPage.tsx(82,17): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, data?: any, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, data?: D | undefined, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/SettingsPage.tsx(15,3): error TS6133: 'Globe' is declared but its value is never read.
+src/pages/SettingsPage.tsx(21,3): error TS6133: 'Check' is declared but its value is never read.
+src/pages/SettingsPage.tsx(75,24): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/SettingsPage.tsx(90,47): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, data?: any, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, data?: D | undefined, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/UsersPage.tsx(11,55): error TS6133: 'UserX' is declared but its value is never read.
+src/pages/UsersPage.tsx(21,24): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/UsersPage.tsx(29,24): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/pages/UsersPage.tsx(48,17): error TS2349: This expression is not callable.
+  Each member of the union type '(<T = any>(url: string, data?: any, config?: AxiosRequestConfig<any> | undefined) => Promise<T>) | (<T = any, R = AxiosResponse<T, any>, D = any>(url: string, data?: D | undefined, config?: AxiosRequestConfig<...> | undefined) => Promise<...>)' has signatures, but none of those signatures are compatible with each other.
+src/SimpleApp.tsx(57,12): error TS2741: Property 'children' is missing in type '{}' but required in type 'LayoutProps'.

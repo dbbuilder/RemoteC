@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
 import { useSimpleAuth } from '@/contexts/SimpleAuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'
@@ -40,39 +39,17 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-export function Layout({ children }: LayoutProps) {
+export function LayoutSimple({ children }: LayoutProps) {
   const location = useLocation()
   const { theme, setTheme } = useTheme()
+  const { user, logout } = useSimpleAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Use the appropriate auth context based on environment
-  const useSimpleAuthMode = import.meta.env.VITE_USE_SIMPLE_AUTH === 'true'
-  
-  // Conditionally get auth data
-  let user: any = null
-  let logout: (() => void) | (() => Promise<void>) = () => {}
-  
-  if (useSimpleAuthMode) {
-    const simpleAuth = useSimpleAuth()
-    user = simpleAuth.user
-    logout = simpleAuth.logout
-  } else {
+  const handleLogout = async () => {
     try {
-      const auth = useAuth()
-      user = auth.user
-      logout = auth.logout
+      await logout()
     } catch (error) {
-      // Auth context not available, likely in SimpleApp
-      console.warn('Auth context not available, using simple auth fallback')
-    }
-  }
-
-  const handleLogout = () => {
-    const result = logout()
-    if (result && typeof result.catch === 'function') {
-      result.catch((error: unknown) => {
-        console.error('Logout failed:', error)
-      })
+      console.error('Logout failed:', error)
     }
   }
 
@@ -143,17 +120,17 @@ export function Layout({ children }: LayoutProps) {
           <div className="border-t p-4">
             <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} />
+                <AvatarImage src={undefined} />
                 <AvatarFallback>
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {user?.name || user?.email || 'User'}
+                  {user?.displayName || user?.email || 'User'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.role || 'Member'}
+                  {user?.roles?.[0] || 'Member'}
                 </p>
               </div>
             </div>
@@ -193,9 +170,9 @@ export function Layout({ children }: LayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar} />
+                    <AvatarImage src={undefined} />
                     <AvatarFallback>
-                      {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -204,7 +181,7 @@ export function Layout({ children }: LayoutProps) {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user?.name || user?.email || 'User'}
+                      {user?.displayName || user?.email || 'User'}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email || ''}

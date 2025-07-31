@@ -12,13 +12,13 @@ import { useUnifiedApi } from '@/hooks/useUnifiedApi'
 import { 
   Settings, 
   Shield, 
-  Globe, 
+  
   Bell, 
   Database, 
   Monitor,
   Save,
   AlertCircle,
-  Check,
+  
   RefreshCw
 } from 'lucide-react'
 import { toast } from 'sonner'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useIsAuthenticated, useMsal } from '@azure/msal-react'
+import { useMsal } from '@azure/msal-react'
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -19,7 +19,6 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function App() {
   const { instance } = useMsal()
-  const isAuthenticated = useIsAuthenticated()
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {

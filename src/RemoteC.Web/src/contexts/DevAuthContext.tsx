@@ -25,7 +25,7 @@ export const DevAuthProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading] = useState(false)
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, _password?: string) => {
     // In development mode, any username/password works
     const mockUser: User = {
       id: 'dev-user-001',

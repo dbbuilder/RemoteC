@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { SimpleAuthProvider, useSimpleAuth } from '@/contexts/SimpleAuthContext'
 import { UnifiedSignalRProvider } from '@/contexts/UnifiedSignalRContext'
-import { Layout } from '@/components/Layout'
+import { LayoutSimple } from '@/components/LayoutSimple'
 import { SimpleLoginPage } from '@/pages/SimpleLoginPage'
 import { Dashboard } from '@/pages/Dashboard'
 import { DevicesPage } from '@/pages/DevicesPage'
@@ -43,6 +43,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function ProtectedLayout() {
+  return (
+    <ProtectedRoute>
+      <LayoutSimple>
+        <Outlet />
+      </LayoutSimple>
+    </ProtectedRoute>
+  )
+}
+
 function AppRoutes() {
   const { isAuthenticated } = useSimpleAuth()
 
@@ -52,18 +62,14 @@ function AppRoutes() {
         isAuthenticated ? <Navigate to="/dashboard" replace /> : <SimpleLoginPage />
       } />
       
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      }>
+      <Route path="/" element={<ProtectedLayout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="devices" element={<DevicesPage />} />
         <Route path="sessions" element={<SessionsPage />} />
         <Route path="sessions/:id" element={<SessionDetails />} />
         <Route path="users" element={<UsersPage />} />
-        <Route path="audit-logs" element={<AuditLogsPage />} />
+        <Route path="audit" element={<AuditLogsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
