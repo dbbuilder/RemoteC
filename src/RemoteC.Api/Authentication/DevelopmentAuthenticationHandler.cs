@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace RemoteC.Api.Authentication
 {
@@ -11,18 +14,33 @@ namespace RemoteC.Api.Authentication
     /// </summary>
     public class DevelopmentAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
+        private readonly IConfiguration _configuration;
+
         public DevelopmentAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock)
+            ISystemClock clock,
+            IConfiguration configuration)
             : base(options, logger, encoder, clock)
         {
+            _configuration = configuration;
         }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            // Create a fake user for development
+            // Check for Bearer token in Authorization header
+            if (Request.Headers.ContainsKey("Authorization"))
+            {
+                var authHeader = Request.Headers["Authorization"].ToString();
+                if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    var token = authHeader.Substring("Bearer ".Length).Trim();
+                    return HandleJwtTokenAsync(token);
+                }
+            }
+
+            // For non-token requests (UI), create a fake user for development
             var devUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             var claims = new[]
             {
@@ -39,6 +57,36 @@ namespace RemoteC.Api.Authentication
             var ticket = new AuthenticationTicket(principal, "Development");
 
             return Task.FromResult(AuthenticateResult.Success(ticket));
+        }
+
+        private Task<AuthenticateResult> HandleJwtTokenAsync(string token)
+        {
+            try
+            {
+                var jwtSecret = _configuration["Jwt:Secret"] ?? "development-secret-key-for-testing-only-change-in-production";
+                var key = Encoding.UTF8.GetBytes(jwtSecret);
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.FromMinutes(5)
+                };
+
+                var handler = new JwtSecurityTokenHandler();
+                var principal = handler.ValidateToken(token, validationParameters, out var validatedToken);
+
+                var ticket = new AuthenticationTicket(principal, "Development");
+                return Task.FromResult(AuthenticateResult.Success(ticket));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "JWT token validation failed");
+                return Task.FromResult(AuthenticateResult.Fail($"Token validation failed: {ex.Message}"));
+            }
         }
     }
 }
