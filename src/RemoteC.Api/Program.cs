@@ -212,7 +212,11 @@ public class Program
             }
 
             // Add AutoMapper
-            builder.Services.AddAutoMapper(typeof(Program).Assembly);
+            var mapperConfig = new AutoMapper.MapperConfiguration(cfg =>
+            {
+                cfg.AddMaps(typeof(Program).Assembly);
+            });
+            builder.Services.AddSingleton(mapperConfig.CreateMapper());
 
             // Add Repositories
             builder.Services.AddScoped<Data.Repositories.IUserRepository, Data.Repositories.UserRepository>();
