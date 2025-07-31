@@ -1,6 +1,31 @@
 namespace RemoteC.Shared.Models;
 
 /// <summary>
+/// Information about a host machine
+/// </summary>
+public class HostInfo
+{
+    public Guid HostId { get; set; }
+    public string MachineName { get; set; } = string.Empty;
+    public string OperatingSystem { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public HostCapabilities Capabilities { get; set; } = new();
+}
+
+/// <summary>
+/// Capabilities of a host machine
+/// </summary>
+public class HostCapabilities
+{
+    public bool SupportsMultiMonitor { get; set; }
+    public bool SupportsFileTransfer { get; set; }
+    public bool SupportsClipboard { get; set; }
+    public bool SupportsAudio { get; set; }
+    public bool SupportsRecording { get; set; }
+    public int MaxSessions { get; set; }
+}
+
+/// <summary>
 /// Screen data sent from host to viewers
 /// </summary>
 public class ScreenData

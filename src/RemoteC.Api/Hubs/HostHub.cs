@@ -163,33 +163,3 @@ public class HostHub : Hub
         // For now, just log it
     }
 }
-
-public class HostInfo
-{
-    public Guid HostId { get; set; }
-    public string MachineName { get; set; } = string.Empty;
-    public string OperatingSystem { get; set; } = string.Empty;
-    public string Version { get; set; } = string.Empty;
-    public HostCapabilities Capabilities { get; set; } = new();
-}
-
-public class HostCapabilities
-{
-    public bool SupportsMultiMonitor { get; set; }
-    public bool SupportsFileTransfer { get; set; }
-    public bool SupportsClipboard { get; set; }
-    public bool SupportsAudio { get; set; }
-    public bool SupportsRecording { get; set; }
-    public int MaxSessions { get; set; }
-}
-
-public class HostHealthStatus
-{
-    public bool IsHealthy { get; set; }
-    public double CpuUsage { get; set; }
-    public double MemoryUsage { get; set; }
-    public double DiskUsage { get; set; }
-    public int ActiveSessions { get; set; }
-    public TimeSpan Uptime { get; set; }
-    public DateTime LastReportTime { get; set; }
-}
