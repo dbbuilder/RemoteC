@@ -27,6 +27,8 @@ export default defineConfig({
       },
     },
   },
+  // Handle SPA routing - serve index.html for all routes
+  appType: 'spa',
   preview: {
     port: 17002,
     host: '0.0.0.0',
