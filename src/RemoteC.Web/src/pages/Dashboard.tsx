@@ -1,13 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useUnifiedApi } from '@/hooks/useUnifiedApi'
-import { Activity, Monitor, Server, Users, AlertCircle } from 'lucide-react'
+import { Activity, Monitor, Server, Users, AlertCircle, Plus } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { PinConnect } from '@/components/PinConnect/PinConnect'
+import { useNavigate } from 'react-router-dom'
 
 export function Dashboard() {
   const api = useUnifiedApi()
+  const navigate = useNavigate()
 
   // Fetch dashboard statistics with auto-refresh every 5 seconds
   const { data: stats, error, isLoading } = useQuery({
@@ -100,11 +104,20 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          System overview and statistics
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            System overview and statistics
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <PinConnect />
+          <Button onClick={() => navigate('/sessions')} variant="default">
+            <Plus className="mr-2 h-4 w-4" />
+            New Session
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

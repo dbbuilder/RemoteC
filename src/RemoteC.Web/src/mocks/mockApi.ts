@@ -54,7 +54,8 @@ export const mockDevices = {
   ],
   totalCount: 3,
   pageNumber: 1,
-  pageSize: 10
+  pageSize: 10,
+  totalPages: 1
 }
 
 export const mockUsers = {
@@ -65,8 +66,10 @@ export const mockUsers = {
       displayName: 'System Administrator',
       roles: ['Admin', 'Operator', 'Viewer'],
       isActive: true,
-      lastLogin: new Date().toISOString(),
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      lastLoginAt: new Date().toISOString(),
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      permissions: []
     },
     {
       id: '2',
@@ -74,8 +77,10 @@ export const mockUsers = {
       displayName: 'John Doe',
       roles: ['Operator', 'Viewer'],
       isActive: true,
-      lastLogin: new Date(Date.now() - 3600000).toISOString(),
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+      lastLoginAt: new Date(Date.now() - 3600000).toISOString(),
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      permissions: []
     },
     {
       id: '3',
@@ -83,45 +88,87 @@ export const mockUsers = {
       displayName: 'Jane Smith',
       roles: ['Viewer'],
       isActive: false,
-      lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+      lastLoginAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      permissions: []
     }
   ],
   totalCount: 3,
   pageNumber: 1,
-  pageSize: 10
+  pageSize: 10,
+  totalPages: 1
 }
 
 export const mockSessions = {
   items: [
     {
       id: '1',
-      hostId: '1',
-      hostName: 'DESKTOP-ABC123',
-      viewerId: '1',
-      viewerName: 'admin@remotec.com',
-      status: 'Active',
-      startTime: new Date(Date.now() - 1800000).toISOString(),
-      endTime: null,
-      duration: 1800,
-      clientIp: '192.168.1.200'
+      deviceId: '1',
+      device: {
+        id: '1',
+        name: 'DESKTOP-ABC123',
+        machineId: 'ABC123',
+        operatingSystem: 'Windows 11',
+        lastSeenAt: new Date().toISOString(),
+        isOnline: true,
+        ipAddress: '192.168.1.100',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      userId: '1',
+      user: {
+        id: '1',
+        email: 'admin@remotec.com',
+        displayName: 'System Administrator',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        isActive: true,
+        roles: ['Admin'],
+        permissions: []
+      },
+      status: 'Active' as const,
+      startedAt: new Date(Date.now() - 1800000).toISOString(),
+      endedAt: undefined,
+      sessionPin: '123456'
     },
     {
       id: '2',
-      hostId: '2',
-      hostName: 'LAPTOP-XYZ789',
-      viewerId: '2',
-      viewerName: 'john.doe@remotec.com',
-      status: 'Ended',
-      startTime: new Date(Date.now() - 7200000).toISOString(),
-      endTime: new Date(Date.now() - 3600000).toISOString(),
-      duration: 3600,
-      clientIp: '192.168.1.201'
+      deviceId: '2',
+      device: {
+        id: '2',
+        name: 'LAPTOP-XYZ789',
+        machineId: 'XYZ789',
+        operatingSystem: 'Windows 10',
+        lastSeenAt: new Date().toISOString(),
+        isOnline: true,
+        ipAddress: '192.168.1.101',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      userId: '2',
+      user: {
+        id: '2',
+        email: 'john.doe@remotec.com',
+        displayName: 'John Doe',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        isActive: true,
+        roles: ['Operator'],
+        permissions: []
+      },
+      status: 'Completed' as const,
+      startedAt: new Date(Date.now() - 7200000).toISOString(),
+      endedAt: new Date(Date.now() - 3600000).toISOString(),
+      sessionPin: '789012'
     }
   ],
   totalCount: 2,
   pageNumber: 1,
-  pageSize: 10
+  pageSize: 10,
+  totalPages: 1
 }
 
 export const mockAuditLogs = {
@@ -130,32 +177,29 @@ export const mockAuditLogs = {
       id: '1',
       timestamp: new Date().toISOString(),
       userId: '1',
-      userName: 'admin@remotec.com',
       action: 'UserLogin',
-      actionType: 'Authentication',
-      severity: 'Info',
+      entityType: 'User',
+      entityId: '1',
       ipAddress: '192.168.1.200',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0',
-      result: 'Success',
-      details: 'User logged in successfully'
+      newValues: JSON.stringify({ login: 'successful' })
     },
     {
       id: '2',
       timestamp: new Date(Date.now() - 600000).toISOString(),
       userId: '2',
-      userName: 'john.doe@remotec.com',
       action: 'SessionStart',
-      actionType: 'RemoteControl',
-      severity: 'Info',
+      entityType: 'Session',
+      entityId: '1',
       ipAddress: '192.168.1.201',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0',
-      result: 'Success',
-      details: 'Remote session started with DESKTOP-ABC123'
+      newValues: JSON.stringify({ deviceName: 'DESKTOP-ABC123' })
     }
   ],
   totalCount: 2,
   pageNumber: 1,
-  pageSize: 10
+  pageSize: 10,
+  totalPages: 1
 }
 
 export const mockSettings = {
