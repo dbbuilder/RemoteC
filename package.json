@@ -1,0 +1,12 @@
+{
+  "name": "remotec-e2e-demo",
+  "version": "1.0.0",
+  "description": "E2E demo for RemoteC with screenshots",
+  "scripts": {
+    "test:e2e": "node playwright-e2e-demo.js",
+    "test:e2e:headless": "HEADLESS=true node playwright-e2e-demo.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.54.1"
+  }
+}

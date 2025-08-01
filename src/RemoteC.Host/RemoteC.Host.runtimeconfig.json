@@ -1,0 +1,11 @@
+{
+  "runtimeOptions": {
+    "configProperties": {
+      "System.Runtime.Loader.UseRidGraph": true
+    },
+    "additionalProbingPaths": [
+      ".",
+      "bin/Debug/net8.0"
+    ]
+  }
+}

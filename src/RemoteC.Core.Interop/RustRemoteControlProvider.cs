@@ -36,6 +36,10 @@ namespace RemoteC.Core.Interop
                 if (_isInitialized)
                     return true;
 
+                // Try to get version first to test library loading
+                var version = RemoteCCore.GetVersion();
+                Console.WriteLine($"Rust Core Version: {version}");
+                
                 RemoteCCore.Initialize();
                 _isInitialized = true;
                 return true;

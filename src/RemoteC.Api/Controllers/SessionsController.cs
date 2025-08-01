@@ -212,6 +212,11 @@ public class SessionsController : ControllerBase
             return "11111111-1111-1111-1111-111111111111";
         }
         
-        return User.Identity?.Name ?? string.Empty;
+        // Try to get user ID from sub claim first, then NameIdentifier
+        var userId = User.FindFirst("sub")?.Value ?? 
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        
+        // If still not found, fall back to Name
+        return userId ?? User.Identity?.Name ?? string.Empty;
     }
 }

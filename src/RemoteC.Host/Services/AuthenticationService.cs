@@ -47,6 +47,7 @@ public class AuthenticationService : IAuthenticationService
             // Get host credentials from configuration
             var hostId = _configuration["Host:Id"];
             var hostSecret = _configuration["Host:Secret"];
+            var baseUrl = _configuration["Api:BaseUrl"];
             var tokenEndpoint = _configuration["Api:TokenEndpoint"];
 
             if (string.IsNullOrEmpty(hostId) || string.IsNullOrEmpty(hostSecret))
@@ -56,11 +57,14 @@ public class AuthenticationService : IAuthenticationService
                 return null;
             }
 
+            // Build full URL
+            var fullUrl = tokenEndpoint.StartsWith("http") ? tokenEndpoint : $"{baseUrl}{tokenEndpoint}";
+
             _logger.LogInformation("Requesting host token from {TokenEndpoint} with HostId: {HostId}", 
-                tokenEndpoint, hostId);
+                fullUrl, hostId);
 
             // Request new token
-            var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
+            var request = new HttpRequestMessage(HttpMethod.Post, fullUrl);
             var requestBody = JsonSerializer.Serialize(new { hostId, secret = hostSecret });
             request.Content = new StringContent(requestBody, System.Text.Encoding.UTF8, "application/json");
             

@@ -304,6 +304,69 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Development-only endpoint for quick testing without Azure AD B2C
+    /// </summary>
+    /// <returns>Authentication token for development testing</returns>
+    /// <remarks>
+    /// This endpoint is only available when EnableDevAuth is set to true.
+    /// It creates a test user token without requiring Azure AD B2C authentication.
+    /// WARNING: This should NEVER be enabled in production.
+    /// </remarks>
+    /// <response code="200">Returns development authentication token</response>
+    /// <response code="404">Endpoint not available (EnableDevAuth is false)</response>
+    [HttpPost("dev-login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(DevLoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<DevLoginResponse> DevLogin()
+    {
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        if (!configuration.GetValue<bool>("EnableDevAuth", false))
+        {
+            return NotFound();
+        }
+
+        var devUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, devUserId.ToString()),
+            new Claim("sub", devUserId.ToString()),
+            new Claim(ClaimTypes.Name, "Developer User"),
+            new Claim(ClaimTypes.Email, "dev@remotec.local"),
+            new Claim("role", "Admin")
+        };
+
+        var jwtSecret = configuration["Jwt:Secret"] ?? "development-secret-key-for-testing-only-change-in-production";
+        var key = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtSecret));
+        var creds = new Microsoft.IdentityModel.Tokens.SigningCredentials(key, Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256);
+        var expiry = DateTime.UtcNow.AddHours(24);
+
+        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"] ?? "RemoteC",
+            audience: configuration["Jwt:Audience"] ?? "RemoteC.Client",
+            claims: claims,
+            expires: expiry,
+            signingCredentials: creds
+        );
+
+        var tokenString = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
+
+        return Ok(new DevLoginResponse
+        {
+            Token = tokenString,
+            TokenType = "Bearer",
+            ExpiresIn = 86400,
+            User = new
+            {
+                Id = devUserId.ToString(),
+                Name = "Developer User",
+                Email = "dev@remotec.local",
+                Roles = new[] { "Admin" }
+            }
+        });
+    }
+
+    /// <summary>
     /// Alternative token endpoint for compatibility
     /// </summary>
     /// <param name="request">Authentication credentials</param>

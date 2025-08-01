@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace RemoteC.Core.Interop
@@ -9,6 +10,67 @@ namespace RemoteC.Core.Interop
     public static class RemoteCCore
     {
         private const string LibraryName = "remotec_core";
+        
+        static RemoteCCore()
+        {
+            Console.WriteLine($"Loading native library: {LibraryName}");
+            Console.WriteLine($"Current directory: {Environment.CurrentDirectory}");
+            Console.WriteLine($"Base directory: {AppDomain.CurrentDomain.BaseDirectory}");
+            
+            // Set up custom library resolution
+            NativeLibrary.SetDllImportResolver(typeof(RemoteCCore).Assembly, DllImportResolver);
+        }
+        
+        private static IntPtr DllImportResolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            Console.WriteLine($"Resolving library: {libraryName}");
+            
+            if (libraryName == LibraryName)
+            {
+                string libraryPath;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    libraryPath = "remotec_core.dll";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    libraryPath = "libremotec_core.so";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    libraryPath = "libremotec_core.dylib";
+                }
+                else
+                {
+                    return IntPtr.Zero;
+                }
+                
+                // Try multiple locations
+                var searchPaths = new[]
+                {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, libraryPath),
+                    Path.Combine(Environment.CurrentDirectory, libraryPath),
+                    Path.Combine(Environment.CurrentDirectory, "bin", "Debug", "net8.0", libraryPath),
+                    Path.Combine(Environment.CurrentDirectory, "bin", "net8.0", "win-x64", libraryPath),
+                    libraryPath
+                };
+                
+                foreach (var path in searchPaths)
+                {
+                    Console.WriteLine($"Trying path: {path}");
+                    if (File.Exists(path))
+                    {
+                        Console.WriteLine($"Found library at: {path}");
+                        if (NativeLibrary.TryLoad(path, out IntPtr handle))
+                        {
+                            return handle;
+                        }
+                    }
+                }
+            }
+            
+            return IntPtr.Zero;
+        }
 
         /// <summary>
         /// Initialize the RemoteC Core library

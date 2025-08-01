@@ -7,15 +7,15 @@
     }
   },
   "Host": {
-    "Id": "dev-host-001",
-    "Secret": "dev-secret-001"
+    "Id": "#{HOST_ID}#",
+    "Secret": "#{HOST_SECRET}#"
   },
   "Api": {
-    "BaseUrl": "http://localhost:17001",
+    "BaseUrl": "https://api.remotec.example.com",
     "TokenEndpoint": "/api/auth/host/token"
   },
   "HostConfiguration": {
-    "ServerUrl": "http://localhost:17001",
+    "ServerUrl": "https://api.remotec.example.com",
     "MaxConcurrentSessions": 5,
     "EnableRecording": true,
     "EnableFileTransfer": true,
@@ -25,6 +25,8 @@
   "RemoteControlProvider": {
     "Type": "Rust",
     "Settings": {
+      // Rust provider uses the built-in RemoteC Core engine
+      // No additional settings required
     }
   }
 }
