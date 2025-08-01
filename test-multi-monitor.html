@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Monitor Test - RemoteC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        
+        .monitor-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .monitor-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+        
+        .monitor-card:hover {
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .monitor-card.primary {
+            border-color: #2196F3;
+            background: #e3f2fd;
+        }
+        
+        .monitor-card.selected {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        
+        .monitor-info {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .monitor-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .virtual-desktop {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            position: relative;
+            min-height: 200px;
+            overflow: auto;
+        }
+        
+        .desktop-monitor {
+            position: absolute;
+            border: 2px solid #666;
+            background: rgba(33, 150, 243, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        .desktop-monitor:hover {
+            background: rgba(33, 150, 243, 0.3);
+        }
+        
+        .desktop-monitor.primary {
+            background: rgba(76, 175, 80, 0.2);
+        }
+        
+        .desktop-monitor.selected {
+            border-color: #4CAF50;
+            border-width: 3px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RemoteC Multi-Monitor Test</h1>
+        
+        <div id="status" class="status">Not connected</div>
+        
+        <div>
+            <button onclick="connectToApi()">Connect to API</button>
+            <button onclick="getMonitors()" disabled id="getMonitorsBtn">Get Monitors</button>
+            <button onclick="getVirtualDesktop()" disabled id="getVirtualDesktopBtn">Get Virtual Desktop</button>
+        </div>
+        
+        <div id="monitorList" class="container" style="display: none;">
+            <h2>Available Monitors</h2>
+            <div id="monitors" class="monitor-list"></div>
+        </div>
+        
+        <div id="virtualDesktopContainer" class="container" style="display: none;">
+            <h2>Virtual Desktop Layout</h2>
+            <div id="virtualDesktop" class="virtual-desktop"></div>
+            <div id="desktopInfo" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let apiUrl = 'http://localhost:7001';
+        let authToken = null;
+        let currentMonitors = [];
+        let selectedMonitorId = null;
+        
+        async function connectToApi() {
+            const statusEl = document.getElementById('status');
+            
+            try {
+                // Try to authenticate (dev mode)
+                const authResponse = await fetch(`${apiUrl}/api/auth/dev-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        deviceId: 'TEST-DEVICE-001'
+                    })
+                });
+                
+                if (!authResponse.ok) {
+                    throw new Error('Failed to authenticate');
+                }
+                
+                const authData = await authResponse.json();
+                authToken = authData.token;
+                
+                statusEl.textContent = 'Connected to API';
+                statusEl.className = 'status connected';
+                
+                document.getElementById('getMonitorsBtn').disabled = false;
+                document.getElementById('getVirtualDesktopBtn').disabled = false;
+                
+            } catch (error) {
+                statusEl.textContent = `Connection failed: ${error.message}`;
+                statusEl.className = 'status error';
+            }
+        }
+        
+        async function getMonitors() {
+            const monitorsEl = document.getElementById('monitors');
+            const containerEl = document.getElementById('monitorList');
+            
+            monitorsEl.innerHTML = '<div class="loading">Loading monitors...</div>';
+            containerEl.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${apiUrl}/api/monitors/TEST-DEVICE-001`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to get monitors');
+                }
+                
+                const monitors = await response.json();
+                currentMonitors = monitors;
+                
+                if (monitors.length === 0) {
+                    monitorsEl.innerHTML = '<p>No monitors found</p>';
+                    return;
+                }
+                
+                monitorsEl.innerHTML = monitors.map(monitor => `
+                    <div class="monitor-card ${monitor.isPrimary ? 'primary' : ''} ${monitor.id === selectedMonitorId ? 'selected' : ''}" 
+                         onclick="selectMonitor('${monitor.id}')">
+                        <div class="monitor-title">${monitor.name} ${monitor.isPrimary ? '(Primary)' : ''}</div>
+                        <div class="monitor-info">ID: ${monitor.id}</div>
+                        <div class="monitor-info">Resolution: ${monitor.bounds.width}x${monitor.bounds.height}</div>
+                        <div class="monitor-info">Position: (${monitor.bounds.x}, ${monitor.bounds.y})</div>
+                        <div class="monitor-info">Scale: ${monitor.scaleFactor}x</div>
+                        <div class="monitor-info">Refresh: ${monitor.refreshRate}Hz</div>
+                        <div class="monitor-info">Orientation: ${getOrientationName(monitor.orientation)}</div>
+                    </div>
+                `).join('');
+                
+                // Automatically show virtual desktop after getting monitors
+                drawVirtualDesktop(monitors);
+                
+            } catch (error) {
+                monitorsEl.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function getVirtualDesktop() {
+            const containerEl = document.getElementById('virtualDesktopContainer');
+            const desktopEl = document.getElementById('virtualDesktop');
+            const infoEl = document.getElementById('desktopInfo');
+            
+            containerEl.style.display = 'block';
+            desktopEl.innerHTML = '<div class="loading">Loading virtual desktop...</div>';
+            
+            try {
+                const response = await fetch(`${apiUrl}/api/monitors/TEST-DEVICE-001/virtual-desktop`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to get virtual desktop');
+                }
+                
+                const virtualDesktop = await response.json();
+                
+                infoEl.innerHTML = `
+                    <strong>Virtual Desktop Info:</strong><br>
+                    Total Size: ${virtualDesktop.width}x${virtualDesktop.height}<br>
+                    Monitor Count: ${virtualDesktop.monitorCount}<br>
+                    Position: (${virtualDesktop.x}, ${virtualDesktop.y})
+                `;
+                
+                // Get monitors if not already loaded
+                if (currentMonitors.length === 0) {
+                    await getMonitors();
+                } else {
+                    drawVirtualDesktop(currentMonitors);
+                }
+                
+            } catch (error) {
+                desktopEl.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function drawVirtualDesktop(monitors) {
+            const containerEl = document.getElementById('virtualDesktopContainer');
+            const desktopEl = document.getElementById('virtualDesktop');
+            
+            containerEl.style.display = 'block';
+            
+            if (monitors.length === 0) {
+                desktopEl.innerHTML = '<p>No monitors to display</p>';
+                return;
+            }
+            
+            // Find bounds of all monitors
+            let minX = Math.min(...monitors.map(m => m.bounds.x));
+            let minY = Math.min(...monitors.map(m => m.bounds.y));
+            let maxX = Math.max(...monitors.map(m => m.bounds.x + m.bounds.width));
+            let maxY = Math.max(...monitors.map(m => m.bounds.y + m.bounds.height));
+            
+            const totalWidth = maxX - minX;
+            const totalHeight = maxY - minY;
+            
+            // Scale down to fit in container
+            const containerWidth = 800;
+            const scale = Math.min(containerWidth / totalWidth, 300 / totalHeight);
+            
+            desktopEl.style.width = (totalWidth * scale) + 'px';
+            desktopEl.style.height = (totalHeight * scale) + 'px';
+            
+            desktopEl.innerHTML = monitors.map(monitor => {
+                const x = (monitor.bounds.x - minX) * scale;
+                const y = (monitor.bounds.y - minY) * scale;
+                const width = monitor.bounds.width * scale;
+                const height = monitor.bounds.height * scale;
+                
+                return `
+                    <div class="desktop-monitor ${monitor.isPrimary ? 'primary' : ''} ${monitor.id === selectedMonitorId ? 'selected' : ''}"
+                         style="left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px;"
+                         onclick="selectMonitor('${monitor.id}')"
+                         title="${monitor.name} - ${monitor.bounds.width}x${monitor.bounds.height}">
+                        ${monitor.name}<br>
+                        ${monitor.bounds.width}x${monitor.bounds.height}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function selectMonitor(monitorId) {
+            selectedMonitorId = monitorId;
+            
+            // Update UI
+            document.querySelectorAll('.monitor-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelectorAll('.desktop-monitor').forEach(monitor => {
+                monitor.classList.remove('selected');
+            });
+            
+            // Find the selected elements and highlight them
+            currentMonitors.forEach(monitor => {
+                if (monitor.id === monitorId) {
+                    document.querySelectorAll('.monitor-card').forEach(card => {
+                        if (card.textContent.includes(monitor.id)) {
+                            card.classList.add('selected');
+                        }
+                    });
+                    document.querySelectorAll('.desktop-monitor').forEach(desktopMon => {
+                        if (desktopMon.title.includes(monitor.name)) {
+                            desktopMon.classList.add('selected');
+                        }
+                    });
+                }
+            });
+            
+            console.log('Selected monitor:', monitorId);
+        }
+        
+        function getOrientationName(orientation) {
+            const names = ['Landscape', 'Portrait', 'Landscape (Flipped)', 'Portrait (Flipped)'];
+            return names[orientation] || 'Unknown';
+        }
+        
+        // Auto-connect on load
+        window.onload = () => {
+            connectToApi();
+        };
+    </script>
+</body>
+</html>

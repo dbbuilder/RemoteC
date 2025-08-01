@@ -39,14 +39,14 @@ namespace RemoteC.Tests.Unit.Host.Services
             {
                 new MonitorInfo
                 {
-                    Id = "\\\\.\DISPLAY1",
+                    Id = @"\\.\DISPLAY1",
                     Name = "Generic PnP Monitor",
                     IsPrimary = true,
                     Bounds = new Rectangle { X = 0, Y = 0, Width = 1920, Height = 1080 }
                 },
                 new MonitorInfo
                 {
-                    Id = "\\\\.\DISPLAY2",
+                    Id = @"\\.\DISPLAY2",
                     Name = "Dell U2415",
                     IsPrimary = false,
                     Bounds = new Rectangle { X = 1920, Y = 0, Width = 1920, Height = 1200 }
@@ -72,7 +72,7 @@ namespace RemoteC.Tests.Unit.Host.Services
         {
             // Arrange
             var sessionId = Guid.NewGuid();
-            var monitorId = "\\\\.\DISPLAY2";
+            var monitorId = @"\\.\DISPLAY2";
             var monitor = new MonitorInfo
             {
                 Id = monitorId,
@@ -145,10 +145,10 @@ namespace RemoteC.Tests.Unit.Host.Services
         {
             // Arrange
             var sessionId = Guid.NewGuid();
-            var disconnectedMonitorId = "\\\\.\DISPLAY2";
+            var disconnectedMonitorId = @"\\.\DISPLAY2";
             var primaryMonitor = new MonitorInfo
             {
-                Id = "\\\\.\DISPLAY1",
+                Id = @"\\.\DISPLAY1",
                 IsPrimary = true,
                 Bounds = new Rectangle { X = 0, Y = 0, Width = 1920, Height = 1080 }
             };
@@ -209,7 +209,7 @@ namespace RemoteC.Tests.Unit.Host.Services
             var windowBounds = new Rectangle { X = 1950, Y = 50, Width = 800, Height = 600 };
             var expectedMonitor = new MonitorInfo
             {
-                Id = "\\\\.\DISPLAY2",
+                Id = @"\\.\DISPLAY2",
                 Bounds = new Rectangle { X = 1920, Y = 0, Width = 1920, Height = 1200 }
             };
 
@@ -226,14 +226,14 @@ namespace RemoteC.Tests.Unit.Host.Services
 
             // Assert
             Assert.NotNull(monitor);
-            Assert.Equal("\\\\.\DISPLAY2", monitor.Id);
+            Assert.Equal(@"\\.\DISPLAY2", monitor.Id);
         }
 
         [Fact]
         public async Task MonitorDPIChange_ShouldUpdateScaleFactor()
         {
             // Arrange
-            var monitorId = "\\\\.\DISPLAY1";
+            var monitorId = @"\\.\DISPLAY1";
             var monitor = new MonitorInfo
             {
                 Id = monitorId,

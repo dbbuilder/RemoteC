@@ -10,6 +10,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod capture;
+pub mod clipboard;
 pub mod encoding;
 pub mod ffi;
 pub mod input;

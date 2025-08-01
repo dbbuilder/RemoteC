@@ -13,3 +13,7 @@ pub mod basic_frame_encoding_test;
 // Import the frame decoding tests
 #[path = "../tests/frame_decoding_tests.rs"]
 pub mod frame_decoding_tests;
+
+// Import the clipboard tests
+#[path = "../tests/clipboard_tests.rs"]
+pub mod clipboard_tests;

@@ -79,6 +79,14 @@ public class Program
                 services.AddSingleton<IClipboardService, ClipboardService>();
                 services.AddSingleton<IAudioService, AudioService>();
                 
+                // Platform-specific services
+                services.AddSingleton<IClipboardAccess>(sp =>
+                {
+                    var logger = sp.GetService<ILogger<IClipboardAccess>>();
+                    return ClipboardAccessFactory.Create(logger);
+                });
+                services.AddSingleton<IClipboardManager, ClipboardManager>();
+                
                 // Remote control provider
                 services.AddSingleton<IRemoteControlProvider>(sp =>
                 {

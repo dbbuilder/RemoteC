@@ -172,6 +172,36 @@ namespace RemoteC.Core.Interop
         
         #endregion
         
+        #region Monitor Management
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr remotec_enumerate_monitors();
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void remotec_free_monitor_list(IntPtr list);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_get_virtual_desktop_bounds(out int x, out int y, out uint width, out uint height);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr remotec_get_monitor_at_point(int x, int y);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void remotec_free_monitor_info(IntPtr info);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int remotec_capture_select_monitor(IntPtr handle, uint monitorIndex);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr remotec_capture_create_with_config(
+            uint mode,
+            [In] uint[] monitorIndices,
+            uint monitorCount,
+            uint targetFps,
+            byte captureCursor);
+        
+        #endregion
+        
         /// <summary>
         /// FFI-safe frame data structure
         /// </summary>
@@ -183,6 +213,40 @@ namespace RemoteC.Core.Interop
             public IntPtr data;
             public UIntPtr data_len;
             public ulong timestamp;
+        }
+        
+        /// <summary>
+        /// FFI-safe monitor info structure
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MonitorInfoFFI
+        {
+            public IntPtr id;
+            public IntPtr name;
+            public uint index;
+            public byte is_primary;
+            public int x;
+            public int y;
+            public uint width;
+            public uint height;
+            public int work_x;
+            public int work_y;
+            public uint work_width;
+            public uint work_height;
+            public float scale_factor;
+            public uint refresh_rate;
+            public uint bit_depth;
+            public uint orientation;
+        }
+        
+        /// <summary>
+        /// FFI-safe monitor list structure
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MonitorListFFI
+        {
+            public IntPtr monitors;
+            public uint count;
         }
     }
 

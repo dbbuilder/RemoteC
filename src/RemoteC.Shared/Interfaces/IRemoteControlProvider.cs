@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using RemoteC.Shared.Models;
 
@@ -48,6 +49,21 @@ namespace RemoteC.Shared.Models
         /// Get session statistics
         /// </summary>
         Task<SessionStatistics> GetStatisticsAsync(string sessionId);
+        
+        /// <summary>
+        /// Get available monitors for a session
+        /// </summary>
+        Task<List<MonitorInfo>> GetMonitorsAsync(string sessionId);
+        
+        /// <summary>
+        /// Select a single monitor for capture
+        /// </summary>
+        Task<bool> SelectMonitorAsync(string sessionId, string monitorId);
+        
+        /// <summary>
+        /// Select multiple monitors for capture
+        /// </summary>
+        Task<bool> SelectMonitorsAsync(string sessionId, string[] monitorIds);
     }
     
     /// <summary>

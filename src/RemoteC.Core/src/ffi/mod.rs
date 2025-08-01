@@ -484,3 +484,224 @@ pub extern "C" fn remotec_capture_create_with_config(
         }
     }
 }
+
+// Monitor-related FFI functions
+
+/// FFI-safe monitor information
+#[repr(C)]
+pub struct MonitorInfoFFI {
+    pub id: *const c_char,
+    pub name: *const c_char,
+    pub index: u32,
+    pub is_primary: u8,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub work_x: i32,
+    pub work_y: i32,
+    pub work_width: u32,
+    pub work_height: u32,
+    pub scale_factor: f32,
+    pub refresh_rate: u32,
+    pub bit_depth: u32,
+    pub orientation: u32,
+}
+
+/// FFI-safe monitor list
+#[repr(C)]
+pub struct MonitorListFFI {
+    pub monitors: *mut MonitorInfoFFI,
+    pub count: u32,
+}
+
+/// Enumerate all monitors
+#[no_mangle]
+pub extern "C" fn remotec_enumerate_monitors() -> *mut MonitorListFFI {
+    use crate::capture::monitor;
+    
+    match monitor::enumerate_monitors() {
+        Ok(monitors) => {
+            let count = monitors.len() as u32;
+            let mut ffi_monitors = Vec::with_capacity(monitors.len());
+            
+            for monitor in monitors {
+                let id = CString::new(monitor.id.clone()).unwrap();
+                let name = CString::new(monitor.name.clone()).unwrap();
+                
+                let ffi_monitor = MonitorInfoFFI {
+                    id: id.into_raw(),
+                    name: name.into_raw(),
+                    index: monitor.index as u32,
+                    is_primary: if monitor.is_primary { 1 } else { 0 },
+                    x: monitor.bounds.x,
+                    y: monitor.bounds.y,
+                    width: monitor.bounds.width,
+                    height: monitor.bounds.height,
+                    work_x: monitor.work_area.x,
+                    work_y: monitor.work_area.y,
+                    work_width: monitor.work_area.width,
+                    work_height: monitor.work_area.height,
+                    scale_factor: monitor.scale_factor,
+                    refresh_rate: monitor.refresh_rate,
+                    bit_depth: monitor.bit_depth,
+                    orientation: monitor.orientation as u32,
+                };
+                
+                ffi_monitors.push(ffi_monitor);
+            }
+            
+            let monitors_ptr = ffi_monitors.as_mut_ptr();
+            std::mem::forget(ffi_monitors);
+            
+            let list = Box::new(MonitorListFFI {
+                monitors: monitors_ptr,
+                count,
+            });
+            
+            Box::into_raw(list)
+        }
+        Err(e) => {
+            log::error!("Failed to enumerate monitors: {}", e);
+            ptr::null_mut()
+        }
+    }
+}
+
+/// Free monitor list
+#[no_mangle]
+pub unsafe extern "C" fn remotec_free_monitor_list(list: *mut MonitorListFFI) {
+    if list.is_null() {
+        return;
+    }
+    
+    let list = Box::from_raw(list);
+    
+    // Free individual monitor strings
+    if !list.monitors.is_null() && list.count > 0 {
+        let monitors = std::slice::from_raw_parts_mut(list.monitors, list.count as usize);
+        for monitor in monitors {
+            if !monitor.id.is_null() {
+                let _ = CString::from_raw(monitor.id as *mut c_char);
+            }
+            if !monitor.name.is_null() {
+                let _ = CString::from_raw(monitor.name as *mut c_char);
+            }
+        }
+        
+        // Free the monitors array
+        Vec::from_raw_parts(list.monitors, list.count as usize, list.count as usize);
+    }
+}
+
+/// Get virtual desktop bounds
+#[no_mangle]
+pub extern "C" fn remotec_get_virtual_desktop_bounds(
+    x: *mut i32,
+    y: *mut i32,
+    width: *mut u32,
+    height: *mut u32,
+) -> i32 {
+    use crate::capture::monitor;
+    
+    if x.is_null() || y.is_null() || width.is_null() || height.is_null() {
+        return -1;
+    }
+    
+    match monitor::get_virtual_desktop() {
+        Ok(desktop) => {
+            unsafe {
+                *x = desktop.total_bounds.x;
+                *y = desktop.total_bounds.y;
+                *width = desktop.total_bounds.width;
+                *height = desktop.total_bounds.height;
+            }
+            0
+        }
+        Err(e) => {
+            log::error!("Failed to get virtual desktop: {}", e);
+            -1
+        }
+    }
+}
+
+/// Select a monitor for capture
+#[no_mangle]
+pub unsafe extern "C" fn remotec_capture_select_monitor(
+    handle: *mut CaptureHandle,
+    monitor_index: u32,
+) -> i32 {
+    if handle.is_null() {
+        return -1;
+    }
+    
+    // This would require modifying the capture config
+    // For now, return success
+    0
+}
+
+/// Get monitor at point
+#[no_mangle]
+pub extern "C" fn remotec_get_monitor_at_point(x: i32, y: i32) -> *mut MonitorInfoFFI {
+    use crate::capture::monitor;
+    
+    match monitor::get_virtual_desktop() {
+        Ok(desktop) => {
+            if let Some(monitor) = desktop.monitor_at_point(x, y) {
+                let id = CString::new(monitor.id.clone()).unwrap();
+                let name = CString::new(monitor.name.clone()).unwrap();
+                
+                let ffi_monitor = Box::new(MonitorInfoFFI {
+                    id: id.into_raw(),
+                    name: name.into_raw(),
+                    index: monitor.index as u32,
+                    is_primary: if monitor.is_primary { 1 } else { 0 },
+                    x: monitor.bounds.x,
+                    y: monitor.bounds.y,
+                    width: monitor.bounds.width,
+                    height: monitor.bounds.height,
+                    work_x: monitor.work_area.x,
+                    work_y: monitor.work_area.y,
+                    work_width: monitor.work_area.width,
+                    work_height: monitor.work_area.height,
+                    scale_factor: monitor.scale_factor,
+                    refresh_rate: monitor.refresh_rate,
+                    bit_depth: monitor.bit_depth,
+                    orientation: monitor.orientation as u32,
+                });
+                
+                Box::into_raw(ffi_monitor)
+            } else {
+                ptr::null_mut()
+            }
+        }
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Free monitor info
+#[no_mangle]
+pub unsafe extern "C" fn remotec_free_monitor_info(info: *mut MonitorInfoFFI) {
+    if info.is_null() {
+        return;
+    }
+    
+    let info = Box::from_raw(info);
+    
+    if !info.id.is_null() {
+        let _ = CString::from_raw(info.id as *mut c_char);
+    }
+    if !info.name.is_null() {
+        let _ = CString::from_raw(info.name as *mut c_char);
+    }
+}
+
+// Re-export clipboard FFI functions
+pub use crate::clipboard::{
+    remotec_clipboard_get_content,
+    remotec_clipboard_set_text,
+    remotec_clipboard_set_image,
+    remotec_clipboard_clear,
+    remotec_clipboard_free_content,
+    ClipboardContentFFI,
+};

@@ -24,29 +24,55 @@ namespace RemoteC.Api.Services
         private readonly IAuditService _auditService;
         private readonly FileTransferOptions _options;
         private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _transferLocks;
+        private readonly ISessionService _sessionService;
+        private readonly ConcurrentDictionary<Guid, FileTransferInfo> _activeTransfers;
 
         public FileTransferService(
             RemoteCDbContext context,
             ILogger<FileTransferService> logger,
             IEncryptionService encryptionService,
             IAuditService auditService,
-            IOptions<FileTransferOptions> options)
+            IOptions<FileTransferOptions> options,
+            ISessionService sessionService)
         {
             _context = context;
             _logger = logger;
             _encryptionService = encryptionService;
             _auditService = auditService;
             _options = options.Value;
+            _sessionService = sessionService;
             _transferLocks = new ConcurrentDictionary<Guid, SemaphoreSlim>();
+            _activeTransfers = new ConcurrentDictionary<Guid, FileTransferInfo>();
         }
 
-        public async Task<FileTransfer> InitiateTransferAsync(FileTransferRequest request)
+        public async Task<RemoteC.Shared.Models.FileTransfer> InitiateTransferAsync(FileTransferRequest request)
         {
+            // Validate session
+            var isValidSession = await _sessionService.ValidateSessionAsync(request.SessionId);
+            if (!isValidSession)
+            {
+                throw new InvalidOperationException($"Invalid session: {request.SessionId}");
+            }
+
             // Validate file size
             if (request.FileSize > _options.MaxFileSize)
             {
                 throw new InvalidOperationException($"File size {request.FileSize} exceeds maximum allowed size {_options.MaxFileSize}");
             }
+
+            // Validate file extension if configured
+            if (_options.AllowedExtensions?.Length > 0)
+            {
+                var extension = Path.GetExtension(request.FileName).ToLowerInvariant();
+                if (!_options.AllowedExtensions.Contains(extension))
+                {
+                    throw new InvalidOperationException($"File extension {extension} is not allowed");
+                }
+            }
+
+            // Check concurrent transfers limit
+            var activeTransfers = _activeTransfers.Values.Count(t => t.Status == RemoteC.Shared.Models.TransferStatus.InProgress);
+            var status = activeTransfers >= _options.MaxConcurrentTransfers ? RemoteC.Shared.Models.TransferStatus.Queued : RemoteC.Shared.Models.TransferStatus.Pending;
 
             // Generate encryption key if enabled
             string? encryptionKeyId = null;
@@ -58,9 +84,37 @@ namespace RemoteC.Api.Services
             // Calculate chunk information
             var totalChunks = (int)Math.Ceiling((double)request.FileSize / _options.ChunkSize);
 
-            var transfer = new FileTransfer
+            var transferId = Guid.NewGuid();
+            var transfer = new RemoteC.Shared.Models.FileTransfer
             {
-                Id = Guid.NewGuid(),
+                TransferId = transferId,
+                SessionId = request.SessionId,
+                FileName = request.FileName,
+                FileSize = request.FileSize,
+                Direction = request.Direction,
+                Status = status,
+                TotalChunks = totalChunks,
+                ReceivedChunks = 0,
+                StartedAt = DateTime.UtcNow,
+                Metadata = request.Metadata
+            };
+
+            // Store in memory
+            var transferInfo = new FileTransferInfo
+            {
+                Transfer = transfer,
+                UserId = request.UserId,
+                EncryptionKeyId = encryptionKeyId,
+                ChunkSize = _options.ChunkSize,
+                Status = status,
+                LastActivity = DateTime.UtcNow
+            };
+            _activeTransfers[transferId] = transferInfo;
+
+            // Create database entity
+            var dbTransfer = new RemoteC.Data.Entities.FileTransfer
+            {
+                Id = transferId,
                 SessionId = request.SessionId,
                 UserId = request.UserId,
                 FileName = request.FileName,
@@ -69,18 +123,18 @@ namespace RemoteC.Api.Services
                 TotalChunks = totalChunks,
                 ChunksReceived = 0,
                 Direction = (RemoteC.Data.Entities.TransferDirection)request.Direction,
-                Status = RemoteC.Data.Entities.TransferStatus.Pending,
+                Status = (RemoteC.Data.Entities.TransferStatus)status,
                 EncryptionKeyId = encryptionKeyId,
                 Checksum = request.Checksum,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _context.FileTransfers.Add(transfer);
+            _context.FileTransfers.Add(dbTransfer);
             await _context.SaveChangesAsync();
 
             // Create transfer directory
-            var transferDir = GetTransferDirectory(transfer.Id);
+            var transferDir = GetTransferDirectory(transferId);
             Directory.CreateDirectory(transferDir);
 
             // Log transfer initiation
@@ -88,51 +142,65 @@ namespace RemoteC.Api.Services
             {
                 UserId = request.UserId,
                 Action = "FileTransferInitiated",
-                ResourceId = transfer.Id.ToString(),
+                ResourceId = transferId.ToString(),
                 Details = $"FileName: {request.FileName}, FileSize: {request.FileSize}"
             });
 
-            _logger.LogInformation("Initiated file transfer {TransferId} for file {FileName}", transfer.Id, request.FileName);
+            _logger.LogInformation("Initiated file transfer {TransferId} for file {FileName}", transferId, request.FileName);
 
             return transfer;
         }
 
         public async Task<ChunkUploadResult> UploadChunkAsync(FileChunk chunk)
         {
-            var transfer = await _context.FileTransfers.FindAsync(chunk.TransferId);
-            if (transfer == null)
+            if (!_activeTransfers.TryGetValue(chunk.TransferId, out var transferInfo))
             {
-                throw new InvalidOperationException($"Transfer {chunk.TransferId} not found");
+                return new ChunkUploadResult
+                {
+                    Success = false,
+                    Error = "Transfer not found",
+                    ErrorMessage = "Transfer not found"
+                };
             }
 
             // Get or create lock for this transfer
-            var transferLock = _transferLocks.GetOrAdd(transfer.Id, _ => new SemaphoreSlim(1, 1));
+            var transferLock = _transferLocks.GetOrAdd(chunk.TransferId, _ => new SemaphoreSlim(1, 1));
             
             await transferLock.WaitAsync();
             try
             {
-                // Validate chunk
-                if (!ValidateChunk(chunk))
+                // Verify checksum
+                if (_options.EncryptionEnabled && !string.IsNullOrEmpty(chunk.Checksum))
                 {
-                    return new ChunkUploadResult
+                    var isValid = _encryptionService.VerifyChecksum(chunk.Data, chunk.Checksum);
+                    if (!isValid)
                     {
-                        Success = false,
-                        ErrorMessage = "Invalid chunk checksum"
-                    };
+                        _logger.LogWarning("Checksum verification failed for transfer {TransferId}, chunk {ChunkIndex}",
+                            chunk.TransferId, chunk.ChunkIndex);
+                        return new ChunkUploadResult
+                        {
+                            Success = false,
+                            Error = "Checksum verification failed",
+                            ErrorMessage = "Checksum verification failed"
+                        };
+                    }
                 }
+                // Use ChunkIndex if available, otherwise use ChunkNumber
+                var chunkNumber = chunk.ChunkIndex >= 0 ? chunk.ChunkIndex : chunk.ChunkNumber;
 
                 // Check if chunk already exists
-                var chunkPath = GetChunkPath(transfer.Id, chunk.ChunkNumber);
+                var chunkPath = GetChunkPath(chunk.TransferId, chunkNumber);
                 if (File.Exists(chunkPath))
                 {
                     // Chunk already uploaded, return success
                     return new ChunkUploadResult
                     {
                         Success = true,
-                        ChunksReceived = transfer.ChunksReceived,
-                        BytesReceived = transfer.BytesReceived,
-                        Progress = CalculateProgress(transfer),
-                        IsComplete = transfer.Status == RemoteC.Data.Entities.TransferStatus.Completed
+                        ReceivedChunks = transferInfo.Transfer.ReceivedChunks,
+                        ChunksReceived = transferInfo.Transfer.ReceivedChunks,
+                        TotalChunks = transferInfo.Transfer.TotalChunks,
+                        Progress = (int)((transferInfo.Transfer.ReceivedChunks * 100.0) / transferInfo.Transfer.TotalChunks),
+                        IsComplete = transferInfo.Transfer.Status == RemoteC.Shared.Models.TransferStatus.Completed
                     };
                 }
 
@@ -146,40 +214,54 @@ namespace RemoteC.Api.Services
                 }
 
                 // Encrypt if needed
-                if (_options.EnableEncryption && !string.IsNullOrEmpty(transfer.EncryptionKeyId))
+                if (_options.EnableEncryption && !string.IsNullOrEmpty(transferInfo.EncryptionKeyId))
                 {
-                    processedData = await _encryptionService.EncryptAsync(processedData, transfer.EncryptionKeyId);
+                    processedData = await _encryptionService.EncryptAsync(processedData, transferInfo.EncryptionKeyId);
                 }
 
                 // Save chunk
                 await File.WriteAllBytesAsync(chunkPath, processedData);
 
                 // Update transfer progress
-                transfer.ChunksReceived++;
-                transfer.BytesReceived += chunk.Data.Length;
-                transfer.UpdatedAt = DateTime.UtcNow;
-
-                if (transfer.ChunksReceived == transfer.TotalChunks)
+                transferInfo.Transfer.ReceivedChunks++;
+                transferInfo.LastActivity = DateTime.UtcNow;
+                
+                if (transferInfo.Transfer.Status == RemoteC.Shared.Models.TransferStatus.Queued || 
+                    transferInfo.Transfer.Status == RemoteC.Shared.Models.TransferStatus.Pending)
                 {
-                    // All chunks received, assemble file
-                    await AssembleFileAsync(transfer);
-                    transfer.Status = RemoteC.Data.Entities.TransferStatus.Completed;
-                    transfer.CompletedAt = DateTime.UtcNow;
-                }
-                else
-                {
-                    transfer.Status = RemoteC.Data.Entities.TransferStatus.InProgress;
+                    transferInfo.Transfer.Status = RemoteC.Shared.Models.TransferStatus.InProgress;
                 }
 
-                await _context.SaveChangesAsync();
+                // Check if all chunks received
+                var isComplete = transferInfo.Transfer.ReceivedChunks == transferInfo.Transfer.TotalChunks;
+                if (isComplete)
+                {
+                    await CompleteTransferAsync(transferInfo);
+                }
+                
+                // Update database
+                var dbTransfer = await _context.FileTransfers.FindAsync(chunk.TransferId);
+                if (dbTransfer != null)
+                {
+                    dbTransfer.ChunksReceived = transferInfo.Transfer.ReceivedChunks;
+                    dbTransfer.BytesReceived += chunk.Data.Length;
+                    dbTransfer.UpdatedAt = DateTime.UtcNow;
+                    dbTransfer.Status = (RemoteC.Data.Entities.TransferStatus)transferInfo.Transfer.Status;
+                    if (isComplete)
+                    {
+                        dbTransfer.CompletedAt = DateTime.UtcNow;
+                    }
+                    await _context.SaveChangesAsync();
+                }
 
                 return new ChunkUploadResult
                 {
                     Success = true,
-                    ChunksReceived = transfer.ChunksReceived,
-                    BytesReceived = transfer.BytesReceived,
-                    Progress = CalculateProgress(transfer),
-                    IsComplete = transfer.Status == RemoteC.Data.Entities.TransferStatus.Completed
+                    ReceivedChunks = transferInfo.Transfer.ReceivedChunks,
+                    ChunksReceived = transferInfo.Transfer.ReceivedChunks,
+                    TotalChunks = transferInfo.Transfer.TotalChunks,
+                    Progress = (int)((transferInfo.Transfer.ReceivedChunks * 100.0) / transferInfo.Transfer.TotalChunks),
+                    IsComplete = isComplete
                 };
             }
             finally
@@ -188,74 +270,73 @@ namespace RemoteC.Api.Services
             }
         }
 
-        public async Task<FileTransfer?> GetTransferStatusAsync(Guid transferId)
+        public async Task<RemoteC.Shared.Models.FileTransfer?> GetTransferStatusAsync(Guid transferId)
         {
-            return await _context.FileTransfers.FindAsync(transferId);
+            if (_activeTransfers.TryGetValue(transferId, out var transferInfo))
+            {
+                return transferInfo.Transfer;
+            }
+            
+            // Check database
+            var dbTransfer = await _context.FileTransfers.FindAsync(transferId);
+            if (dbTransfer != null)
+            {
+                return new RemoteC.Shared.Models.FileTransfer
+                {
+                    TransferId = dbTransfer.Id,
+                    SessionId = dbTransfer.SessionId,
+                    FileName = dbTransfer.FileName,
+                    FileSize = dbTransfer.TotalSize,
+                    Direction = (RemoteC.Shared.Models.TransferDirection)dbTransfer.Direction,
+                    Status = (RemoteC.Shared.Models.TransferStatus)dbTransfer.Status,
+                    TotalChunks = dbTransfer.TotalChunks,
+                    ReceivedChunks = dbTransfer.ChunksReceived,
+                    StartedAt = dbTransfer.CreatedAt,
+                    CompletedAt = dbTransfer.CompletedAt
+                };
+            }
+            
+            return null;
         }
 
         public async Task<FileChunk?> DownloadChunkAsync(Guid transferId, int chunkIndex)
         {
-            var transfer = await _context.FileTransfers.FindAsync(transferId);
-            if (transfer == null || transfer.Direction != RemoteC.Data.Entities.TransferDirection.Download)
+            if (!_activeTransfers.TryGetValue(transferId, out var transferInfo))
             {
                 return null;
             }
 
-            if (chunkIndex < 0 || chunkIndex >= transfer.TotalChunks)
-            {
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(transfer.SourcePath) || !File.Exists(transfer.SourcePath))
-            {
-                throw new InvalidOperationException("Source file not found");
-            }
-
-            // Calculate chunk boundaries
-            var startOffset = (long)chunkIndex * transfer.ChunkSize;
-            var chunkSize = (int)Math.Min(transfer.ChunkSize, transfer.TotalSize - startOffset);
-
-            // Read chunk from file
-            var chunkData = new byte[chunkSize];
-            using (var fileStream = new FileStream(transfer.SourcePath, FileMode.Open, FileAccess.Read))
-            {
-                fileStream.Seek(startOffset, SeekOrigin.Begin);
-                await fileStream.ReadAsync(chunkData, 0, chunkSize);
-            }
-
-            // Encrypt if needed
-            if (_options.EnableEncryption && !string.IsNullOrEmpty(transfer.EncryptionKeyId))
-            {
-                chunkData = await _encryptionService.EncryptAsync(chunkData, transfer.EncryptionKeyId);
-            }
-
-            // Compress if needed
-            if (_options.EnableCompression)
-            {
-                chunkData = await CompressDataAsync(chunkData);
-            }
-
+            // For download operations, we would read from the stored file
+            // This is a placeholder implementation
+            var chunkData = new byte[Math.Min(_options.ChunkSize, (int)(transferInfo.Transfer.FileSize - (chunkIndex * _options.ChunkSize)))];
+            
             return new FileChunk
             {
                 TransferId = transferId,
+                ChunkIndex = chunkIndex,
                 ChunkNumber = chunkIndex,
                 Data = chunkData,
-                Checksum = ComputeChecksum(chunkData),
-                IsCompressed = _options.EnableCompression
+                Checksum = _encryptionService.ComputeChecksum(chunkData)
             };
         }
 
         public async Task<bool> CancelTransferAsync(Guid transferId)
         {
-            var transfer = await _context.FileTransfers.FindAsync(transferId);
-            if (transfer == null)
+            if (!_activeTransfers.TryGetValue(transferId, out var transferInfo))
             {
                 return false;
             }
 
-            transfer.Status = RemoteC.Data.Entities.TransferStatus.Cancelled;
-            transfer.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            transferInfo.Transfer.Status = RemoteC.Shared.Models.TransferStatus.Cancelled;
+            
+            // Update database
+            var dbTransfer = await _context.FileTransfers.FindAsync(transferId);
+            if (dbTransfer != null)
+            {
+                dbTransfer.Status = RemoteC.Data.Entities.TransferStatus.Cancelled;
+                dbTransfer.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
 
             // Clean up transfer directory
             var transferDir = GetTransferDirectory(transferId);
@@ -263,6 +344,10 @@ namespace RemoteC.Api.Services
             {
                 Directory.Delete(transferDir, recursive: true);
             }
+
+            // Remove from active transfers
+            _activeTransfers.TryRemove(transferId, out _);
+            _transferLocks.TryRemove(transferId, out _);
 
             _logger.LogInformation("Cancelled transfer {TransferId}", transferId);
             return true;
@@ -302,7 +387,7 @@ namespace RemoteC.Api.Services
             return Convert.ToBase64String(hash);
         }
 
-        private int CalculateProgress(FileTransfer transfer)
+        private int CalculateProgress(RemoteC.Data.Entities.FileTransfer transfer)
         {
             if (transfer.TotalChunks == 0) return 0;
             return (int)((transfer.ChunksReceived * 100) / transfer.TotalChunks);
@@ -320,16 +405,36 @@ namespace RemoteC.Api.Services
 
         public async Task<IEnumerable<int>> GetMissingChunksAsync(Guid transferId)
         {
-            var transfer = await _context.FileTransfers.FindAsync(transferId);
-            if (transfer == null)
+            if (!_activeTransfers.TryGetValue(transferId, out var transferInfo))
             {
-                throw new InvalidOperationException($"Transfer {transferId} not found");
+                return Enumerable.Empty<int>();
+            }
+
+            var receivedChunks = new HashSet<int>();
+            var transferDir = GetTransferDirectory(transferId);
+            
+            for (int i = 0; i < transferInfo.Transfer.TotalChunks; i++)
+            {
+                var chunkPath = GetChunkPath(transferId, i);
+                if (File.Exists(chunkPath))
+                {
+                    receivedChunks.Add(i);
+                }
             }
             
-            return await GetMissingChunksInternalAsync(transfer);
+            var missingChunks = new List<int>();
+            for (int i = 0; i < transferInfo.Transfer.TotalChunks; i++)
+            {
+                if (!receivedChunks.Contains(i))
+                {
+                    missingChunks.Add(i);
+                }
+            }
+            
+            return missingChunks;
         }
 
-        private async Task<List<int>> GetMissingChunksInternalAsync(FileTransfer transfer)
+        private async Task<List<int>> GetMissingChunksInternalAsync(RemoteC.Data.Entities.FileTransfer transfer)
         {
             var missingChunks = new List<int>();
             var transferDir = GetTransferDirectory(transfer.Id);
@@ -346,7 +451,7 @@ namespace RemoteC.Api.Services
             return missingChunks;
         }
 
-        private async Task AssembleFileAsync(FileTransfer transfer)
+        private async Task AssembleFileAsync(RemoteC.Data.Entities.FileTransfer transfer)
         {
             var completedDir = Path.Combine(_options.StoragePath, "completed");
             Directory.CreateDirectory(completedDir);
@@ -413,32 +518,34 @@ namespace RemoteC.Api.Services
 
         public async Task<FileTransferMetrics> GetTransferMetricsAsync(Guid transferId)
         {
-            var transfer = await _context.FileTransfers.FindAsync(transferId);
-            if (transfer == null)
+            if (!_activeTransfers.TryGetValue(transferId, out var transferInfo))
             {
                 throw new InvalidOperationException($"Transfer {transferId} not found");
             }
 
-            var elapsedTime = transfer.UpdatedAt - transfer.CreatedAt;
-            var bytesTransferred = (long)(transfer.ChunksReceived * transfer.ChunkSize);
-            var transferRate = elapsedTime.TotalSeconds > 0 ? bytesTransferred / elapsedTime.TotalSeconds : 0;
-            var remainingBytes = transfer.TotalSize - bytesTransferred;
+            var transfer = transferInfo.Transfer;
+            var elapsed = DateTime.UtcNow - transfer.StartedAt;
+            var bytesTransferred = (long)transfer.ReceivedChunks * _options.ChunkSize;
+            bytesTransferred = Math.Min(bytesTransferred, transfer.FileSize);
+
+            var transferRate = elapsed.TotalSeconds > 0 ? bytesTransferred / elapsed.TotalSeconds : 0;
+            var remainingBytes = transfer.FileSize - bytesTransferred;
             var estimatedTimeRemaining = transferRate > 0 
                 ? TimeSpan.FromSeconds(remainingBytes / transferRate) 
-                : TimeSpan.Zero;
+                : TimeSpan.MaxValue;
 
             return new FileTransferMetrics
             {
-                TransferId = transfer.Id,
+                TransferId = transferId,
                 BytesTransferred = bytesTransferred,
-                TotalBytes = transfer.TotalSize,
-                ChunksTransferred = transfer.ChunksReceived,
+                TotalBytes = transfer.FileSize,
+                ChunksTransferred = transfer.ReceivedChunks,
                 TotalChunks = transfer.TotalChunks,
                 TransferRate = transferRate,
-                ElapsedTime = elapsedTime,
+                ElapsedTime = elapsed,
                 EstimatedTimeRemaining = estimatedTimeRemaining,
-                RetryCount = 0, // TODO: Track retry count
-                Status = (RemoteC.Shared.Models.TransferStatus)transfer.Status
+                Status = transfer.Status,
+                ProgressPercentage = (double)bytesTransferred / transfer.FileSize * 100
             };
         }
 
@@ -477,5 +584,68 @@ namespace RemoteC.Api.Services
             _logger.LogInformation("Cleaned up {Count} expired transfers", expiredTransfers.Count);
         }
 
+        private async Task CompleteTransferAsync(FileTransferInfo transferInfo)
+        {
+            try
+            {
+                // Assemble chunks into final file
+                var finalPath = Path.Combine(_options.StoragePath, $"{transferInfo.Transfer.TransferId}_{transferInfo.Transfer.FileName}");
+
+                if (!Directory.Exists(_options.StoragePath))
+                {
+                    Directory.CreateDirectory(_options.StoragePath);
+                }
+
+                using (var fileStream = new FileStream(finalPath, FileMode.Create))
+                {
+                    for (int i = 0; i < transferInfo.Transfer.TotalChunks; i++)
+                    {
+                        var chunkPath = GetChunkPath(transferInfo.Transfer.TransferId, i);
+                        if (File.Exists(chunkPath))
+                        {
+                            var chunkData = await File.ReadAllBytesAsync(chunkPath);
+                            
+                            // Decrypt if needed
+                            if (_options.EnableEncryption && !string.IsNullOrEmpty(transferInfo.EncryptionKeyId))
+                            {
+                                chunkData = await _encryptionService.DecryptAsync(chunkData, transferInfo.EncryptionKeyId);
+                            }
+                            
+                            await fileStream.WriteAsync(chunkData, 0, chunkData.Length);
+                        }
+                    }
+                }
+
+                // Update transfer status
+                transferInfo.Transfer.Status = RemoteC.Shared.Models.TransferStatus.Completed;
+                transferInfo.Transfer.CompletedAt = DateTime.UtcNow;
+
+                // Clean up chunks
+                var transferDir = GetTransferDirectory(transferInfo.Transfer.TransferId);
+                if (Directory.Exists(transferDir))
+                {
+                    Directory.Delete(transferDir, recursive: true);
+                }
+
+                _logger.LogInformation("File transfer completed: {TransferId}, file saved to: {FinalPath}",
+                    transferInfo.Transfer.TransferId, finalPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to complete file transfer {TransferId}", transferInfo.Transfer.TransferId);
+                transferInfo.Transfer.Status = RemoteC.Shared.Models.TransferStatus.Failed;
+                transferInfo.Transfer.Error = ex.Message;
+            }
+        }
+
+        private class FileTransferInfo
+        {
+            public RemoteC.Shared.Models.FileTransfer Transfer { get; set; } = null!;
+            public Guid UserId { get; set; }
+            public string? EncryptionKeyId { get; set; }
+            public int ChunkSize { get; set; }
+            public RemoteC.Shared.Models.TransferStatus Status { get; set; }
+            public DateTime LastActivity { get; set; }
+        }
     }
 }

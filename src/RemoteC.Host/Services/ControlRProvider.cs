@@ -156,6 +156,53 @@ public class ControlRProvider : IRemoteControlProvider
         return await Task.FromResult(stats);
     }
 
+    public async Task<List<MonitorInfo>> GetMonitorsAsync(string sessionId)
+    {
+        if (!_isInitialized)
+            throw new InvalidOperationException("Provider not initialized");
+
+        // TODO: Get monitors from ControlR
+        // For now, return dummy monitor data
+        var monitors = new List<MonitorInfo>
+        {
+            new MonitorInfo
+            {
+                Id = @"\\.\DISPLAY1",
+                Index = 0,
+                Name = "Primary Monitor",
+                IsPrimary = true,
+                Bounds = new Rectangle { X = 0, Y = 0, Width = 1920, Height = 1080 },
+                WorkArea = new Rectangle { X = 0, Y = 0, Width = 1920, Height = 1040 },
+                ScaleFactor = 1.0f,
+                RefreshRate = 60,
+                BitDepth = 32,
+                Orientation = MonitorOrientation.Landscape
+            }
+        };
+
+        return await Task.FromResult(monitors);
+    }
+
+    public async Task<bool> SelectMonitorAsync(string sessionId, string monitorId)
+    {
+        if (!_isInitialized)
+            throw new InvalidOperationException("Provider not initialized");
+
+        // TODO: Select monitor in ControlR
+        _logger.LogInformation("Selected monitor {MonitorId} for session {SessionId}", monitorId, sessionId);
+        return await Task.FromResult(true);
+    }
+
+    public async Task<bool> SelectMonitorsAsync(string sessionId, string[] monitorIds)
+    {
+        if (!_isInitialized)
+            throw new InvalidOperationException("Provider not initialized");
+
+        // TODO: Select multiple monitors in ControlR
+        _logger.LogInformation("Selected {Count} monitors for session {SessionId}", monitorIds.Length, sessionId);
+        return await Task.FromResult(true);
+    }
+
     public void Dispose()
     {
         // TODO: Cleanup ControlR resources

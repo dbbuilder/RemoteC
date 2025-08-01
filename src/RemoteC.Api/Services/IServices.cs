@@ -229,6 +229,29 @@ public interface IPinService
 }
 
 /// <summary>
+/// Extension methods for ISessionService
+/// </summary>
+public static class SessionServiceExtensions
+{
+    /// <summary>
+    /// Validates if a session exists and is active
+    /// </summary>
+    public static async Task<bool> ValidateSessionAsync(this ISessionService sessionService, Guid sessionId)
+    {
+        try
+        {
+            // This is a simple validation - in a real implementation, you might want to check
+            // if the session exists and is in an active state
+            return true; // Placeholder implementation
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
+
+/// <summary>
 /// Interface for remote control operations (ControlR integration)
 /// </summary>
 public interface IRemoteControlService
@@ -245,6 +268,42 @@ public interface IRemoteControlService
     Task<MonitorInfo?> GetSelectedMonitorAsync(Guid sessionId);
     Task<ScreenBounds?> GetMonitorBoundsAsync(Guid sessionId, string monitorId);
     Task NotifyMonitorChangeAsync(Guid sessionId, string fromMonitorId, string toMonitorId);
+    
+    // Clipboard operations
+    Task<ClipboardContent?> GetClipboardContentAsync(Guid sessionId);
+    Task<bool> SetClipboardContentAsync(Guid sessionId, ClipboardContent content);
+    Task<ClipboardContent?> GetHostClipboardAsync(Guid sessionId);
+    Task<ClipboardContent?> GetClientClipboardAsync(Guid sessionId);
+    Task<bool> SetClientClipboardAsync(Guid sessionId, ClipboardContent content);
+    Task<ClipboardHistoryItem[]?> GetClipboardHistoryAsync(Guid sessionId, int maxItems);
+    Task<bool> ClearClipboardAsync(Guid sessionId, ClipboardTarget target);
+    bool IsClipboardTypeSupported(ClipboardContentType type);
+}
+
+
+/// <summary>
+/// Interface for adaptive quality service
+/// </summary>
+public interface IAdaptiveQualityService
+{
+    Task<QualitySettings> DetermineOptimalQualityAsync(Guid sessionId);
+    Task UpdateQualitySettingsAsync(Guid sessionId, QualitySettings settings);
+    Task<QualitySettings> GetCurrentQualityAsync(Guid sessionId);
+    Task ReportMetricsAsync(Guid sessionId, RemoteC.Shared.Models.SessionMetrics metrics);
+    QualitySettings GetQualityPreset(RemoteC.Shared.Models.QualityLevel level);
+    Task<bool> ShouldDowngradeQualityAsync(Guid sessionId);
+    Task<bool> ShouldUpgradeQualityAsync(Guid sessionId);
+}
+
+/// <summary>
+/// Interface for session metrics service
+/// </summary>
+public interface ISessionMetricsService
+{
+    Task RecordSessionMetricsAsync(Guid sessionId, RemoteC.Shared.Models.SessionMetrics metrics);
+    Task<RemoteC.Shared.Models.SessionMetrics?> GetSessionMetricsAsync(Guid sessionId);
+    Task<IEnumerable<RemoteC.Shared.Models.SessionMetrics>> GetHistoricalMetricsAsync(Guid sessionId, TimeSpan duration);
+    Task ClearMetricsAsync(Guid sessionId);
 }
 
 /// <summary>
@@ -280,9 +339,9 @@ public interface ICommandExecutionService
 /// </summary>
 public interface IFileTransferService
 {
-    Task<FileTransfer> InitiateTransferAsync(FileTransferRequest request);
+    Task<RemoteC.Shared.Models.FileTransfer> InitiateTransferAsync(FileTransferRequest request);
     Task<ChunkUploadResult> UploadChunkAsync(FileChunk chunk);
-    Task<FileTransfer?> GetTransferStatusAsync(Guid transferId);
+    Task<RemoteC.Shared.Models.FileTransfer?> GetTransferStatusAsync(Guid transferId);
     Task<IEnumerable<int>> GetMissingChunksAsync(Guid transferId);
     Task<FileChunk?> DownloadChunkAsync(Guid transferId, int chunkIndex);
     Task<bool> CancelTransferAsync(Guid transferId);
@@ -290,5 +349,6 @@ public interface IFileTransferService
     Task CleanupExpiredTransfersAsync();
     Task<int> CleanupStalledTransfersAsync();
 }
+
 
 

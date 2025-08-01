@@ -13,19 +13,18 @@ namespace RemoteC.Tests.Unit.Core
     /// </summary>
     public class MultiMonitorCaptureTests : IDisposable
     {
-        private readonly RemoteCCore _core;
         private bool _disposed;
 
         public MultiMonitorCaptureTests()
         {
-            _core = new RemoteCCore();
+            // RemoteCCore is a static class
         }
 
         [Fact]
         public void EnumerateMonitors_ShouldReturnAllConnectedMonitors()
         {
             // Act
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
 
             // Assert
             Assert.NotNull(monitors);
@@ -48,7 +47,7 @@ namespace RemoteC.Tests.Unit.Core
         public void CaptureMonitor_SpecificMonitor_ShouldCaptureOnlyThatMonitor()
         {
             // Arrange
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
             if (monitors.Count() < 2)
             {
                 // Skip test if only one monitor
@@ -81,7 +80,7 @@ namespace RemoteC.Tests.Unit.Core
         public void CaptureAllMonitors_ShouldReturnCombinedImage()
         {
             // Arrange
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
             var virtualBounds = CalculateVirtualBounds(monitors);
 
             // Act
@@ -98,7 +97,7 @@ namespace RemoteC.Tests.Unit.Core
         public void CaptureRegion_AcrossMonitors_ShouldCaptureCorrectArea()
         {
             // Arrange
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
             if (monitors.Count() < 2)
             {
                 // Skip test if only one monitor
@@ -130,7 +129,7 @@ namespace RemoteC.Tests.Unit.Core
         public void GetMonitorAtPoint_ShouldReturnCorrectMonitor()
         {
             // Arrange
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
             var primaryMonitor = monitors.First(m => m.IsPrimary);
             
             var testPoint = new Point
@@ -151,7 +150,7 @@ namespace RemoteC.Tests.Unit.Core
         public void HandleDPIScaling_HighDPIMonitor_ShouldScaleCorrectly()
         {
             // Arrange
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
             var highDpiMonitor = monitors.FirstOrDefault(m => m.ScaleFactor > 1.0f);
             
             if (highDpiMonitor == null)
@@ -186,7 +185,7 @@ namespace RemoteC.Tests.Unit.Core
             var initialMonitors = _core.EnumerateMonitors();
             
             // Act - Simulate configuration change notification
-            _core.HandleMonitorConfigurationChange();
+            RemoteCCore.HandleMonitorConfigurationChange();
             var updatedMonitors = _core.EnumerateMonitors();
 
             // Assert
@@ -220,7 +219,7 @@ namespace RemoteC.Tests.Unit.Core
         public void TranslateCoordinates_BetweenMonitorSpaces_ShouldBeAccurate()
         {
             // Arrange
-            var monitors = _core.EnumerateMonitors();
+            var monitors = RemoteCCore.EnumerateMonitors();
             if (monitors.Count() < 2)
             {
                 return;

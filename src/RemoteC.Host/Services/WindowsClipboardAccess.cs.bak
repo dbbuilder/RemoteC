@@ -1,0 +1,284 @@
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using RemoteC.Shared.Models;
+
+namespace RemoteC.Host.Services
+{
+    /// <summary>
+    /// Windows-specific clipboard access implementation
+    /// </summary>
+    public class WindowsClipboardAccess : IClipboardAccess
+    {
+        private readonly System.Threading.SynchronizationContext? _syncContext;
+        private IntPtr _clipboardViewerNext;
+        private readonly object _lock = new object();
+
+        public event EventHandler? ClipboardChanged;
+
+        public WindowsClipboardAccess()
+        {
+            // Create a synchronization context for clipboard operations
+            if (System.Threading.SynchronizationContext.Current == null)
+            {
+                System.Threading.SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
+            }
+            _syncContext = System.Threading.SynchronizationContext.Current;
+        }
+
+        public bool ContainsText()
+        {
+            return RunOnSTAThread(() => Clipboard.ContainsText());
+        }
+
+        public bool ContainsImage()
+        {
+            return RunOnSTAThread(() => Clipboard.ContainsImage());
+        }
+
+        public bool ContainsFileDropList()
+        {
+            return RunOnSTAThread(() => Clipboard.ContainsFileDropList());
+        }
+
+        public Task<string?> GetTextAsync()
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                if (Clipboard.ContainsText())
+                {
+                    return Clipboard.GetText();
+                }
+                return null;
+            }));
+        }
+
+        public Task<byte[]?> GetImageAsync()
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                if (Clipboard.ContainsImage())
+                {
+                    using var image = Clipboard.GetImage();
+                    if (image != null)
+                    {
+                        using var ms = new MemoryStream();
+                        image.Save(ms, ImageFormat.Png);
+                        return ms.ToArray();
+                    }
+                }
+                return null;
+            }));
+        }
+
+        public Task<string[]?> GetFileDropListAsync()
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                if (Clipboard.ContainsFileDropList())
+                {
+                    var fileDropList = Clipboard.GetFileDropList();
+                    if (fileDropList != null && fileDropList.Count > 0)
+                    {
+                        var files = new string[fileDropList.Count];
+                        fileDropList.CopyTo(files, 0);
+                        return files;
+                    }
+                }
+                return null;
+            }));
+        }
+
+        public Task<bool> SetTextAsync(string text)
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                try
+                {
+                    Clipboard.SetText(text);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }));
+        }
+
+        public Task<bool> SetImageAsync(byte[] imageData)
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                try
+                {
+                    using var ms = new MemoryStream(imageData);
+                    using var image = Image.FromStream(ms);
+                    Clipboard.SetImage(image);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }));
+        }
+
+        public Task<bool> SetHtmlAsync(string html, string textFallback)
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                try
+                {
+                    var dataObject = new DataObject();
+                    
+                    // Add HTML format
+                    var htmlFormat = DataFormats.Html;
+                    var htmlData = GetHtmlDataString(html);
+                    dataObject.SetData(htmlFormat, htmlData);
+                    
+                    // Add text fallback
+                    if (!string.IsNullOrEmpty(textFallback))
+                    {
+                        dataObject.SetData(DataFormats.Text, textFallback);
+                        dataObject.SetData(DataFormats.UnicodeText, textFallback);
+                    }
+                    
+                    Clipboard.SetDataObject(dataObject, true);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }));
+        }
+
+        public Task<bool> ClearAsync()
+        {
+            return Task.FromResult(RunOnSTAThread(() =>
+            {
+                try
+                {
+                    Clipboard.Clear();
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }));
+        }
+
+        public bool IsFormatSupported(ClipboardContentType type)
+        {
+            return type switch
+            {
+                ClipboardContentType.Text => true,
+                ClipboardContentType.Html => true,
+                ClipboardContentType.Image => true,
+                ClipboardContentType.FileList => true,
+                ClipboardContentType.RichText => true,
+                _ => false
+            };
+        }
+
+        private T RunOnSTAThread<T>(Func<T> func)
+        {
+            if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+            {
+                return func();
+            }
+
+            T result = default!;
+            Exception? exception = null;
+
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    result = func();
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+            });
+
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+
+            if (exception != null)
+            {
+                throw exception;
+            }
+
+            return result;
+        }
+
+        private string GetHtmlDataString(string html)
+        {
+            var sb = new StringBuilder();
+            
+            // HTML clipboard format header
+            var header = "Version:0.9\r\nStartHTML:00000000\r\nEndHTML:00000000\r\nStartFragment:00000000\r\nEndFragment:00000000\r\n";
+            var startHtml = header.Length;
+            
+            sb.Append(header);
+            sb.Append("<!DOCTYPE html>\r\n<html>\r\n<body>\r\n<!--StartFragment-->");
+            
+            var startFragment = sb.Length;
+            sb.Append(html);
+            var endFragment = sb.Length;
+            
+            sb.Append("<!--EndFragment-->\r\n</body>\r\n</html>");
+            var endHtml = sb.Length;
+            
+            // Update header with actual positions
+            sb.Replace("StartHTML:00000000", $"StartHTML:{startHtml:D8}");
+            sb.Replace("EndHTML:00000000", $"EndHTML:{endHtml:D8}");
+            sb.Replace("StartFragment:00000000", $"StartFragment:{startFragment:D8}");
+            sb.Replace("EndFragment:00000000", $"EndFragment:{endFragment:D8}");
+            
+            return sb.ToString();
+        }
+
+        public void StartMonitoring(IntPtr hwnd)
+        {
+            lock (_lock)
+            {
+                _clipboardViewerNext = SetClipboardViewer(hwnd);
+            }
+        }
+
+        public void StopMonitoring(IntPtr hwnd)
+        {
+            lock (_lock)
+            {
+                ChangeClipboardChain(hwnd, _clipboardViewerNext);
+                _clipboardViewerNext = IntPtr.Zero;
+            }
+        }
+
+        public void HandleClipboardChange()
+        {
+            ClipboardChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        #region Native Methods
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetClipboardViewer(IntPtr hWndNewViewer);
+
+        [DllImport("user32.dll")]
+        private static extern bool ChangeClipboardChain(IntPtr hWndRemove, IntPtr hWndNewNext);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+        #endregion
+    }
+}

@@ -89,7 +89,7 @@ namespace RemoteC.Api.Tests.Services
             // Arrange
             var sessionId = Guid.NewGuid();
             var organizationId = _context.Organizations.First().Id;
-            var recordingOptions = new RecordingOptions
+            var recordingOptions = new RemoteC.Api.Services.RecordingOptions
             {
                 CompressionType = CompressionType.Gzip,
                 IncludeAudio = true,
@@ -112,7 +112,7 @@ namespace RemoteC.Api.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(sessionId, result.SessionId);
             Assert.Equal(organizationId, result.OrganizationId);
-            Assert.Equal(RecordingStatus.Recording, result.Status);
+            Assert.Equal(RemoteC.Data.Entities.RecordingStatus.Recording, result.Status);
             Assert.Equal(encryptionKeyId, result.EncryptionKeyId);
             Assert.True(result.IncludeAudio);
             Assert.Equal(RecordingQuality.High, result.Quality);
@@ -133,7 +133,7 @@ namespace RemoteC.Api.Tests.Services
             var sessionId = Guid.NewGuid();
             var organizationId = Guid.NewGuid(); // Non-existent org
 
-            var recordingOptions = new RecordingOptions();
+            var recordingOptions = new RemoteC.Api.Services.RecordingOptions();
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(
@@ -148,13 +148,13 @@ namespace RemoteC.Api.Tests.Services
         public async Task StopRecordingAsync_WithActiveRecording_StopsRecording()
         {
             // Arrange
-            var recording = new SessionRecording
+            var recording = new RemoteC.Data.Entities.SessionRecording
             {
                 Id = Guid.NewGuid(),
                 SessionId = Guid.NewGuid(),
                 OrganizationId = _context.Organizations.First().Id,
                 StartedAt = DateTime.UtcNow.AddMinutes(-30),
-                Status = RecordingStatus.Recording,
+                Status = RemoteC.Data.Entities.RecordingStatus.Recording,
                 EncryptionKeyId = "test-key",
                 FileSize = 1024 * 1024 * 50 // 50MB
             };
@@ -167,7 +167,7 @@ namespace RemoteC.Api.Tests.Services
             // Assert
             var dbRecording = await _context.SessionRecordings.FindAsync(recording.Id);
             Assert.NotNull(dbRecording);
-            Assert.Equal(RecordingStatus.Completed, dbRecording.Status);
+            Assert.Equal(RemoteC.Data.Entities.RecordingStatus.Completed, dbRecording.Status);
             Assert.NotNull(dbRecording.EndedAt);
             Assert.True(dbRecording.Duration > TimeSpan.Zero);
 
@@ -182,20 +182,20 @@ namespace RemoteC.Api.Tests.Services
         public async Task AppendFrameAsync_WithValidFrame_AppendsSuccessfully()
         {
             // Arrange
-            var recording = new SessionRecording
+            var recording = new RemoteC.Data.Entities.SessionRecording
             {
                 Id = Guid.NewGuid(),
                 SessionId = Guid.NewGuid(),
                 OrganizationId = _context.Organizations.First().Id,
                 StartedAt = DateTime.UtcNow,
-                Status = RecordingStatus.Recording,
+                Status = RemoteC.Data.Entities.RecordingStatus.Recording,
                 EncryptionKeyId = "test-key",
                 CompressionType = CompressionType.None
             };
             _context.SessionRecordings.Add(recording);
             await _context.SaveChangesAsync();
 
-            var frame = new RecordingFrame
+            var frame = new RemoteC.Api.Services.RecordingFrame
             {
                 FrameNumber = 1,
                 Timestamp = DateTime.UtcNow,
@@ -236,14 +236,14 @@ namespace RemoteC.Api.Tests.Services
         public async Task GetRecordingAsync_WithValidId_ReturnsRecording()
         {
             // Arrange
-            var recording = new SessionRecording
+            var recording = new RemoteC.Data.Entities.SessionRecording
             {
                 Id = Guid.NewGuid(),
                 SessionId = Guid.NewGuid(),
                 OrganizationId = _context.Organizations.First().Id,
                 StartedAt = DateTime.UtcNow.AddHours(-1),
                 EndedAt = DateTime.UtcNow,
-                Status = RecordingStatus.Completed,
+                Status = RemoteC.Data.Entities.RecordingStatus.Completed,
                 EncryptionKeyId = "test-key",
                 FileSize = 1024 * 1024 * 100,
                 Duration = TimeSpan.FromHours(1),
@@ -270,14 +270,14 @@ namespace RemoteC.Api.Tests.Services
         public async Task ExportRecordingAsync_WithValidRecording_ExportsSuccessfully()
         {
             // Arrange
-            var recording = new SessionRecording
+            var recording = new RemoteC.Data.Entities.SessionRecording
             {
                 Id = Guid.NewGuid(),
                 SessionId = Guid.NewGuid(),
                 OrganizationId = _context.Organizations.First().Id,
                 StartedAt = DateTime.UtcNow.AddHours(-1),
                 EndedAt = DateTime.UtcNow,
-                Status = RecordingStatus.Completed,
+                Status = RemoteC.Data.Entities.RecordingStatus.Completed,
                 EncryptionKeyId = "test-key",
                 FileSize = 1024 * 1024,
                 Duration = TimeSpan.FromHours(1)

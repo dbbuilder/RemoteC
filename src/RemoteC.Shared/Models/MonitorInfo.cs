@@ -263,4 +263,12 @@ namespace RemoteC.Shared.Models
         public int Width { get; set; }
         public int Height { get; set; }
     }
+
+    /// <summary>
+    /// Virtual desktop bounds with monitor count
+    /// </summary>
+    public class VirtualDesktopBounds : ScreenBounds
+    {
+        public int MonitorCount { get; set; }
+    }
 }

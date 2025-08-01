@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -146,6 +147,33 @@ namespace RemoteC.Api.Services
             }
             
             await Task.CompletedTask;
+        }
+
+        public async Task<byte[]> EncryptAsync(byte[] data)
+        {
+            // Generate a temporary key for single-use encryption
+            var keyId = await GenerateKeyAsync();
+            return await EncryptAsync(data, keyId);
+        }
+
+        public async Task<byte[]> DecryptAsync(byte[] data)
+        {
+            // This would need to extract the key ID from the encrypted data
+            // For now, throw not implemented
+            throw new NotImplementedException("Decrypting without key ID is not yet implemented");
+        }
+
+        public string ComputeChecksum(byte[] data)
+        {
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(data);
+            return Convert.ToBase64String(hash);
+        }
+
+        public bool VerifyChecksum(byte[] data, string checksum)
+        {
+            var computedChecksum = ComputeChecksum(data);
+            return computedChecksum == checksum;
         }
     }
 }

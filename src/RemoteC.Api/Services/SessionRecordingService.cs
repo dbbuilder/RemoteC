@@ -57,7 +57,7 @@ namespace RemoteC.Api.Services
         /// <summary>
         /// Start recording a session
         /// </summary>
-        public async Task<SessionRecording> StartRecordingAsync(
+        public async Task<RemoteC.Data.Entities.SessionRecording> StartRecordingAsync(
             Guid sessionId,
             Guid organizationId,
             RecordingOptions options)
@@ -72,13 +72,13 @@ namespace RemoteC.Api.Services
             }
 
             // Create recording entry
-            var recording = new SessionRecording
+            var recording = new RemoteC.Data.Entities.SessionRecording
             {
                 Id = Guid.NewGuid(),
                 SessionId = sessionId,
                 OrganizationId = organizationId,
                 StartedAt = DateTime.UtcNow,
-                Status = RecordingStatus.Recording,
+                Status = RemoteC.Data.Entities.RecordingStatus.Recording,
                 EncryptionKeyId = await _encryptionService.GenerateKeyAsync(),
                 CompressionType = options.CompressionType,
                 IncludeAudio = options.IncludeAudio,
@@ -119,7 +119,7 @@ namespace RemoteC.Api.Services
             var recording = await _context.SessionRecordings
                 .FirstOrDefaultAsync(r => r.Id == recordingId, cancellationToken);
 
-            if (recording == null || recording.Status != RecordingStatus.Recording)
+            if (recording == null || recording.Status != RemoteC.Data.Entities.RecordingStatus.Recording)
             {
                 throw new InvalidOperationException("Recording not found or not active");
             }
@@ -199,7 +199,7 @@ namespace RemoteC.Api.Services
         /// <summary>
         /// Stop recording
         /// </summary>
-        public async Task<SessionRecording> StopRecordingAsync(Guid recordingId)
+        public async Task<RemoteC.Data.Entities.SessionRecording> StopRecordingAsync(Guid recordingId)
         {
             var recording = await _context.SessionRecordings
                 .FirstOrDefaultAsync(r => r.Id == recordingId);
@@ -209,7 +209,7 @@ namespace RemoteC.Api.Services
                 throw new InvalidOperationException("Recording not found");
             }
 
-            recording.Status = RecordingStatus.Processing;
+            recording.Status = RemoteC.Data.Entities.RecordingStatus.Processing;
             recording.EndedAt = DateTime.UtcNow;
             recording.Duration = recording.EndedAt.Value - recording.StartedAt;
 
@@ -377,7 +377,7 @@ namespace RemoteC.Api.Services
                 await CreateSearchableIndexAsync(recording);
 
                 // Mark as completed
-                recording.Status = RecordingStatus.Completed;
+                recording.Status = RemoteC.Data.Entities.RecordingStatus.Completed;
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Post-processing completed for recording {RecordingId}", recordingId);
@@ -391,13 +391,13 @@ namespace RemoteC.Api.Services
                 
                 if (recording != null)
                 {
-                    recording.Status = RecordingStatus.Failed;
+                    recording.Status = RemoteC.Data.Entities.RecordingStatus.Failed;
                     await _context.SaveChangesAsync();
                 }
             }
         }
 
-        private async Task GenerateThumbnailAsync(SessionRecording recording)
+        private async Task GenerateThumbnailAsync(RemoteC.Data.Entities.SessionRecording recording)
         {
             // Extract first keyframe as thumbnail
             var containerClient = _blobServiceClient.GetBlobContainerClient(CONTAINER_NAME);
@@ -417,7 +417,7 @@ namespace RemoteC.Api.Services
             }
         }
 
-        private async Task CreateSearchableIndexAsync(SessionRecording recording)
+        private async Task CreateSearchableIndexAsync(RemoteC.Data.Entities.SessionRecording recording)
         {
             // TODO: Index recording metadata for searching
             // - OCR on screen content
@@ -482,7 +482,7 @@ namespace RemoteC.Api.Services
             };
         }
 
-        private async Task<bool> HasPlaybackPermissionAsync(Guid userId, SessionRecording recording)
+        private async Task<bool> HasPlaybackPermissionAsync(Guid userId, RemoteC.Data.Entities.SessionRecording recording)
         {
             // Check if user is session participant
             var isParticipant = await _context.SessionParticipants
@@ -561,9 +561,9 @@ namespace RemoteC.Api.Services
 
     public interface ISessionRecordingService
     {
-        Task<SessionRecording> StartRecordingAsync(Guid sessionId, Guid organizationId, RecordingOptions options);
+        Task<RemoteC.Data.Entities.SessionRecording> StartRecordingAsync(Guid sessionId, Guid organizationId, RecordingOptions options);
         Task AppendFrameAsync(Guid recordingId, RecordingFrame frame, CancellationToken cancellationToken = default);
-        Task<SessionRecording> StopRecordingAsync(Guid recordingId);
+        Task<RemoteC.Data.Entities.SessionRecording> StopRecordingAsync(Guid recordingId);
         Task<RecordingPlayback> GetRecordingAsync(Guid recordingId, Guid userId);
         Task<int> DeleteOldRecordingsAsync(CancellationToken cancellationToken = default);
         Task<DataExport> ExportRecordingAsync(Guid recordingId, ExportOptions options); // Added for test compatibility

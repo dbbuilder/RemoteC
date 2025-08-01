@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -229,6 +231,135 @@ namespace RemoteC.Core.Interop
             };
 
             return await Task.FromResult(stats);
+        }
+
+        public async Task<List<MonitorInfo>> GetMonitorsAsync(string sessionId)
+        {
+            if (!_isInitialized)
+                throw new InvalidOperationException("Provider not initialized");
+
+            if (!_sessions.TryGetValue(sessionId, out var context))
+                throw new InvalidOperationException("Session not found");
+
+            try
+            {
+                var monitors = MonitorManager.EnumerateMonitors();
+                return await Task.FromResult(monitors);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to enumerate monitors: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> SelectMonitorAsync(string sessionId, string monitorId)
+        {
+            if (!_isInitialized)
+                throw new InvalidOperationException("Provider not initialized");
+
+            if (!_sessions.TryGetValue(sessionId, out var context))
+                throw new InvalidOperationException("Session not found");
+
+            try
+            {
+                // Find monitor by ID
+                var monitors = MonitorManager.EnumerateMonitors();
+                var monitor = monitors.FirstOrDefault(m => m.Id == monitorId);
+                if (monitor == null)
+                    return false;
+
+                // Create new capture handle with selected monitor
+                var newCaptureHandle = RemoteCCore.remotec_capture_create_with_config(
+                    1, // SingleMonitor = 1
+                    new[] { (uint)monitor.Index },
+                    1,
+                    30, // target FPS
+                    1   // capture cursor
+                );
+
+                if (newCaptureHandle == IntPtr.Zero)
+                    return false;
+
+                // Stop and destroy old capture
+                if (context.CaptureHandle != IntPtr.Zero)
+                {
+                    RemoteCCore.remotec_capture_stop(context.CaptureHandle);
+                    RemoteCCore.remotec_capture_destroy(context.CaptureHandle);
+                }
+
+                // Replace with new capture
+                context.CaptureHandle = newCaptureHandle;
+
+                // Start new capture
+                var result = RemoteCCore.remotec_capture_start(context.CaptureHandle);
+                return await Task.FromResult(result == 0);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to select monitor: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> SelectMonitorsAsync(string sessionId, string[] monitorIds)
+        {
+            if (!_isInitialized)
+                throw new InvalidOperationException("Provider not initialized");
+
+            if (!_sessions.TryGetValue(sessionId, out var context))
+                throw new InvalidOperationException("Session not found");
+
+            try
+            {
+                // Find monitors by IDs
+                var monitors = MonitorManager.EnumerateMonitors();
+                var selectedIndices = new List<uint>();
+
+                foreach (var monitorId in monitorIds)
+                {
+                    var monitor = monitors.FirstOrDefault(m => m.Id == monitorId);
+                    if (monitor != null)
+                    {
+                        selectedIndices.Add((uint)monitor.Index);
+                    }
+                }
+
+                if (selectedIndices.Count == 0)
+                    return false;
+
+                // Create new capture handle with selected monitors
+                var captureMode = selectedIndices.Count == 1 
+                    ? 1u // SingleMonitor = 1
+                    : 3u; // SelectedMonitors = 3
+
+                var newCaptureHandle = RemoteCCore.remotec_capture_create_with_config(
+                    captureMode,
+                    selectedIndices.ToArray(),
+                    (uint)selectedIndices.Count,
+                    30, // target FPS
+                    1   // capture cursor
+                );
+
+                if (newCaptureHandle == IntPtr.Zero)
+                    return false;
+
+                // Stop and destroy old capture
+                if (context.CaptureHandle != IntPtr.Zero)
+                {
+                    RemoteCCore.remotec_capture_stop(context.CaptureHandle);
+                    RemoteCCore.remotec_capture_destroy(context.CaptureHandle);
+                }
+
+                // Replace with new capture
+                context.CaptureHandle = newCaptureHandle;
+
+                // Start new capture
+                var result = RemoteCCore.remotec_capture_start(context.CaptureHandle);
+                return await Task.FromResult(result == 0);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to select monitors: {ex.Message}", ex);
+            }
         }
 
         public void Dispose()

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RemoteC.Shared.Models;
@@ -195,6 +197,257 @@ namespace RemoteC.Api.Services
                 _logger.LogDebug(ex, "Error checking session {SessionId} status, assuming inactive", sessionId);
                 return false;
             }
+        }
+
+        public async Task<IEnumerable<MonitorInfo>> GetMonitorsAsync(string deviceId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting monitors for device {DeviceId}", deviceId);
+                
+                // For now, create a temporary session to get monitors
+                // In the future, this should be device-based, not session-based
+                var tempSession = await _provider.StartSessionAsync(deviceId, Guid.NewGuid().ToString());
+                
+                try
+                {
+                    var monitors = await _provider.GetMonitorsAsync(tempSession.Id);
+                    return monitors;
+                }
+                finally
+                {
+                    // Clean up temporary session
+                    await _provider.EndSessionAsync(tempSession.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get monitors for device {DeviceId}", deviceId);
+                throw;
+            }
+        }
+
+        public async Task<bool> SelectMonitorAsync(Guid sessionId, string monitorId)
+        {
+            try
+            {
+                if (!_activeSessions.TryGetValue(sessionId, out var remoteSession))
+                {
+                    _logger.LogWarning("Remote session {SessionId} not found", sessionId);
+                    return false;
+                }
+
+                _logger.LogInformation("Selecting monitor {MonitorId} for session {SessionId}", monitorId, sessionId);
+                return await _provider.SelectMonitorAsync(remoteSession.Id, monitorId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to select monitor {MonitorId} for session {SessionId}", monitorId, sessionId);
+                throw;
+            }
+        }
+
+        public async Task<MonitorInfo?> GetSelectedMonitorAsync(Guid sessionId)
+        {
+            try
+            {
+                if (!_activeSessions.TryGetValue(sessionId, out var remoteSession))
+                {
+                    _logger.LogWarning("Remote session {SessionId} not found", sessionId);
+                    return null;
+                }
+
+                var monitors = await _provider.GetMonitorsAsync(remoteSession.Id);
+                // For now, return the first monitor or primary
+                return monitors?.FirstOrDefault(m => m.IsPrimary) ?? monitors?.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get selected monitor for session {SessionId}", sessionId);
+                return null;
+            }
+        }
+
+        public async Task<ScreenBounds?> GetMonitorBoundsAsync(Guid sessionId, string monitorId)
+        {
+            try
+            {
+                if (!_activeSessions.TryGetValue(sessionId, out var remoteSession))
+                {
+                    _logger.LogWarning("Remote session {SessionId} not found", sessionId);
+                    return null;
+                }
+
+                var monitors = await _provider.GetMonitorsAsync(remoteSession.Id);
+                var monitor = monitors?.FirstOrDefault(m => m.Id == monitorId);
+                
+                if (monitor == null)
+                    return null;
+
+                return new ScreenBounds
+                {
+                    X = monitor.Bounds.X,
+                    Y = monitor.Bounds.Y,
+                    Width = monitor.Bounds.Width,
+                    Height = monitor.Bounds.Height
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get monitor bounds for session {SessionId}, monitor {MonitorId}", sessionId, monitorId);
+                return null;
+            }
+        }
+
+        public async Task NotifyMonitorChangeAsync(Guid sessionId, string fromMonitorId, string toMonitorId)
+        {
+            try
+            {
+                _logger.LogInformation("Notifying monitor change for session {SessionId} from {FromMonitor} to {ToMonitor}", 
+                    sessionId, fromMonitorId, toMonitorId);
+                
+                // TODO: Implement SignalR notification to connected clients
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to notify monitor change for session {SessionId}", sessionId);
+                throw;
+            }
+        }
+
+        // Clipboard operations
+        public async Task<ClipboardContent?> GetClipboardContentAsync(Guid sessionId)
+        {
+            try
+            {
+                if (!_activeSessions.TryGetValue(sessionId, out var remoteSession))
+                {
+                    _logger.LogWarning("Remote session {SessionId} not found", sessionId);
+                    return null;
+                }
+
+                // Get clipboard from host via provider
+                // For now, return a placeholder implementation
+                _logger.LogInformation("Getting clipboard content for session {SessionId}", sessionId);
+                
+                // TODO: Implement actual clipboard retrieval via provider
+                return new ClipboardContent
+                {
+                    Type = ClipboardContentType.Text,
+                    Text = "Clipboard content placeholder",
+                    Timestamp = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get clipboard content for session {SessionId}", sessionId);
+                throw;
+            }
+        }
+
+        public async Task<bool> SetClipboardContentAsync(Guid sessionId, ClipboardContent content)
+        {
+            try
+            {
+                if (!_activeSessions.TryGetValue(sessionId, out var remoteSession))
+                {
+                    _logger.LogWarning("Remote session {SessionId} not found", sessionId);
+                    return false;
+                }
+
+                _logger.LogInformation("Setting clipboard content for session {SessionId}, type: {Type}", 
+                    sessionId, content.Type);
+                
+                // TODO: Implement actual clipboard setting via provider
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to set clipboard content for session {SessionId}", sessionId);
+                return false;
+            }
+        }
+
+        public async Task<ClipboardContent?> GetHostClipboardAsync(Guid sessionId)
+        {
+            // This gets clipboard directly from the host
+            return await GetClipboardContentAsync(sessionId);
+        }
+
+        public async Task<ClipboardContent?> GetClientClipboardAsync(Guid sessionId)
+        {
+            // This would get clipboard from the client side
+            // For now, return placeholder
+            return new ClipboardContent
+            {
+                Type = ClipboardContentType.Text,
+                Text = "Client clipboard placeholder",
+                Timestamp = DateTime.UtcNow
+            };
+        }
+
+        public async Task<bool> SetClientClipboardAsync(Guid sessionId, ClipboardContent content)
+        {
+            try
+            {
+                _logger.LogInformation("Setting client clipboard for session {SessionId}", sessionId);
+                // TODO: Implement SignalR notification to update client clipboard
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to set client clipboard for session {SessionId}", sessionId);
+                return false;
+            }
+        }
+
+        public async Task<ClipboardHistoryItem[]?> GetClipboardHistoryAsync(Guid sessionId, int maxItems)
+        {
+            try
+            {
+                _logger.LogInformation("Getting clipboard history for session {SessionId}, max items: {MaxItems}", 
+                    sessionId, maxItems);
+                
+                // TODO: Implement clipboard history retrieval
+                return Array.Empty<ClipboardHistoryItem>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get clipboard history for session {SessionId}", sessionId);
+                return null;
+            }
+        }
+
+        public async Task<bool> ClearClipboardAsync(Guid sessionId, ClipboardTarget target)
+        {
+            try
+            {
+                _logger.LogInformation("Clearing clipboard for session {SessionId}, target: {Target}", 
+                    sessionId, target);
+                
+                // TODO: Implement clipboard clearing
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to clear clipboard for session {SessionId}", sessionId);
+                return false;
+            }
+        }
+
+        public bool IsClipboardTypeSupported(ClipboardContentType type)
+        {
+            // Check which clipboard types are supported by the current provider
+            return type switch
+            {
+                ClipboardContentType.Text => true,
+                ClipboardContentType.Image => true,
+                ClipboardContentType.Html => true,
+                ClipboardContentType.FileList => false, // Not supported yet
+                ClipboardContentType.RichText => false, // Not supported yet
+                _ => false
+            };
         }
     }
 

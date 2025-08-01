@@ -238,6 +238,8 @@ public class Program
             builder.Services.AddScoped<IAuditService, AuditService>();
             builder.Services.AddScoped<IEncryptionService, EncryptionService>();
             builder.Services.AddScoped<IE2EEncryptionService, E2EEncryptionService>();
+            builder.Services.AddScoped<IAdaptiveQualityService, AdaptiveQualityService>();
+            builder.Services.AddScoped<IMetricsCollector, MetricsCollector>();
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             builder.Services.AddHostedService<QueuedHostedService>();
             
@@ -259,6 +261,7 @@ public class Program
             builder.Services.AddScoped<IIdentityProviderService, IdentityProviderService>();
             builder.Services.AddScoped<ICertificateService, CertificateService>();
             builder.Services.AddScoped<IPolicyEngineService, PolicyEngineService>();
+            builder.Services.AddScoped<IClipboardService, ClipboardService>();
             
             // Configure file transfer options
             builder.Services.Configure<FileTransferOptions>(builder.Configuration.GetSection("FileTransfer"));
