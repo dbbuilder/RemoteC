@@ -3,7 +3,7 @@
 use super::{Transport, TransportConfig, TransportMessage, ConnectionState, NetworkStats};
 use crate::{Result, RemoteCError};
 use bytes::Bytes;
-use quinn::{Endpoint, Connection, RecvStream, SendStream};
+use quinn::{Endpoint, Connection};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;

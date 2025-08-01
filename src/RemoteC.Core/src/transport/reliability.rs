@@ -2,7 +2,7 @@
 //!
 //! Provides packet acknowledgment, retransmission, and ordering.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 /// Packet tracking for reliability

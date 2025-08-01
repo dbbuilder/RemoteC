@@ -6,7 +6,6 @@ use crate::{Result, RemoteCError};
 use bytes::Bytes;
 use std::net::SocketAddr;
 use std::time::Duration;
-use tokio::sync::mpsc;
 
 /// Transport protocol types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

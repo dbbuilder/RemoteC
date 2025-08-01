@@ -2,8 +2,7 @@
 //!
 //! Provides high-performance video encoding using H.264/H.265 codecs.
 
-use crate::{Result, RemoteCError};
-use std::sync::Arc;
+use crate::Result;
 
 /// Supported video codecs
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

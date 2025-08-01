@@ -1,6 +1,6 @@
 //! Hardware acceleration detection and management
 
-use crate::{Result, RemoteCError};
+use crate::Result;
 use std::sync::Once;
 
 static INIT: Once = Once::new();
@@ -300,7 +300,7 @@ impl HardwareEncoder for NvencEncoder {
 
 /// Select best available hardware encoder
 pub fn select_hardware_encoder() -> Option<Box<dyn HardwareEncoder>> {
-    let caps = detect_hardware_acceleration();
+    let _caps = detect_hardware_acceleration();
     
     #[cfg(feature = "nvenc")]
     {
@@ -323,7 +323,7 @@ mod tests {
         let caps = detect_hardware_acceleration();
         
         // At least one of these should be available on CI
-        let any_available = caps.nvidia_nvenc || 
+        let _any_available = caps.nvidia_nvenc || 
                            caps.intel_qsv || 
                            caps.amd_vce || 
                            caps.apple_vt ||

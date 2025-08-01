@@ -2,7 +2,7 @@
 //! 
 //! Provides cross-platform input simulation for mouse and keyboard events.
 
-use crate::{Result, RemoteCError};
+use crate::Result;
 
 /// Mouse button types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,7 +39,7 @@ pub enum MouseEvent {
 }
 
 /// Keyboard key codes
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum KeyCode {
     // Letters
     A, B, C, D, E, F, G, H, I, J, K, L, M,

@@ -1,7 +1,7 @@
 //! Linux-specific input simulation implementation
 
-use super::{InputSimulator, KeyCode, KeyboardEvent, MouseButton, MouseEvent};
-use crate::{Result, RemoteCError};
+use super::{InputSimulator, KeyCode, KeyboardEvent, MouseEvent};
+use crate::Result;
 
 pub struct LinuxInputSimulator;
 

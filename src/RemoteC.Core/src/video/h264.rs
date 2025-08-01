@@ -100,7 +100,7 @@ impl VideoEncoder for H264Encoder {
     }
     
     fn encode_frame(&mut self, frame: &[u8], timestamp: u64) -> Result<EncodedFrame> {
-        let (width, height, keyframe_interval) = {
+        let (_width, _height, keyframe_interval) = {
             let config = self.config.as_ref()
                 .ok_or_else(|| RemoteCError::EncodingError("Encoder not configured".to_string()))?;
             

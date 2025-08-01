@@ -2,8 +2,7 @@
 //! 
 //! Provides cross-platform screen capture functionality with high performance.
 
-use crate::{Result, RemoteCError};
-use std::sync::Arc;
+use crate::Result;
 
 pub mod monitor;
 pub use monitor::{Monitor, MonitorBounds, MonitorOrientation, VirtualDesktop};

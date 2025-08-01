@@ -1,9 +1,7 @@
 //! FFI module for .NET interop
 
-use crate::{Result, RemoteCError};
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{c_char, CString};
 use std::ptr;
-use std::sync::Arc;
 use tokio::runtime::Runtime;
 use once_cell::sync::Lazy;
 

@@ -18,6 +18,7 @@ pub mod transport;
 pub mod video;
 
 use thiserror::Error;
+use crate::encoding::EncodingError as FrameEncodingError;
 
 /// Result type for RemoteC Core operations
 pub type Result<T> = std::result::Result<T, RemoteCError>;
@@ -69,6 +70,12 @@ pub enum RemoteCError {
     Other(String),
 }
 
+impl From<FrameEncodingError> for RemoteCError {
+    fn from(err: FrameEncodingError) -> Self {
+        RemoteCError::EncodingError(err.to_string())
+    }
+}
+
 /// Initialize the RemoteC Core library
 pub fn initialize() -> Result<()> {
     logging::init_logging();
@@ -97,3 +104,11 @@ mod tests {
         assert!(result.is_ok());
     }
 }
+
+// Include test modules when building tests
+#[cfg(test)]
+mod test_modules;
+
+// Include test modules for the main testing
+#[cfg(test)]
+pub use test_modules::*;
