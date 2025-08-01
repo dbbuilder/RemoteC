@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using RemoteC.Data;
 using RemoteC.Data.Entities;
 using RemoteC.Shared.Models;
+using RemoteC.Api.Hubs;
 using AutoMapper;
 
 namespace RemoteC.Api.Services;
@@ -17,6 +19,7 @@ public class SessionService : ISessionService
     private readonly IRemoteControlService _remoteControlService;
     private readonly IAuditService _auditService;
     private readonly ILogger<SessionService> _logger;
+    private readonly IHubContext<SessionHub> _hubContext;
 
     public SessionService(
         RemoteCDbContext context,
@@ -24,7 +27,8 @@ public class SessionService : ISessionService
         IPinService pinService,
         IRemoteControlService remoteControlService,
         IAuditService auditService,
-        ILogger<SessionService> logger)
+        ILogger<SessionService> logger,
+        IHubContext<SessionHub> hubContext)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -32,6 +36,7 @@ public class SessionService : ISessionService
         _remoteControlService = remoteControlService ?? throw new ArgumentNullException(nameof(remoteControlService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
     }
 
     public async Task<IEnumerable<SessionDto>> GetUserSessionsAsync(string userId)
@@ -446,5 +451,122 @@ public class SessionService : ISessionService
             _logger.LogError(ex, "Error updating session {SessionId} status", sessionId);
             throw;
         }
+    }
+    
+    public async Task<SessionJoinResult> JoinSessionWithPinAsync(Guid sessionId, string pin, string userId)
+    {
+        var session = await _context.Sessions
+            .Include(s => s.Device)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+            
+        if (session == null)
+        {
+            throw new ArgumentException($"Session {sessionId} not found");
+        }
+        
+        if (!session.RequirePin)
+        {
+            throw new InvalidOperationException("Session does not require PIN");
+        }
+        
+        // Validate PIN
+        var isPinValid = await _pinService.ValidatePinAsync(sessionId, pin);
+        if (!isPinValid)
+        {
+            _logger.LogWarning("Invalid PIN attempt for session {SessionId} by user {UserId}", sessionId, userId);
+            throw new UnauthorizedAccessException("Invalid or expired PIN");
+        }
+        
+        // Check if user is already a participant
+        var existingParticipant = await _context.SessionParticipants
+            .FirstOrDefaultAsync(p => p.SessionId == sessionId && p.UserId.ToString() == userId);
+            
+        if (existingParticipant == null)
+        {
+            // Add user as participant
+            var participant = new SessionParticipant
+            {
+                Id = Guid.NewGuid(),
+                SessionId = sessionId,
+                UserId = Guid.Parse(userId),
+                Role = Data.Entities.ParticipantRole.Viewer,
+                JoinedAt = DateTime.UtcNow
+            };
+            
+            _context.SessionParticipants.Add(participant);
+        }
+        
+        // Update session status if needed
+        if (session.Status == Data.Entities.SessionStatus.WaitingForPin)
+        {
+            session.Status = Data.Entities.SessionStatus.Active;
+            session.StartedAt = DateTime.UtcNow;
+        }
+        
+        await _context.SaveChangesAsync();
+        
+        // Generate connection token
+        var connectionToken = GenerateConnectionToken(sessionId, userId);
+        
+        // Notify other participants via SignalR
+        await _hubContext.Clients.Group($"session-{sessionId}")
+            .SendAsync("ParticipantJoined", new
+            {
+                sessionId,
+                userId,
+                joinedAt = DateTime.UtcNow,
+                role = "Viewer"
+            });
+        
+        _logger.LogInformation("User {UserId} joined session {SessionId} with PIN", userId, sessionId);
+        
+        return new SessionJoinResult
+        {
+            Success = true,
+            SessionId = sessionId,
+            ConnectionToken = connectionToken,
+            UserRole = "Guest",
+            WebSocketUrl = $"/hubs/session?session={sessionId}",
+            ConnectionParameters = new Dictionary<string, object>
+            {
+                { "deviceId", session.DeviceId },
+                { "sessionName", session.Name }
+            }
+        };
+    }
+    
+    public async Task<ExtendedPinGenerationResult> GenerateTemporaryPinAsync(Guid sessionId, string userId, int expirationMinutes)
+    {
+        var session = await _context.Sessions.FindAsync(sessionId);
+        if (session == null)
+        {
+            throw new ArgumentException($"Session {sessionId} not found");
+        }
+        
+        // Check permissions
+        if (session.CreatedBy.ToString() != userId)
+        {
+            throw new UnauthorizedAccessException("Only session creator can generate PINs");
+        }
+        
+        var result = await _pinService.GeneratePinWithDetailsAsync(sessionId, expirationMinutes);
+        
+        _logger.LogInformation("Generated temporary PIN for session {SessionId} with {Minutes} minute expiration", 
+            sessionId, expirationMinutes);
+            
+        return result;
+    }
+    
+    public async Task<bool> ValidatePinBeforeJoinAsync(Guid sessionId, string pin)
+    {
+        return await _pinService.IsPinValidAsync(sessionId, pin);
+    }
+    
+    private string GenerateConnectionToken(Guid sessionId, string userId)
+    {
+        // Simple token generation - in production, use proper JWT
+        var data = $"{sessionId}:{userId}:{DateTime.UtcNow.Ticks}";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(data);
+        return Convert.ToBase64String(bytes);
     }
 }

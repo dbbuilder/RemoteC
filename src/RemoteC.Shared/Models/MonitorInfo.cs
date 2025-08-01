@@ -242,4 +242,25 @@ namespace RemoteC.Shared.Models
         /// </summary>
         public float ScaleFactor { get; set; } = 1.0f;
     }
+
+    /// <summary>
+    /// Result of monitor selection operation
+    /// </summary>
+    public class MonitorSelectionResult
+    {
+        public bool Success { get; set; }
+        public string? SelectedMonitorId { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    /// <summary>
+    /// Screen bounds information
+    /// </summary>
+    public class ScreenBounds
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+    }
 }

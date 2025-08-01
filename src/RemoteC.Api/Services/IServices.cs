@@ -74,6 +74,32 @@ public interface ISessionService
     /// <param name="status">The new session status</param>
     /// <returns>Task completion</returns>
     Task UpdateSessionStatusAsync(Guid sessionId, RemoteC.Shared.Models.SessionStatus status);
+    
+    /// <summary>
+    /// Joins a session using a PIN code
+    /// </summary>
+    /// <param name="sessionId">The session to join</param>
+    /// <param name="pin">The PIN code</param>
+    /// <param name="userId">The user joining the session</param>
+    /// <returns>Session join result with connection details</returns>
+    Task<SessionJoinResult> JoinSessionWithPinAsync(Guid sessionId, string pin, string userId);
+    
+    /// <summary>
+    /// Generates a temporary PIN with custom expiration
+    /// </summary>
+    /// <param name="sessionId">The session to generate PIN for</param>
+    /// <param name="userId">The user requesting the PIN</param>
+    /// <param name="expirationMinutes">PIN expiration time in minutes</param>
+    /// <returns>Extended PIN generation result</returns>
+    Task<ExtendedPinGenerationResult> GenerateTemporaryPinAsync(Guid sessionId, string userId, int expirationMinutes);
+    
+    /// <summary>
+    /// Validates if a PIN is valid before attempting to join
+    /// </summary>
+    /// <param name="sessionId">The session ID</param>
+    /// <param name="pin">The PIN to validate</param>
+    /// <returns>True if PIN is valid</returns>
+    Task<bool> ValidatePinBeforeJoinAsync(Guid sessionId, string pin);
 }
 
 /// <summary>
@@ -212,6 +238,31 @@ public interface IRemoteControlService
     Task<bool> SendInputAsync(Guid sessionId, object inputData);
     Task<byte[]> GetScreenshotAsync(Guid sessionId);
     Task<bool> IsSessionActiveAsync(Guid sessionId);
+    
+    // Multi-monitor support
+    Task<IEnumerable<MonitorInfo>> GetMonitorsAsync(string deviceId);
+    Task<bool> SelectMonitorAsync(Guid sessionId, string monitorId);
+    Task<MonitorInfo?> GetSelectedMonitorAsync(Guid sessionId);
+    Task<ScreenBounds?> GetMonitorBoundsAsync(Guid sessionId, string monitorId);
+    Task NotifyMonitorChangeAsync(Guid sessionId, string fromMonitorId, string toMonitorId);
+}
+
+/// <summary>
+/// Interface for monitor management operations
+/// </summary>
+public interface IMonitorService
+{
+    Task<IEnumerable<MonitorInfo>> GetMonitorsAsync(string deviceId);
+    Task<MonitorSelectionResult> SelectMonitorAsync(Guid sessionId, string monitorId);
+    Task<MonitorInfo?> GetSelectedMonitorAsync(Guid sessionId);
+    Task<VirtualDesktopBounds?> GetVirtualDesktopBoundsAsync(string deviceId);
+    Task SwitchMonitorAsync(Guid sessionId, string fromMonitorId, string toMonitorId);
+    Task<MonitorInfo?> GetMonitorAtPointAsync(string deviceId, int x, int y);
+    Task HandleMonitorConfigurationChangeAsync(string deviceId);
+    Task<ScreenBounds?> GetCaptureBoundsAsync(Guid sessionId);
+    Task<MonitorInfo?> GetPrimaryMonitorAsync(string deviceId);
+    (int X, int Y) ToGlobalCoordinates(MonitorInfo monitor, int localX, int localY);
+    (int X, int Y) ToMonitorCoordinates(MonitorInfo monitor, int globalX, int globalY);
 }
 
 /// <summary>
