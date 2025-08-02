@@ -52,6 +52,20 @@ Write-Host "  Provider: ControlR (with Stub fallback)" -ForegroundColor Gray
 Write-Host "  Device ID: dev-host-001" -ForegroundColor Gray
 Write-Host ""
 
+# Ensure project is built
+Write-Host "Ensuring project is built..." -ForegroundColor Yellow
+dotnet restore
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Package restore failed!" -ForegroundColor Red
+    exit 1
+}
+
+dotnet build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Build failed!" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "Starting RemoteC Host..." -ForegroundColor Green
 Write-Host "Press Ctrl+C to stop" -ForegroundColor Gray
 Write-Host ""

@@ -26,7 +26,6 @@
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="ScreenCapture.NET" Version="1.1.0" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
-    <PackageReference Include="System.Windows.Forms" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
