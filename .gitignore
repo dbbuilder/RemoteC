@@ -395,6 +395,28 @@ appsettings.*.json
 **/appsettings.*.json
 !**/appsettings.json.example
 !**/appsettings.Development.json.example
+!**/appsettings.json.template
+
+# Environment files with connection strings
+.env
+.env.*
+!.env.template
+!.env.example
+
+# Scripts with hardcoded connection strings
+scripts/*-local.ps1
+scripts/*-prod.ps1
+scripts/*-staging.ps1
+
+# Docker compose files with real connection strings
+docker-compose.local.yml
+docker-compose.prod.yml
+docker-compose.staging.yml
+
+# Kubernetes secrets
+k8s/secret*.yaml
+k8s/*-secret.yaml
+!k8s/secret.yaml.example
 
 # Certificate files
 *.pfx
