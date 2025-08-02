@@ -3,7 +3,8 @@
 
 param(
     [switch]$Clean,
-    [switch]$Release
+    [switch]$Release,
+    [string]$DesktopIP = "localhost"
 )
 
 $ErrorActionPreference = "Stop"
@@ -195,8 +196,14 @@ if (Test-Path $devConfigPath) {
         $config.RemoteControlProvider.Type = "Rust"
         $config.RemoteControlProvider.Settings.FallbackToStub = $true
         
+        # Update server URLs with the provided DesktopIP
+        $serverUrl = "http://${DesktopIP}:7001"
+        $config.Api.BaseUrl = $serverUrl
+        $config.HostConfiguration.ServerUrl = $serverUrl
+        $config.ConnectionStrings.SignalRHub = "${serverUrl}/hubs/host"
+        
         $config | ConvertTo-Json -Depth 10 | Set-Content $devConfigPath
-        Write-Host "✓ Updated configuration to use Rust provider" -ForegroundColor Green
+        Write-Host "✓ Updated configuration to use Rust provider with server: $serverUrl" -ForegroundColor Green
     } catch {
         Write-Host "! Failed to update configuration: $_" -ForegroundColor Yellow
     }
@@ -217,9 +224,14 @@ Write-Host "  Build Type: $buildType" -ForegroundColor White
 Write-Host "  Installed to: $copyCount host directories" -ForegroundColor White
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Yellow
-Write-Host "  1. Run: .\scripts\run-host-dev.ps1" -ForegroundColor Gray
+if ($DesktopIP -ne "localhost") {
+    Write-Host "  1. Run: .\scripts\run-host-laptop.ps1 -DesktopIP $DesktopIP" -ForegroundColor Gray
+} else {
+    Write-Host "  1. Run: .\scripts\run-host-dev.ps1" -ForegroundColor Gray
+}
 Write-Host "  2. Host will now use the Rust provider" -ForegroundColor Gray
 Write-Host "  3. Check logs for 'Rust provider initialized'" -ForegroundColor Gray
+Write-Host "  4. Server configured for: http://${DesktopIP}:7001" -ForegroundColor Gray
 Write-Host ""
 
 if (-not $Release) {
