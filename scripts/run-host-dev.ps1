@@ -43,13 +43,42 @@ try {
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 $env:REMOTEC_SERVER_URL = $ServerUrl
 
+# Check provider configuration
+$configPath = "appsettings.Development.json"
+$providerType = "ControlR"
+$rustLibPath = "remotec_core.dll"
+
+if (Test-Path $configPath) {
+    try {
+        $config = Get-Content $configPath | ConvertFrom-Json
+        $providerType = $config.RemoteControlProvider.Type
+    } catch {
+        # Ignore JSON parsing errors
+    }
+}
+
+$rustAvailable = Test-Path $rustLibPath
+$providerStatus = switch ($providerType) {
+    "Rust" { if ($rustAvailable) { "Rust (Native)" } else { "Rust -> Stub (DLL not found)" } }
+    "ControlR" { "ControlR (External)" }
+    default { "Stub (Fallback)" }
+}
+
 # Display configuration
 Write-Host ""
 Write-Host "Configuration:" -ForegroundColor Yellow
 Write-Host "  Environment: Development" -ForegroundColor Gray
 Write-Host "  Server URL: $ServerUrl" -ForegroundColor Gray
-Write-Host "  Provider: ControlR (with Stub fallback)" -ForegroundColor Gray
+Write-Host "  Provider: $providerStatus" -ForegroundColor Gray
 Write-Host "  Device ID: dev-host-001" -ForegroundColor Gray
+if ($providerType -eq "Rust") {
+    if ($rustAvailable) {
+        $dllSize = (Get-Item $rustLibPath).Length
+        Write-Host "  Rust Library: $rustLibPath ($([math]::Round($dllSize/1MB, 1)) MB)" -ForegroundColor Green
+    } else {
+        Write-Host "  Rust Library: Missing - run .\scripts\build-rust-core.ps1" -ForegroundColor Yellow
+    }
+}
 Write-Host ""
 
 # Ensure project is built
