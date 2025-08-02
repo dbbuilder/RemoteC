@@ -13,4 +13,6 @@ public interface ISessionRepository
     Task<bool> RemoveParticipantAsync(Guid sessionId, Guid userId);
     Task<bool> UpdateParticipantStatusAsync(Guid sessionId, Guid userId, bool isConnected);
     Task<IEnumerable<SessionParticipant>> GetSessionParticipantsAsync(Guid sessionId);
+    Task<int> GetActiveSessionsCountAsync();
+    Task<Dictionary<DateTime, int>> GetSessionCountsByDateRangeAsync(DateTime startDate, DateTime endDate);
 }

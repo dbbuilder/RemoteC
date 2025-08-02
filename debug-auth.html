@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug</title>
+</head>
+<body>
+    <h1>Authentication Debug Test</h1>
+    <button onclick="testAuth()">Test Authentication</button>
+    <pre id="output"></pre>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.textContent += message + '\n';
+            console.log(message);
+        }
+
+        async function testAuth() {
+            output.textContent = '';
+            
+            // Check what's in localStorage
+            log('1. Checking localStorage...');
+            const devAuth = localStorage.getItem('dev-auth');
+            if (devAuth) {
+                log('Found dev-auth: ' + devAuth.substring(0, 100) + '...');
+            } else {
+                log('No dev-auth in localStorage');
+            }
+            
+            // Check config
+            log('\n2. Checking config...');
+            log('Location: ' + window.location.href);
+            log('Origin: ' + window.location.origin);
+            
+            // Try to login
+            log('\n3. Attempting login...');
+            try {
+                const response = await fetch('http://localhost:7001/api/auth/dev-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@remotec.demo',
+                        password: 'admin123'
+                    })
+                });
+                
+                log('Response status: ' + response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('Login successful!');
+                    log('Token: ' + data.token.substring(0, 50) + '...');
+                    
+                    // Store in localStorage
+                    const authData = {
+                        user: data.user,
+                        token: data.token
+                    };
+                    localStorage.setItem('dev-auth', JSON.stringify(authData));
+                    log('\n4. Stored in localStorage');
+                    
+                    // Check if it persists
+                    const stored = localStorage.getItem('dev-auth');
+                    log('Verified in localStorage: ' + (stored ? 'YES' : 'NO'));
+                    
+                    // Test API call with token
+                    log('\n5. Testing authenticated API call...');
+                    const apiResponse = await fetch('http://localhost:7001/api/dashboard/stats', {
+                        headers: {
+                            'Authorization': `Bearer ${data.token}`
+                        }
+                    });
+                    log('Dashboard API status: ' + apiResponse.status);
+                    
+                } else {
+                    log('Login failed: ' + response.status);
+                }
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+            
+            // Check React app environment
+            log('\n6. Checking if this is the React app...');
+            if (window.React || document.querySelector('#root')) {
+                log('React app detected');
+            } else {
+                log('Not in React app - open http://localhost:3000 to test the actual app');
+            }
+        }
+        
+        // Auto-run on load
+        window.onload = testAuth;
+    </script>
+</body>
+</html>

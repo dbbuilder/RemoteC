@@ -51,3 +51,24 @@ publish/
 # Logs
 logs/
 *.log
+
+# IMPORTANT: Exclude test directories
+tests/
+test-results/
+test-backup-*
+e2e-videos/
+screenshots/
+node_modules/
+.git/
+
+# Rust build artifacts (HUGE!)
+src/RemoteC.Core/target/
+**/target/
+
+# All bin and obj directories
+src/**/bin/
+src/**/obj/
+**/bin/Debug/
+**/bin/Release/
+**/obj/Debug/
+**/obj/Release/

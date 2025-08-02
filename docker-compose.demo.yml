@@ -1,0 +1,138 @@
+services:
+  # SQL Server Database - COMMENTED OUT: Using external SQL Server at sqltest.schoolvision.net
+  # db:
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   container_name: remotec-db
+  #   environment:
+  #     - ACCEPT_EULA=Y
+  #     - MSSQL_SA_PASSWORD=${DB_PASSWORD:-YourStrong@Passw0rd}
+  #     - MSSQL_PID=Developer
+  #   ports:
+  #     - "${DB_PORT:-1433}:1433"
+  #   volumes:
+  #     - remotec-sqldata:/var/opt/mssql
+  #     - ./database/init:/docker-entrypoint-initdb.d
+  #   networks:
+  #     - remotec-network
+  #   healthcheck:
+  #     test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${DB_PASSWORD:-YourStrong@Passw0rd}" -Q "SELECT 1" -b
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 10
+  #     start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: remotec-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - remotec-redis:/data
+    networks:
+      - remotec-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # RemoteC API
+  api:
+    build:
+      context: .
+      dockerfile: src/RemoteC.Api/Dockerfile
+      args:
+        - ENVIRONMENT=${API_ENVIRONMENT:-Development}
+    container_name: remotec-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${API_ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:7001
+      - ConnectionStrings__DefaultConnection=Server=${DB_SERVER:-sqltest.schoolvision.net},${DB_PORT:-14333};Database=${DB_NAME:-RemoteC2Db};User Id=${DB_USER:-sv};Password=${DB_PASSWORD:-Gv51076!};TrustServerCertificate=true;MultipleActiveResultSets=true
+      - ConnectionStrings__RedisConnection=${REDIS_CONNECTION:-redis:6379}
+      - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-for-jwt-tokens-minimum-32-chars}
+      - Jwt__Issuer=${JWT_ISSUER:-RemoteC}
+      - Jwt__Audience=${JWT_AUDIENCE:-RemoteC}
+      - Jwt__ExpiryMinutes=1440
+      - Demo__Enabled=${DEMO_MODE:-true}
+      - Demo__AdminEmail=${DEMO_ADMIN_EMAIL:-admin@remotec.demo}
+      - Demo__AdminPassword=${DEMO_ADMIN_PASSWORD:-Admin@123}
+      - Demo__UserEmail=${DEMO_USER_EMAIL:-user@remotec.demo}
+      - Demo__UserPassword=${DEMO_USER_PASSWORD:-User@123}
+      - Cors__AllowedOrigins=http://localhost:3000,http://${HOST_IP:-localhost}:3000
+      - Logging__LogLevel__Default=${LOG_LEVEL:-Information}
+      - AllowedHosts=*
+    ports:
+      - "${API_PORT:-7001}:7001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - remotec-network
+    volumes:
+      - remotec-logs:/app/logs
+      - ./src/RemoteC.Api/appsettings.json:/app/appsettings.json:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  # RemoteC Web (React Frontend)
+  web:
+    build:
+      context: ./src/RemoteC.Web
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:7001}
+        - REACT_APP_HUB_URL=${REACT_APP_HUB_URL:-http://localhost:7001/hubs}
+    container_name: remotec-web
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:7001}
+      - REACT_APP_HUB_URL=${REACT_APP_HUB_URL:-http://localhost:7001/hubs}
+      - REACT_APP_DEMO_MODE=${DEMO_MODE:-true}
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - remotec-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Nginx Reverse Proxy (Optional - disabled by default for demo)
+  # Uncomment to enable HTTPS support
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: remotec-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./deployment/nginx/demo.conf:/etc/nginx/nginx.conf:ro
+  #     - ./deployment/ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - api
+  #     - web
+  #   networks:
+  #     - remotec-network
+  #   profiles:
+  #     - ssl
+
+networks:
+  remotec-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  # remotec-sqldata: # Not needed - using external SQL Server
+  remotec-redis:
+  remotec-logs:

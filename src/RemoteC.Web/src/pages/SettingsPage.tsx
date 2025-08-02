@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useUnifiedApi } from '@/hooks/useUnifiedApi'
+import { Badge } from '@/components/ui/badge'
 import { 
   Settings, 
   Shield, 
@@ -76,7 +77,7 @@ export function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false)
   
   // Fetch current settings
-  const { data: settings, isLoading, error, refetch } = useQuery<SystemSettings>({
+  const { data: settings, isLoading, refetch } = useQuery<SystemSettings>({
     queryKey: ['system-settings'],
     queryFn: async () => {
       try {

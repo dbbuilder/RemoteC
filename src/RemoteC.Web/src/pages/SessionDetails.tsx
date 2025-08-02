@@ -65,7 +65,7 @@ export function SessionDetails() {
   const [error, setError] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [selectedMonitor, setSelectedMonitor] = useState<string>('')
-  const [controlEnabled, setControlEnabled] = useState(false)
+  const [controlEnabled] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Fetch session details

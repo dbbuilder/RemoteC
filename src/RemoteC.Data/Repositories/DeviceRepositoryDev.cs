@@ -162,5 +162,17 @@ namespace RemoteC.Data.Repositories
             // For development, just return true
             return await Task.FromResult(true);
         }
+
+        public async Task<int> GetDeviceCountAsync()
+        {
+            // For development, return the count of devices from the database
+            return await _context.Devices.CountAsync();
+        }
+
+        public async Task<int> GetOnlineDeviceCountAsync()
+        {
+            // For development, return the count of online devices from the database
+            return await _context.Devices.Where(d => d.IsOnline).CountAsync();
+        }
     }
 }

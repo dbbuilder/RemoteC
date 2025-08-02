@@ -147,4 +147,9 @@ public class UserRepository : IUserRepository
             .AsNoTracking()
             .ToListAsync();
     }
+
+    public async Task<int> GetUserCountAsync()
+    {
+        return await _context.Users.CountAsync();
+    }
 }

@@ -239,6 +239,7 @@ public class Program
             builder.Services.AddScoped<IEncryptionService, EncryptionService>();
             builder.Services.AddScoped<IE2EEncryptionService, E2EEncryptionService>();
             builder.Services.AddScoped<IAdaptiveQualityService, AdaptiveQualityService>();
+            builder.Services.AddScoped<ISessionMetricsService, SessionMetricsService>();
             builder.Services.AddScoped<IMetricsCollector, MetricsCollector>();
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             builder.Services.AddHostedService<QueuedHostedService>();

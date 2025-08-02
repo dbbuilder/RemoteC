@@ -23,30 +23,49 @@ export const useDevAuth = () => {
 export const DevAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const login = async (username: string, _password?: string) => {
-    // In development mode, any username/password works
-    const mockUser: User = {
-      id: 'dev-user-001',
-      email: `${username}@dev.local`,
-      displayName: username,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-      isActive: true,
-      roles: ['Admin'], // Give admin role in dev mode
-      permissions: ['view_all', 'manage_all'], // Full permissions in dev
+  const login = async (username: string, password: string) => {
+    try {
+      // Call the actual dev-login endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:7001'}/api/auth/dev-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: username.includes('@') ? username : `${username}@remotec.demo`,
+          password: password || 'Admin@123'
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Login failed')
+      }
+
+      const data = await response.json()
+      
+      const user: User = {
+        id: data.user.id,
+        email: data.user.email,
+        displayName: data.user.name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        isActive: true,
+        roles: data.user.roles || ['Admin'],
+        permissions: ['view_all', 'manage_all'], // Full permissions in dev
+      }
+      
+      setUser(user)
+      setIsAuthenticated(true)
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('dev-auth', JSON.stringify({ user, token: data.token }))
+    } catch (error) {
+      console.error('Login failed:', error)
+      throw error
     }
-
-    // Simulate async API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    setUser(mockUser)
-    setIsAuthenticated(true)
-    
-    // Store in localStorage for persistence
-    localStorage.setItem('dev-auth', JSON.stringify({ user: mockUser, token: 'dev-token-123' }))
   }
 
   const logout = async () => {
@@ -56,18 +75,38 @@ export const DevAuthProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }
 
   const getAccessToken = async (): Promise<string> => {
-    // Return a mock token for development
+    // Get the actual token from localStorage
+    const storedAuth = localStorage.getItem('dev-auth')
+    if (storedAuth) {
+      const { token } = JSON.parse(storedAuth)
+      return token || 'dev-token-123'
+    }
     return 'dev-token-123'
   }
 
   // Check for existing auth on mount
   React.useEffect(() => {
-    const storedAuth = localStorage.getItem('dev-auth')
-    if (storedAuth) {
-      const { user: storedUser } = JSON.parse(storedAuth)
-      setUser(storedUser)
-      setIsAuthenticated(true)
+    const checkAuth = () => {
+      try {
+        const storedAuth = localStorage.getItem('dev-auth')
+        if (storedAuth) {
+          const { user: storedUser, token } = JSON.parse(storedAuth)
+          // Verify we have both user and token
+          if (storedUser && token) {
+            setUser(storedUser)
+            setIsAuthenticated(true)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading auth state:', error)
+        // Clear invalid auth data
+        localStorage.removeItem('dev-auth')
+      } finally {
+        setIsLoading(false)
+      }
     }
+    
+    checkAuth()
   }, [])
 
   const value: DevAuthContextType = {

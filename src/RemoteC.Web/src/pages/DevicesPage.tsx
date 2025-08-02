@@ -81,7 +81,7 @@ export function DevicesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Online':
-        return <Badge variant="success">Online</Badge>
+        return <Badge variant="default">Online</Badge>
       case 'Offline':
         return <Badge variant="secondary">Offline</Badge>
       default:

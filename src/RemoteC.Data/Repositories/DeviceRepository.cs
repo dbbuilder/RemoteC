@@ -234,4 +234,16 @@ public class DeviceRepository : IDeviceRepository
 
         return true;
     }
+
+    public async Task<int> GetDeviceCountAsync()
+    {
+        var result = await _context.Database.SqlQuery<int>($"SELECT COUNT(*) FROM Devices").FirstOrDefaultAsync();
+        return result;
+    }
+
+    public async Task<int> GetOnlineDeviceCountAsync()
+    {
+        var result = await _context.Database.SqlQuery<int>($"SELECT COUNT(*) FROM Devices WHERE IsOnline = 1").FirstOrDefaultAsync();
+        return result;
+    }
 }

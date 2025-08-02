@@ -25,4 +25,5 @@ public interface IAuditRepository
         int pageSize = 50);
 
     Task<int> CleanupAuditLogsAsync(int retentionDays = 90);
+    Task<int> GetRecentActivityCountAsync(TimeSpan timeSpan);
 }

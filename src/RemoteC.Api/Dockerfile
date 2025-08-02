@@ -2,26 +2,27 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution and project files
-COPY RemoteC.sln .
+# Copy project files for dependency projects
 COPY src/RemoteC.Api/RemoteC.Api.csproj src/RemoteC.Api/
 COPY src/RemoteC.Data/RemoteC.Data.csproj src/RemoteC.Data/
 COPY src/RemoteC.Shared/RemoteC.Shared.csproj src/RemoteC.Shared/
 COPY src/RemoteC.Core.Interop/RemoteC.Core.Interop.csproj src/RemoteC.Core.Interop/
 
-# Restore dependencies
+# Restore dependencies for the API project only
+WORKDIR /src/src/RemoteC.Api
 RUN dotnet restore
 
 # Copy source code
+WORKDIR /src
 COPY src/ src/
 
 # Build application
 WORKDIR /src/src/RemoteC.Api
-RUN dotnet build -c Release -o /app/build
+RUN dotnet build -c Release -o /app/build /p:NoWarn=CS1591
 
 # Publish stage
 FROM build AS publish
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false /p:NoWarn=CS1591
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

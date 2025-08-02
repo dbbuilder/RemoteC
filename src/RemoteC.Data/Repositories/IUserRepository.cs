@@ -12,4 +12,5 @@ public interface IUserRepository
     Task RemoveRoleAsync(Guid userId, Guid roleId);
     Task<IEnumerable<Role>> GetUserRolesAsync(Guid userId);
     Task<IEnumerable<Permission>> GetUserPermissionsAsync(Guid userId);
+    Task<int> GetUserCountAsync();
 }

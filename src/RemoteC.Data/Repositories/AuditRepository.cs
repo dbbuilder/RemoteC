@@ -113,4 +113,12 @@ public class AuditRepository : IAuditRepository
 
         return result;
     }
+
+    public async Task<int> GetRecentActivityCountAsync(TimeSpan timeSpan)
+    {
+        var cutoffTime = DateTime.UtcNow.Subtract(timeSpan);
+        return await _context.AuditLogs
+            .Where(a => a.Timestamp >= cutoffTime)
+            .CountAsync();
+    }
 }

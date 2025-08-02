@@ -15,4 +15,6 @@ public interface IDeviceRepository
     Task<IEnumerable<DeviceDto>> GetDevicesInGroupAsync(Guid deviceGroupId, int pageNumber = 1, int pageSize = 25);
     Task<bool> AddDeviceToGroupAsync(Guid deviceGroupId, Guid deviceId, Guid addedBy);
     Task<bool> RemoveDeviceFromGroupAsync(Guid deviceGroupId, Guid deviceId);
+    Task<int> GetDeviceCountAsync();
+    Task<int> GetOnlineDeviceCountAsync();
 }

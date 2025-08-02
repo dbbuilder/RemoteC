@@ -117,56 +117,6 @@ export function FileTransfer({ sessionId }: FileTransferProps) {
     }
   }
 
-  const downloadFile = async (fileId: string, fileName: string) => {
-    const transferId = `${Date.now()}-${Math.random()}`
-    const transfer: FileTransferItem = {
-      id: transferId,
-      name: fileName,
-      size: 0,
-      type: 'application/octet-stream',
-      status: 'downloading',
-      progress: 0,
-      direction: 'download',
-    }
-
-    setTransfers((prev) => [...prev, transfer])
-    setIsTransferring(true)
-
-    try {
-      const response = await post(
-        `/api/file-transfer/download`,
-        { sessionId, fileId },
-        {
-          responseType: 'blob',
-          onDownloadProgress: (progressEvent) => {
-            const progress = Math.round(
-              (progressEvent.loaded * 100) / (progressEvent.total || 1)
-            )
-            updateTransferProgress(transferId, progress)
-          },
-        }
-      )
-
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', fileName)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-
-      updateTransferStatus(transferId, 'completed')
-      toast.success(`${fileName} downloaded successfully`)
-    } catch (error) {
-      console.error('Download failed:', error)
-      updateTransferStatus(transferId, 'failed', 'Download failed')
-      toast.error(`Failed to download ${fileName}`)
-    } finally {
-      setIsTransferring(false)
-    }
-  }
 
   const updateTransferStatus = (
     id: string,

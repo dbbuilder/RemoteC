@@ -234,4 +234,25 @@ public class SessionRepository : ISessionRepository
             .AsNoTracking()
             .ToListAsync();
     }
+
+    public async Task<int> GetActiveSessionsCountAsync()
+    {
+        return await _context.Sessions
+            .Where(s => s.Status == RemoteC.Data.Entities.SessionStatus.Active || 
+                       s.Status == RemoteC.Data.Entities.SessionStatus.Connected ||
+                       s.Status == RemoteC.Data.Entities.SessionStatus.Connecting)
+            .CountAsync();
+    }
+
+    public async Task<Dictionary<DateTime, int>> GetSessionCountsByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        var sessions = await _context.Sessions
+            .Where(s => s.CreatedAt >= startDate && s.CreatedAt <= endDate)
+            .GroupBy(s => s.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+
+        return sessions.ToDictionary(x => x.Date, x => x.Count);
+    }
 }

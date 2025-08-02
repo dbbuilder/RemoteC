@@ -318,7 +318,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(DevLoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<DevLoginResponse> DevLogin()
+    public ActionResult<DevLoginResponse> DevLogin([FromBody] DevLoginRequest request)
     {
         var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
         if (!configuration.GetValue<bool>("EnableDevAuth", false))
@@ -326,13 +326,17 @@ public class AuthController : ControllerBase
             return NotFound();
         }
 
+        // Accept any username/password in dev mode
+        var email = request?.Email ?? "dev@remotec.local";
+        var name = email.Contains("@") ? email.Split('@')[0] : email;
+        
         var devUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, devUserId.ToString()),
             new Claim("sub", devUserId.ToString()),
-            new Claim(ClaimTypes.Name, "Developer User"),
-            new Claim(ClaimTypes.Email, "dev@remotec.local"),
+            new Claim(ClaimTypes.Name, name),
+            new Claim(ClaimTypes.Email, email),
             new Claim("role", "Admin")
         };
 

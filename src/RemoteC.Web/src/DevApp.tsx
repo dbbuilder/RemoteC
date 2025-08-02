@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { DevAuthProvider, useDevAuth } from '@/contexts/DevAuthContext'
-import { SignalRProvider } from '@/contexts/SignalRContext'
+import { DevSignalRProvider } from '@/contexts/DevSignalRContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { DevLayout } from '@/components/DevLayout'
 import { DevLoginPage } from '@/pages/DevLoginPage'
@@ -15,14 +15,22 @@ import { AuditLogsPage } from '@/pages/AuditLogsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function DevAppRoutes() {
-  const { isAuthenticated } = useDevAuth()
+  const { isAuthenticated, isLoading } = useDevAuth()
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <DevLoginPage />
   }
 
   return (
-    <SignalRProvider>
+    <DevSignalRProvider>
       <DevLayout>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -37,7 +45,7 @@ function DevAppRoutes() {
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </DevLayout>
-    </SignalRProvider>
+    </DevSignalRProvider>
   )
 }
 
