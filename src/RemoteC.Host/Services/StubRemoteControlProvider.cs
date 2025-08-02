@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RemoteC.Shared.Models;
+using DrawingRectangle = System.Drawing.Rectangle;
 
 namespace RemoteC.Host.Services;
 
@@ -18,11 +19,12 @@ public class StubRemoteControlProvider : IRemoteControlProvider
 {
     private readonly ILogger<StubRemoteControlProvider> _logger;
     private bool _isInitialized;
+    private readonly Dictionary<string, RemoteSession> _sessions = new();
 
     public string Name => "Stub";
     public string Version => "1.0.0-dev";
 
-    public StubRemoteControlProvider(ILogger<StubRemoteControlProvider> logger = null)
+    public StubRemoteControlProvider(ILogger<StubRemoteControlProvider>? logger = null)
     {
         _logger = logger ?? LoggerFactory.Create(builder => builder.AddConsole())
             .CreateLogger<StubRemoteControlProvider>();
@@ -35,19 +37,32 @@ public class StubRemoteControlProvider : IRemoteControlProvider
         return Task.FromResult(true);
     }
 
-    public Task<bool> ConnectAsync(string sessionId)
+    public Task<RemoteSession> StartSessionAsync(string deviceId, string userId)
     {
-        _logger.LogInformation($"Stub: Connecting to session {sessionId}");
+        var sessionId = Guid.NewGuid().ToString();
+        var session = new RemoteSession
+        {
+            Id = sessionId,
+            DeviceId = deviceId,
+            UserId = userId,
+            StartedAt = DateTime.UtcNow,
+            Status = SessionStatus.Active,
+            ConnectionString = $"stub://{Environment.MachineName}:{sessionId}"
+        };
+        
+        _sessions[sessionId] = session;
+        _logger.LogInformation($"Stub: Started session {sessionId} for device {deviceId}");
+        return Task.FromResult(session);
+    }
+
+    public Task<bool> EndSessionAsync(string sessionId)
+    {
+        _sessions.Remove(sessionId);
+        _logger.LogInformation($"Stub: Ended session {sessionId}");
         return Task.FromResult(true);
     }
 
-    public Task<bool> DisconnectAsync(string sessionId)
-    {
-        _logger.LogInformation($"Stub: Disconnecting from session {sessionId}");
-        return Task.FromResult(true);
-    }
-
-    public async Task<CaptureFrame> CaptureScreenAsync(string sessionId)
+    public async Task<ScreenFrame> CaptureScreenAsync(string sessionId)
     {
         if (!_isInitialized)
             throw new InvalidOperationException("Provider not initialized");
@@ -69,14 +84,14 @@ public class StubRemoteControlProvider : IRemoteControlProvider
 
             _logger.LogDebug($"Stub: Captured screen - {bounds.Width}x{bounds.Height}, {data.Length} bytes");
 
-            return new CaptureFrame
+            return new ScreenFrame
             {
                 Width = bounds.Width,
                 Height = bounds.Height,
                 Data = data,
-                Format = FrameFormat.Jpeg,
                 Timestamp = DateTime.UtcNow,
-                IsKeyFrame = true
+                IsKeyFrame = true,
+                CompressionQuality = 85
             };
         }
         catch (Exception ex)
@@ -87,20 +102,14 @@ public class StubRemoteControlProvider : IRemoteControlProvider
         }
     }
 
-    public Task<bool> SendInputAsync(string sessionId, InputEvent inputEvent)
+    public Task SendInputAsync(string sessionId, InputEvent inputEvent)
     {
         _logger.LogInformation($"Stub: Sending input event {inputEvent.Type} to session {sessionId}");
         // In a real implementation, this would send mouse/keyboard input
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
-    public Task<bool> TransferFileAsync(string sessionId, string localPath, string remotePath)
-    {
-        _logger.LogInformation($"Stub: Transferring file from {localPath} to {remotePath} in session {sessionId}");
-        return Task.FromResult(true);
-    }
-
-    public Task<List<MonitorInfo>> GetMonitorsAsync()
+    public Task<List<MonitorInfo>> GetMonitorsAsync(string sessionId)
     {
         _logger.LogInformation("Stub: Getting monitor information");
         
@@ -109,39 +118,38 @@ public class StubRemoteControlProvider : IRemoteControlProvider
         
         monitors.Add(new MonitorInfo
         {
+            Id = "monitor-0",
             Index = 0,
             Name = "Primary Monitor",
-            Width = bounds.Width,
-            Height = bounds.Height,
-            X = bounds.X,
-            Y = bounds.Y,
-            IsPrimary = true
+            IsPrimary = true,
+            Bounds = new RemoteC.Shared.Models.Rectangle
+            {
+                X = bounds.X,
+                Y = bounds.Y,
+                Width = bounds.Width,
+                Height = bounds.Height
+            },
+            WorkArea = new RemoteC.Shared.Models.Rectangle
+            {
+                X = bounds.X,
+                Y = bounds.Y,
+                Width = bounds.Width,
+                Height = bounds.Height - 40 // Account for taskbar
+            }
         });
 
         return Task.FromResult(monitors);
     }
 
-    public Task<bool> SetQualityAsync(string sessionId, int quality)
+    public Task<bool> SelectMonitorAsync(string sessionId, string monitorId)
     {
-        _logger.LogInformation($"Stub: Setting quality to {quality} for session {sessionId}");
+        _logger.LogInformation($"Stub: Selecting monitor {monitorId} for session {sessionId}");
         return Task.FromResult(true);
     }
 
-    public Task<bool> SetFrameRateAsync(string sessionId, int frameRate)
+    public Task<bool> SelectMonitorsAsync(string sessionId, string[] monitorIds)
     {
-        _logger.LogInformation($"Stub: Setting frame rate to {frameRate} for session {sessionId}");
-        return Task.FromResult(true);
-    }
-
-    public Task<bool> PauseAsync(string sessionId)
-    {
-        _logger.LogInformation($"Stub: Pausing session {sessionId}");
-        return Task.FromResult(true);
-    }
-
-    public Task<bool> ResumeAsync(string sessionId)
-    {
-        _logger.LogInformation($"Stub: Resuming session {sessionId}");
+        _logger.LogInformation($"Stub: Selecting {monitorIds.Length} monitors for session {sessionId}");
         return Task.FromResult(true);
     }
 
@@ -149,31 +157,40 @@ public class StubRemoteControlProvider : IRemoteControlProvider
     {
         return Task.FromResult(new SessionStatistics
         {
-            SessionId = sessionId,
-            Duration = TimeSpan.FromMinutes(5),
-            FramesCaptured = 1500,
-            BytesTransferred = 1024 * 1024 * 10, // 10 MB
-            AverageFrameRate = 25,
-            CurrentLatency = 15
+            FramesPerSecond = 25,
+            Latency = 15,
+            Bandwidth = 1024 * 1024, // 1 MB/s
+            PacketLoss = 0.1f,
+            BytesSent = 1024 * 1024 * 10, // 10 MB
+            BytesReceived = 1024 * 512, // 512 KB
+            FramesEncoded = 1500,
+            FramesDropped = 5,
+            CpuUsage = 25.5,
+            MemoryUsage = 128.0,
+            Duration = TimeSpan.FromMinutes(5)
         });
     }
 
-    public Task DisposeAsync()
+    public void Dispose()
     {
         _logger.LogInformation("Stub: Disposing provider");
         _isInitialized = false;
-        return Task.CompletedTask;
+        _sessions.Clear();
     }
 
-    private Rectangle GetPrimaryScreenBounds()
+    private DrawingRectangle GetPrimaryScreenBounds()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             try
             {
-                // Try to get actual screen bounds
-                var primaryScreen = System.Windows.Forms.Screen.PrimaryScreen;
-                return primaryScreen.Bounds;
+                // Use Win32 API to get screen dimensions
+                var width = GetSystemMetrics(0); // SM_CXSCREEN
+                var height = GetSystemMetrics(1); // SM_CYSCREEN
+                if (width > 0 && height > 0)
+                {
+                    return new DrawingRectangle(0, 0, width, height);
+                }
             }
             catch
             {
@@ -182,10 +199,13 @@ public class StubRemoteControlProvider : IRemoteControlProvider
         }
 
         // Default resolution if we can't get actual screen bounds
-        return new Rectangle(0, 0, 1920, 1080);
+        return new DrawingRectangle(0, 0, 1920, 1080);
     }
 
-    private CaptureFrame CreatePlaceholderFrame()
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
+
+    private ScreenFrame CreatePlaceholderFrame()
     {
         // Create a simple placeholder image
         using var bitmap = new Bitmap(800, 600);
@@ -204,14 +224,14 @@ public class StubRemoteControlProvider : IRemoteControlProvider
         using var ms = new MemoryStream();
         bitmap.Save(ms, ImageFormat.Jpeg);
 
-        return new CaptureFrame
+        return new ScreenFrame
         {
             Width = 800,
             Height = 600,
             Data = ms.ToArray(),
-            Format = FrameFormat.Jpeg,
             Timestamp = DateTime.UtcNow,
-            IsKeyFrame = true
+            IsKeyFrame = true,
+            CompressionQuality = 85
         };
     }
 }
