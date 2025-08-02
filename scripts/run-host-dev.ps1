@@ -26,10 +26,10 @@ Write-Host "Checking if RemoteC API is accessible..." -ForegroundColor Yellow
 try {
     $response = Invoke-WebRequest -Uri "$ServerUrl/health" -UseBasicParsing -TimeoutSec 5
     if ($response.StatusCode -eq 200) {
-        Write-Host "✓ API is running at $ServerUrl" -ForegroundColor Green
+        Write-Host "API is running at $ServerUrl" -ForegroundColor Green
     }
 } catch {
-    Write-Host "✗ Cannot reach API at $ServerUrl" -ForegroundColor Red
+    Write-Host "Cannot reach API at $ServerUrl" -ForegroundColor Red
     Write-Host "  Make sure RemoteC is running (docker ps)" -ForegroundColor Gray
     Write-Host "  Or run: .\scripts\fast-deploy.ps1" -ForegroundColor Gray
     Write-Host ""
