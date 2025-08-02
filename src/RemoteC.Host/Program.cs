@@ -91,14 +91,32 @@ public class Program
                 services.AddSingleton<IRemoteControlProvider>(sp =>
                 {
                     var config = sp.GetRequiredService<IConfiguration>();
+                    var logger = sp.GetRequiredService<ILogger<Program>>();
                     var providerType = config["RemoteControlProvider:Type"];
+                    var fallbackToStub = config.GetValue<bool>("RemoteControlProvider:Settings:FallbackToStub", false);
                     
-                    return providerType switch
+                    try
                     {
-                        "ControlR" => new ControlRProvider(config), // Phase 1
-                        "Rust" => new RemoteC.Core.Interop.RustRemoteControlProvider(), // Phase 2
-                        _ => throw new InvalidOperationException($"Unknown provider type: {providerType}")
-                    };
+                        return providerType switch
+                        {
+                            "ControlR" => new ControlRProvider(config), // Phase 1
+                            "Rust" => new RemoteC.Core.Interop.RustRemoteControlProvider(), // Phase 2
+                            "Stub" => new StubRemoteControlProvider(sp.GetService<ILogger<StubRemoteControlProvider>>()), // Development
+                            _ => throw new InvalidOperationException($"Unknown provider type: {providerType}")
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, $"Failed to initialize {providerType} provider");
+                        
+                        if (fallbackToStub)
+                        {
+                            logger.LogInformation("Falling back to Stub provider for development");
+                            return new StubRemoteControlProvider(sp.GetService<ILogger<StubRemoteControlProvider>>());
+                        }
+                        
+                        throw;
+                    }
                 });
                 
                 // Communication services
