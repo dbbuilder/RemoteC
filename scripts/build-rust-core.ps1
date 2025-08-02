@@ -24,9 +24,9 @@ Write-Host ""
 Write-Host "Checking Rust installation..." -ForegroundColor Yellow
 try {
     $rustVersion = rustc --version
-    Write-Host "✓ Found Rust: $rustVersion" -ForegroundColor Green
+    Write-Host "Found Rust: $rustVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Rust not found!" -ForegroundColor Red
+    Write-Host "Rust not found!" -ForegroundColor Red
     Write-Host ""
     Write-Host "Please install Rust from: https://rustup.rs/" -ForegroundColor Yellow
     Write-Host "Or run: winget install Rustlang.Rustup" -ForegroundColor Gray
@@ -36,19 +36,19 @@ try {
 
 try {
     $cargoVersion = cargo --version
-    Write-Host "✓ Found Cargo: $cargoVersion" -ForegroundColor Green
+    Write-Host "Found Cargo: $cargoVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Cargo not found!" -ForegroundColor Red
+    Write-Host "Cargo not found!" -ForegroundColor Red
     exit 1
 }
 
 # Check if Rust core directory exists
 if (-not (Test-Path $rustCorePath)) {
-    Write-Host "✗ Rust core directory not found: $rustCorePath" -ForegroundColor Red
+    Write-Host "Rust core directory not found: $rustCorePath" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Rust core directory found" -ForegroundColor Green
+Write-Host "Rust core directory found" -ForegroundColor Green
 
 # Change to Rust core directory
 Set-Location $rustCorePath
@@ -58,7 +58,7 @@ if ($Clean) {
     Write-Host ""
     Write-Host "Cleaning previous build..." -ForegroundColor Yellow
     cargo clean
-    Write-Host "✓ Clean complete" -ForegroundColor Green
+    Write-Host "Clean complete" -ForegroundColor Green
 }
 
 # Build the Rust library
@@ -80,11 +80,11 @@ if ($Release) {
 }
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Rust build failed!" -ForegroundColor Red
+    Write-Host "Rust build failed!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Rust build successful!" -ForegroundColor Green
+Write-Host "Rust build successful!" -ForegroundColor Green
 
 # Find the built library
 $targetDir = if ($Release) { "target\release" } else { "target\debug" }
@@ -116,12 +116,12 @@ foreach ($libFile in $libFiles) {
 }
 
 if (-not $foundLib) {
-    Write-Host "✗ Could not find built library in $libPath" -ForegroundColor Red
+    Write-Host "Could not find built library in $libPath" -ForegroundColor Red
     Write-Host "Expected files: $($libFiles -join ', ')" -ForegroundColor Gray
     exit 1
 }
 
-Write-Host "✓ Found library: $foundLib" -ForegroundColor Green
+Write-Host "Found library: $foundLib" -ForegroundColor Green
 
 # Copy to host directories
 Write-Host ""
@@ -140,7 +140,7 @@ foreach ($target in $hostTargets) {
         $targetFile = Join-Path $target "remotec_core.dll"
         try {
             Copy-Item $foundLib $targetFile -Force
-            Write-Host "  ✓ Copied to: $target" -ForegroundColor Green
+            Write-Host "  Copied to: $target" -ForegroundColor Green
             $copyCount++
         } catch {
             Write-Host "  ! Failed to copy to: $target" -ForegroundColor Yellow
@@ -151,7 +151,7 @@ foreach ($target in $hostTargets) {
             New-Item -ItemType Directory -Path $target -Force | Out-Null
             $targetFile = Join-Path $target "remotec_core.dll"
             Copy-Item $foundLib $targetFile -Force
-            Write-Host "  ✓ Created and copied to: $target" -ForegroundColor Green
+            Write-Host "  Created and copied to: $target" -ForegroundColor Green
             $copyCount++
         } catch {
             Write-Host "  ! Failed to create/copy to: $target" -ForegroundColor Yellow
@@ -160,11 +160,11 @@ foreach ($target in $hostTargets) {
 }
 
 if ($copyCount -eq 0) {
-    Write-Host "✗ Failed to copy library to any host directory!" -ForegroundColor Red
+    Write-Host "Failed to copy library to any host directory!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Library installed to $copyCount locations" -ForegroundColor Green
+Write-Host "Library installed to $copyCount locations" -ForegroundColor Green
 
 # Verify the library can be loaded (basic check)
 Write-Host ""
@@ -176,7 +176,7 @@ if (Test-Path $testLib) {
         # Try to load the DLL to check if it's valid
         $bytes = [System.IO.File]::ReadAllBytes($testLib)
         if ($bytes.Length -gt 0) {
-            Write-Host "✓ Library file is valid ($($bytes.Length) bytes)" -ForegroundColor Green
+            Write-Host "Library file is valid ($($bytes.Length) bytes)" -ForegroundColor Green
         }
     } catch {
         Write-Host "! Library may have issues: $_" -ForegroundColor Yellow
@@ -203,7 +203,7 @@ if (Test-Path $devConfigPath) {
         $config.ConnectionStrings.SignalRHub = "${serverUrl}/hubs/host"
         
         $config | ConvertTo-Json -Depth 10 | Set-Content $devConfigPath
-        Write-Host "✓ Updated configuration to use Rust provider with server: $serverUrl" -ForegroundColor Green
+        Write-Host "Updated configuration to use Rust provider with server: $serverUrl" -ForegroundColor Green
     } catch {
         Write-Host "! Failed to update configuration: $_" -ForegroundColor Yellow
     }
