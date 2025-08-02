@@ -4,7 +4,7 @@ mod monitor;
 pub use monitor::{enumerate_monitors_windows, get_monitor_at_point_windows};
 
 use crate::capture::{
-    CaptureConfig, CaptureMode, CaptureRegion, ScreenCapture, ScreenFrame,
+    CaptureConfig, CaptureMode, ScreenCapture, ScreenFrame,
 };
 use crate::{RemoteCError, Result};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -274,6 +274,12 @@ impl Drop for WindowsCapture {
         self.cleanup();
     }
 }
+
+// SAFETY: WindowsCapture controls the lifetime of GDI handles and ensures proper cleanup
+// The handles are only used within the methods of this struct and not shared between threads
+// directly. The atomic boolean ensures thread-safe state management.
+unsafe impl Send for WindowsCapture {}
+unsafe impl Sync for WindowsCapture {}
 
 #[cfg(test)]
 mod tests {

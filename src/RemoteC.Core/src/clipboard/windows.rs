@@ -1,5 +1,4 @@
-use super::{Clipboard, ClipboardContent, ClipboardContentType, ClipboardError, ClipboardFormat};
-use std::time::SystemTime;
+use super::{Clipboard, ClipboardContent, ClipboardError, ClipboardFormat};
 
 pub struct WindowsClipboard {
     monitoring: bool,

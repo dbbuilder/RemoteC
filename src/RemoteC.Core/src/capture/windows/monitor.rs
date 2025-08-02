@@ -4,11 +4,11 @@ use crate::capture::monitor::{Monitor, MonitorBounds, MonitorOrientation};
 use crate::{Result, RemoteCError};
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
-use winapi::shared::minwindef::{BOOL, DWORD, FALSE, LPARAM, TRUE};
-use winapi::shared::windef::{HDC, HMONITOR, LPRECT, RECT};
+use winapi::shared::minwindef::{BOOL, DWORD, LPARAM, TRUE};
+use winapi::shared::windef::{HDC, HMONITOR, LPRECT, POINT};
 use winapi::um::winuser::{
     EnumDisplayMonitors, GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITORINFOEXW,
-    MONITOR_DEFAULTTOPRIMARY, POINT,
+    MONITOR_DEFAULTTOPRIMARY,
 };
 
 /// Enumerate all monitors on Windows
@@ -32,7 +32,7 @@ pub fn enumerate_monitors_windows() -> Result<Vec<Monitor>> {
     }
 
     // Sort monitors by index to ensure consistent ordering
-    monitors.sort_by_key(|m| m.index);
+    monitors.sort_by_key(|m: &Monitor| m.index);
 
     Ok(monitors)
 }

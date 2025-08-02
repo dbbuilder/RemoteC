@@ -4,17 +4,17 @@ use super::{InputSimulator, KeyCode, KeyboardEvent, MouseButton, MouseEvent};
 use crate::{Result, RemoteCError};
 use winapi::{
     shared::{
-        minwindef::{DWORD, WORD},
+        minwindef::{DWORD},
         windef::POINT,
     },
     um::{
         winuser::{
             GetAsyncKeyState, GetCursorPos, GetSystemMetrics, SendInput, INPUT, INPUT_KEYBOARD,
-            INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, MOUSEEVENTF_ABSOLUTE,
+            INPUT_MOUSE, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, MOUSEEVENTF_ABSOLUTE,
             MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN,
             MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_MOVE, MOUSEEVENTF_RIGHTDOWN,
             MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_WHEEL, MOUSEEVENTF_HWHEEL, MOUSEEVENTF_XDOWN,
-            MOUSEEVENTF_XUP, MOUSEINPUT, SM_CXSCREEN, SM_CYSCREEN, VK_CONTROL, VK_SHIFT,
+            MOUSEEVENTF_XUP, SM_CXSCREEN, SM_CYSCREEN, VK_CONTROL, VK_SHIFT,
             VK_MENU, VK_LWIN, WHEEL_DELTA, XBUTTON1, XBUTTON2,
         },
     },
